@@ -1,0 +1,33 @@
+.app {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.container {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* var(--spacing-gap-extralarge) */
+  align-items: center;
+  width: 100%;
+  max-width: var(--container-max-width);
+  min-width: var(--container-min-width);
+}
+
+.editorArea {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 140px;
+  height: 140px;
+  pointer-events: auto;
+}

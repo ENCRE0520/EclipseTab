@@ -1,0 +1,97 @@
+/*
+文件描述: 文件夹视图样式
+作用: 定义文件夹弹出窗口的布局和动画
+*/
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  pointer-events: none;
+}
+
+.popupWrapper {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  z-index: 1998;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popover {
+  box-shadow: var(--shadow-medium);
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.clickAway {
+  position: fixed;
+  inset: 0;
+  z-index: 1997;
+  pointer-events: none;
+}
+
+.grid {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  align-items: start;
+}
+
+/* 3.1 Folder Window 进场：scale + opacity + blur */
+@keyframes folder-pop {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+    filter: blur(5px);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(2px);
+  }
+}
+
+/* 3.2 子图标错峰入场 */
+@keyframes icon-in {
+  0% {
+    transform: translateY(6px) scale(0.8);
+    opacity: 0;
+    filter: blur(3px);
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(2px);
+  }
+}
+
+.container {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-large);
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* 拖动时的占位符提示 */
+.placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+}

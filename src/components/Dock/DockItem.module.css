@@ -1,0 +1,138 @@
+/*
+文件描述: Dock 项目样式
+作用: 定义 Dock 中每个图标项的外观和交互
+*/
+.dockItem {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  transition: transform 300ms var(--ease-out-quint);
+}
+
+.dockItem.editMode {
+  animation: jiggle 0.3s ease-in-out infinite;
+}
+
+.dockItem.dragging {
+  opacity: 0.5;
+}
+
+.iconContainer {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-default);
+  overflow: hidden;
+  transition: transform 300ms var(--ease-out-quint),
+    box-shadow 300ms var(--ease-out-quint);
+}
+
+.nonFolderBg {
+  background: var(--color-bg-white);
+}
+
+.iconContainer.hovered {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-medium);
+}
+
+.icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.folderIcon {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  background: var(--color-bg-tertiary);
+  padding: 6px;
+  border-radius: var(--radius-default);
+}
+
+.folderIconTile {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg-white);
+}
+
+.folderIconTile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fallbackIcon {
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-secondary);
+}
+
+.deleteButton {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  color: rgba(255, 77, 77, 1);
+  border: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: transform 150ms ease-out;
+}
+
+.deleteButton:hover {
+  transform: scale(1.1);
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-1px);
+  }
+
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* 1. 抖动优化：±2° 旋转，0.3s，无限，错峰通过行内 animation-delay 控制 */
+@keyframes jiggle {
+  0% {
+    transform: rotate(-2deg);
+  }
+
+  50% {
+    transform: rotate(2deg);
+  }
+
+  100% {
+    transform: rotate(-2deg);
+  }
+}
+
+/* 拖拽目标高亮（用于文件夹放大） */
+.dropTarget .iconContainer {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4), 0 0 0 2px rgba(59, 130, 246, 0.5);
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}

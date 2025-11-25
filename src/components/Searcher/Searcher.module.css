@@ -1,0 +1,158 @@
+.searcher {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-default);
+  padding: var(--spacing-border-default);
+  /* max-width: var(--container-max-width); */
+  /* min-width: var(--container-min-width); */
+  width: 100%;
+  box-shadow: var(--shadow-small);
+}
+
+.innerContainer {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-default-in);
+  padding: var(--spacing-padding-extrasmall) var(--spacing-padding-extrasmall) var(--spacing-padding-extrasmall) var(--spacing-padding-large);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-padding-extrasmall);
+  box-shadow: var(--shadow-small);
+  position: relative;
+  transform: translateY(0);
+  transition: transform 200ms var(--ease-out-quint), box-shadow 200ms var(--ease-out-quint), filter 200ms var(--ease-out-quint);
+}
+
+.divider {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 0;
+  height: 44px;
+}
+
+/* 2.1 悬停状态：轻微上移 + 阴影增强 */
+/* Hover should visually lift only the inner container */
+.innerContainer:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 8px 24px 0px rgba(0, 0, 0, 0.18);
+}
+
+/* 2.2 焦点状态：蓝色光环（移除默认outline） */
+.innerContainer:focus-within {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.9), var(--shadow-small);
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchInfo {
+  display: flex;
+  gap: var(--spacing-padding-extrasmall);
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.label {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-medium);
+  line-height: var(--line-height-none);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  margin: 0;
+}
+
+.searchTool {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchEngine {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-medium);
+  line-height: var(--line-height-none);
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-underline-position: from-font;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
+}
+
+.textInputContainer {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: stretch;
+}
+
+.iconContainer {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-small);
+  padding: var(--spacing-padding-small) 8px;
+  display: flex;
+  gap: var(--spacing-padding-extrasmall);
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-small);
+  cursor: pointer;
+  border: none;
+  flex-shrink: 0;
+}
+
+.asteriskIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.searchInput {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-medium);
+  line-height: var(--line-height-none);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.searchButtonIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+.searchButtonLabel {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-medium);
+  line-height: var(--line-height-none);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  margin: 0;
+}
