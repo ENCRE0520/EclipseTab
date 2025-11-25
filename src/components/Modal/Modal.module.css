@@ -1,0 +1,89 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.container {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-default);
+  padding: var(--spacing-padding-large);
+  box-shadow: var(--shadow-combined);
+  min-width: 400px;
+  max-width: 600px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-padding-large);
+}
+
+.title {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-medium);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 25px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-small);
+  transition: background 200ms ease-out;
+}
+
+.closeButton:hover {
+  background: var(--color-bg-primary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-gap-large);
+}
+
+/* Popover mode */
+.popoverRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.popover {
+  pointer-events: auto;
+  box-shadow: var(--shadow-combined);
+  min-width: auto;
+  padding: 0;
+  z-index: 1;
+}
+
+.clickAway {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  background: transparent;
+  z-index: 0;
+}
+

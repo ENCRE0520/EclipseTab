@@ -1,0 +1,152 @@
+/*
+文件描述: Dock 样式
+作用: 定义 Dock 容器及其子元素的布局和外观
+*/
+.dock {
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 25px;
+    padding: var(--spacing-border-default);
+    box-shadow: var(--shadow-small);
+    display: inline-block;
+    position: relative;
+    z-index: 2000;
+    /* 使 Dock 宽度由其内部元素决定 */
+}
+
+.dockContent {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-large);
+    padding: var(--spacing-gap-small);
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    /* Remove gap to allow manual margin control for animations */
+    /* gap: var(--spacing-gap-small); */
+}
+
+.dockItemWrapper {
+    margin-right: var(--spacing-gap-small);
+}
+
+.dockContent.editMode>div:nth-child(4) .dockItem {
+    animation-delay: 120ms;
+}
+
+.dockContent.editMode>div:nth-child(5) .dockItem {
+    animation-delay: 160ms;
+}
+
+.dockContent.editMode>div:nth-child(6) .dockItem {
+    animation-delay: 200ms;
+}
+
+.dockContent.editMode>div:nth-child(7) .dockItem {
+    animation-delay: 240ms;
+}
+
+.dockContent.editMode>div:nth-child(8) .dockItem {
+    animation-delay: 280ms;
+}
+
+.dockContent.editMode>div:nth-child(9) .dockItem {
+    animation-delay: 320ms;
+}
+
+.dockContent.editMode>div:nth-child(10) .dockItem {
+    animation-delay: 360ms;
+}
+
+.divider {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-self: stretch;
+    height: 64px;
+    flex-shrink: 0;
+    width: 8px;
+    position: relative;
+}
+
+.divider svg {
+    position: absolute;
+    bottom: 0;
+    left: 0px;
+    right: 0px;
+    top: 8px;
+    width: 1px;
+    height: 48px;
+}
+
+.dockNavigator {
+    display: flex;
+    gap: var(--spacing-gap-small);
+    align-items: center;
+    flex: 0 0 auto;
+    width: 128px;
+}
+
+.navigatorIcon {
+    flex: 1 0 0;
+    background: var(--color-bg-white);
+    height: 64px;
+    min-height: 0;
+    min-width: 0;
+    border-radius: var(--radius-default);
+    flex-shrink: 0;
+}
+
+.placeholder {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: var(--radius-default);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Edit Mode Animation */
+.editTools {
+    display: flex;
+    align-items: center;
+    width: 0;
+    opacity: 0;
+    margin-right: 0;
+    gap: var(--spacing-gap-small);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.editTools.visible {
+    width: calc(64px + 8px + var(--spacing-gap-small));
+    /* 64px icon + 16px gap roughly, or adjust to fit content */
+    opacity: 1;
+}
+
+/* Drag Reordering Animation - Gap Strategy */
+.gap {
+    width: 0;
+    height: 64px;
+    flex-shrink: 0;
+    margin-right: 0;
+    transition: width 0.2s cubic-bezier(0.2, 0, 0, 1),
+        margin-right 0.2s cubic-bezier(0.2, 0, 0, 1);
+    border-radius: var(--radius-default);
+    /* No border/bg by default */
+}
+
+.gap.active {
+    width: 64px;
+    margin-right: var(--spacing-gap-small);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.gap.noTransition {
+    transition: none !important;
+}

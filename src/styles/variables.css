@@ -1,0 +1,75 @@
+/* Design System Variables - 从Figma提取的设计变量 */
+
+:root {
+  /* Spacing */
+  --spacing-none: 0px;
+  --spacing-border-default: 4px;
+  --spacing-padding-extrasmall: 4px;
+  --spacing-padding-small: 8px;
+  --spacing-padding-large: 16px;
+  --spacing-gap-small: 8px;
+  --spacing-gap-medium: 10px;
+  --spacing-gap-large: 12px;
+  --spacing-gap-extralarge: 14px;
+
+  /* Radius */
+  --radius-default: 16px;
+  --radius-default-in: 12px;
+  --radius-large: 20px;
+  --radius-small: 8px;
+
+  /* Colors - Light Mode */
+  --color-bg-primary: rgba(255, 255, 255, 0.16);
+  --color-bg-secondary: rgba(255, 255, 255, 0.2);
+  --color-bg-tertiary: rgba(255, 255, 255, 0.6);
+  --color-bg-white: rgba(255, 255, 255, 1);
+  --color-border: rgba(255, 255, 255, 0.36);
+  --color-text-primary: rgba(255, 255, 255, 1);
+  --color-text-secondary: rgba(255, 255, 255, 0.6);
+  --color-text-tertiary: rgba(77, 77, 77, 1);
+
+  /* Shadows */
+  --shadow-small: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0px 4px 12px 0px rgba(0, 0, 0, 0.08);
+  --shadow-combined: 0px 4px 12px 0px rgba(0, 0, 0, 0.08), 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+
+  /* Font */
+  --font-family: 'Bricolage Grotesque', sans-serif;
+  --font-weight-medium: 500;
+  --font-size-small: 12px;
+  --font-size-medium: 16px;
+  --line-height-none: 1;
+
+  /* Layout */
+  --container-max-width: 1280px;
+  --container-min-width: 640px;
+  --icon-size: 64px;
+  --icon-size-small: 25px;
+  --icon-size-medium: 32px;
+  --search-icon-size: 18px;
+  --editor-icon-size: 25px;
+
+  /* Animation */
+  --transition-fast: 150ms ease-out;
+  --transition-medium: 300ms ease-out;
+  --transition-slow: 500ms ease-out;
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+}
+
+/* Background Gradient */
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}

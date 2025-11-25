@@ -1,0 +1,30 @@
+/*
+文件描述: Dock 添加图标样式
+作用: 定义 .addIcon 的外观和交互效果
+*/
+.addIcon {
+  width: 64px;
+  height: 64px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-default);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 200ms var(--ease-out-quint),
+    opacity 200ms var(--ease-out-quint),
+    box-shadow 200ms var(--ease-out-quint);
+  box-shadow: var(--shadow-small);
+}
+
+.addIcon:hover {
+  transform: translateY(-4px);
+  opacity: 0.95;
+  box-shadow: var(--shadow-medium);
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  color: var(--color-text-primary);
+}
