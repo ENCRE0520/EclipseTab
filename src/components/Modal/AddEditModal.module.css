@@ -5,9 +5,9 @@
 .container {
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: var(--color-bg-primary) !important;
   border-radius: 16px;
-  box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.08), 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-combined);
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
@@ -16,8 +16,8 @@
   min-width: 320px !important;
   max-width: 320px !important;
   box-sizing: border-box;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
 }
 
 .header {
@@ -27,13 +27,13 @@
   opacity: 0.8;
   font-size: 12px;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-text-primary);
   margin-bottom: 4px;
 }
 
 .divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-border);
   width: 100%;
   margin-bottom: 8px;
 }
@@ -47,27 +47,27 @@
 
 .label {
   font-size: 14px;
-  color: #fff;
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .input {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-secondary);
   border: none;
   border-radius: 8px;
   padding: 8px 12px;
-  color: #fff;
+  color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
   transition: background 0.2s;
 }
 
 .input:focus {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-tertiary);
 }
 
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
 }
 
 .iconSection {
@@ -78,7 +78,7 @@
 .iconPreview {
   width: 64px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-secondary);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@
 .iconPlaceholder {
   width: 24px;
   height: 24px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-tertiary);
   border-radius: 50%;
 }
 
@@ -107,12 +107,12 @@
 }
 
 .actionButton {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-secondary);
   border: none;
   border-radius: 8px;
   padding: 0 12px;
   height: 28px;
-  color: #fff;
+  color: var(--color-text-primary);
   font-size: 12px;
   cursor: pointer;
   transition: background 0.2s;
@@ -123,7 +123,7 @@
 }
 
 .actionButton:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-tertiary);
 }
 
 .actionButton:disabled {
@@ -153,21 +153,21 @@
 }
 
 .cancelButton {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .cancelButton:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-tertiary);
 }
 
 .addButton {
-  background: #fff;
-  color: #333;
+  background: var(--color-bg-white);
+  color: var(--color-text-tertiary);
 }
 
 .addButton:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-tertiary);
 }
 
 .addButton:disabled {

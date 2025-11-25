@@ -73,12 +73,12 @@
 }
 
 .container {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-primary);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-large);
   padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -90,8 +90,8 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px dashed rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-border);
   transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   pointer-events: none;
 }

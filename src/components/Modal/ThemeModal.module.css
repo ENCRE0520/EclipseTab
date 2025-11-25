@@ -1,0 +1,110 @@
+/*
+文件描述: 主题选择弹窗样式
+作用: 定义主题选择弹窗的外观和交互
+*/
+.modal {
+    position: fixed;
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-default);
+    padding: var(--spacing-border-default);
+    box-shadow: var(--shadow-combined);
+    z-index: 4000;
+    width: 280px;
+    animation: modalEnter 200ms var(--ease-out-quint);
+}
+
+.modal.closing {
+    animation: modalExit 200ms var(--ease-out-quint);
+}
+
+@keyframes modalEnter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes modalExit {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+}
+
+.content {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-default-in);
+    padding: var(--spacing-padding-small);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-padding-extrasmall);
+    box-shadow: var(--shadow-small);
+}
+
+.themeOption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: var(--radius-small);
+    cursor: pointer;
+    transition: background 150ms ease-out, transform 150ms ease-out;
+    background: transparent;
+}
+
+.themeOption:hover {
+    background: var(--color-bg-primary);
+    transform: translateX(2px);
+}
+
+.themeOption.selected {
+    background: var(--color-bg-tertiary);
+}
+
+.themeOption.selected:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.themeInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.themeLabel {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-medium);
+    line-height: var(--line-height-none);
+    color: var(--color-text-primary);
+}
+
+.themeDescription {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-none);
+    color: var(--color-text-secondary);
+}
+
+.checkmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    width: 20px;
+    height: 20px;
+}

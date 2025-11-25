@@ -1,0 +1,42 @@
+/*
+文件描述: 设置器样式
+作用: 定义设置按钮的外观和交互
+*/
+.settings {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-default);
+    padding: var(--spacing-border-default);
+    cursor: pointer;
+    transition: opacity 200ms var(--ease-out-quint), transform 300ms var(--ease-out-quint);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3000;
+}
+
+.settings:hover {
+    transform: scale(1.05);
+}
+
+.innerContainer {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-default-in);
+    padding: var(--spacing-gap-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-small);
+    width: 40px;
+    height: 40px;
+}
+
+.icon {
+    width: var(--editor-icon-size);
+    height: var(--editor-icon-size);
+    color: var(--color-text-primary);
+}

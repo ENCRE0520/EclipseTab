@@ -6,12 +6,16 @@ import { generateFolderIcon, fetchIcon } from './utils/iconFetcher';
 import { Searcher } from './components/Searcher/Searcher';
 import { Dock } from './components/Dock/Dock';
 import { Editor } from './components/Editor/Editor';
+import { Settings } from './components/Settings/Settings';
 import { FolderView } from './components/FolderView/FolderView';
 import { AddEditModal } from './components/Modal/AddEditModal';
 import { SearchEngineModal } from './components/Modal/SearchEngineModal';
+import { ThemeModal } from './components/Modal/ThemeModal';
+import { useTheme } from './context/ThemeContext';
 import styles from './App.module.css';
 
 function App() {
+  const { theme, setTheme } = useTheme();
   const [dockItems, setDockItems] = useState<DockItem[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSearchEngine, setSelectedSearchEngine] = useState<SearchEngine>(DEFAULT_SEARCH_ENGINE);
@@ -19,10 +23,13 @@ function App() {
   const [folderAnchor, setFolderAnchor] = useState<DOMRect | null>(null);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isSearchEngineModalOpen, setIsSearchEngineModalOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [searchEngineAnchor, setSearchEngineAnchor] = useState<DOMRect | null>(null);
+  const [themeAnchor, setThemeAnchor] = useState<DOMRect | null>(null);
   const [addIconAnchor, setAddIconAnchor] = useState<DOMRect | null>(null);
   const [editingItem, setEditingItem] = useState<DockItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [dockWidth, setDockWidth] = useState<number | null>(null);
   const [draggingItem, setDraggingItem] = useState<DockItem | null>(null);
 
@@ -468,6 +475,22 @@ function App() {
           externalDragItem={draggingItem}
         />
       </div>
+      {/* 左上角触发热点：悬停显示设置按钮 */}
+      <div
+        className={styles.settingsArea}
+        onMouseEnter={() => setShowSettings(true)}
+        onMouseLeave={() => setShowSettings(false)}
+      >
+        <Settings
+          visible={showSettings}
+          onClick={(e: React.MouseEvent<HTMLElement>) => {
+            e.stopPropagation();
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setThemeAnchor(rect);
+            setIsThemeModalOpen(true);
+          }}
+        />
+      </div>
       {/* 右上角触发热点：悬停显示编辑按钮 */}
       <div
         className={styles.editorArea}
@@ -514,6 +537,13 @@ function App() {
         onClose={() => setIsSearchEngineModalOpen(false)}
         onSelect={setSelectedSearchEngine}
         anchorRect={searchEngineAnchor}
+      />
+      <ThemeModal
+        isOpen={isThemeModalOpen}
+        currentTheme={theme}
+        onSelect={setTheme}
+        onClose={() => setIsThemeModalOpen(false)}
+        anchorRect={themeAnchor}
       />
     </div>
   );
