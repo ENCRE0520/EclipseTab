@@ -1,0 +1,328 @@
+/* Settings Modal Styles */
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2999;
+    pointer-events: auto;
+}
+
+.modal {
+    position: fixed;
+    z-index: 3000;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 4px;
+    gap: 4px;
+    width: fit-content;
+    background: #E5E5E5;
+    border: 1px solid #D9D9D9;
+    box-shadow: none;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 16px;
+    animation: modalEnter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalEnter {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Inner Container */
+.innerContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px;
+    gap: 8px;
+    width: 264px;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+/* Icon Container (Theme Section) */
+.iconContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 0px;
+    gap: 8px;
+    width: 248px;
+    height: 48px;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+/* DefaultTheme */
+.defaultTheme {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    width: 64px;
+    height: 48px;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+.defaultTheme:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.defaultThemeActive {
+    background: var(--color-bg-tertiary);
+    border-color: #007AFF;
+}
+
+/* Theme Group Container (Light/Dark/Auto) */
+.themeGroupContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px;
+    isolation: isolate;
+    width: 176px;
+    height: 48px;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+    position: relative;
+}
+
+/* Highlight Background for Theme Group */
+.highlightBackground {
+    position: absolute;
+    width: 56px;
+    height: 40px;
+    left: 4px;
+    top: 4px;
+    background: #E6E6E6;
+    border-radius: 4px;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+}
+
+/* Theme Option in Group */
+.themeGroupOption {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    width: 56px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1;
+    flex: none;
+    flex-grow: 0;
+}
+
+/* Texture Option Section */
+.textureSection {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px;
+    gap: 4px;
+    width: 248px;
+    height: 48px;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    flex: none;
+    order: 1;
+    align-self: stretch;
+    flex-grow: 0;
+}
+
+.textureOption {
+    box-sizing: border-box;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: var(--color-bg-tertiary);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    flex: none;
+    align-self: stretch;
+    flex-grow: 1;
+    width: fit-content;
+}
+
+.textureOptionActive {
+    border: 1px solid #5798FF;
+}
+
+.texturePreviewNone {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.texturePreviewImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+
+}
+
+/* Wallpaper/Gradient Section */
+.wallpaperSection {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 0px;
+    gap: 8px;
+    width: 248px;
+    min-height: 48px;
+    height: auto;
+    flex: none;
+    order: 2;
+    align-self: stretch;
+    flex-grow: 0;
+}
+
+/* Wallpaper Upload Button (reusing DefaultTheme style essentially) */
+.wallpaperUploadBtn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    width: 64px;
+    height: 48px;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+.wallpaperPreview {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+}
+
+.wallpaperImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.removeWallpaperBtn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* Color Options Container */
+.colorOptionsContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 4px;
+    gap: 4px;
+    width: 176px;
+    min-height: 48px;
+    height: auto;
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    flex: none;
+    order: 1;
+    align-self: stretch;
+    flex-grow: 1;
+}
+
+.colorOption {
+    width: 39px;
+    height: 40px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.1s;
+    flex: none;
+    order: 0;
+    align-self: stretch;
+    flex-grow: 1;
+}
+
+.colorOption:hover {
+    transform: scale(1.05);
+}
+
+.colorOptionActive {
+    border-color: #007AFF;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+.error {
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    right: 0;
+    padding: 4px 8px;
+    background: rgba(255, 59, 48, 0.9);
+    border-radius: 4px;
+    color: white;
+    font-size: 10px;
+    text-align: center;
+    z-index: 3001;
+}

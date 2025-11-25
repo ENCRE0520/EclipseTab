@@ -10,12 +10,11 @@ import { Settings } from './components/Settings/Settings';
 import { FolderView } from './components/FolderView/FolderView';
 import { AddEditModal } from './components/Modal/AddEditModal';
 import { SearchEngineModal } from './components/Modal/SearchEngineModal';
-import { ThemeModal } from './components/Modal/ThemeModal';
-import { useTheme } from './context/ThemeContext';
+import { SettingsModal } from './components/Modal/SettingsModal.tsx';
 import styles from './App.module.css';
 
 function App() {
-  const { theme, setTheme } = useTheme();
+  // Theme context - theme management now handled by SettingsModal via context
   const [dockItems, setDockItems] = useState<DockItem[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSearchEngine, setSelectedSearchEngine] = useState<SearchEngine>(DEFAULT_SEARCH_ENGINE);
@@ -23,9 +22,9 @@ function App() {
   const [folderAnchor, setFolderAnchor] = useState<DOMRect | null>(null);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isSearchEngineModalOpen, setIsSearchEngineModalOpen] = useState(false);
-  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [searchEngineAnchor, setSearchEngineAnchor] = useState<DOMRect | null>(null);
-  const [themeAnchor, setThemeAnchor] = useState<DOMRect | null>(null);
+  const [settingsAnchor, setSettingsAnchor] = useState<DOMRect | null>(null);
   const [addIconAnchor, setAddIconAnchor] = useState<DOMRect | null>(null);
   const [editingItem, setEditingItem] = useState<DockItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -486,8 +485,8 @@ function App() {
           onClick={(e: React.MouseEvent<HTMLElement>) => {
             e.stopPropagation();
             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setThemeAnchor(rect);
-            setIsThemeModalOpen(true);
+            setSettingsAnchor(rect);
+            setIsSettingsModalOpen(true);
           }}
         />
       </div>
@@ -538,12 +537,10 @@ function App() {
         onSelect={setSelectedSearchEngine}
         anchorRect={searchEngineAnchor}
       />
-      <ThemeModal
-        isOpen={isThemeModalOpen}
-        currentTheme={theme}
-        onSelect={setTheme}
-        onClose={() => setIsThemeModalOpen(false)}
-        anchorRect={themeAnchor}
+      <SettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        anchorPosition={settingsAnchor ? { x: settingsAnchor.left, y: settingsAnchor.top } : { x: 0, y: 0 }}
       />
     </div>
   );

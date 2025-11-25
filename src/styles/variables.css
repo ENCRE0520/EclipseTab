@@ -99,7 +99,10 @@ body {
   padding: 0;
   width: 100%;
   height: 100vh;
-  background: linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%);
+  background: var(--background-custom, linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%));
+  background-size: var(--background-size, auto);
+  background-position: var(--background-position, initial);
+  background-repeat: no-repeat;
   font-family: var(--font-family);
   font-weight: var(--font-weight-medium);
   overflow: hidden;
@@ -108,12 +111,12 @@ body {
 
 /* Light Theme Background */
 [data-theme="light"] body {
-  background: #F3F3F3;
+  background: var(--background-custom, #F3F3F3);
 }
 
 /* Dark Theme Background */
 [data-theme="dark"] body {
-  background: #404040;
+  background: var(--background-custom, #404040);
 }
 
 #root {
