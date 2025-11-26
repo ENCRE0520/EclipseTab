@@ -138,11 +138,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         root.style.removeProperty('--background-image');
         root.removeAttribute('data-texture');
 
+
         if (wallpaper) {
-            // Wallpaper takes precedence
+            // Wallpaper takes precedence - always fill entire page
             root.style.setProperty('--background-custom', `url(${wallpaper})`);
-            root.style.setProperty('--background-size', 'cover');
-            root.style.setProperty('--background-position', 'center');
         } else {
             // Determine background color/gradient
             let backgroundValue = '';
@@ -173,7 +172,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             }
 
             // Apply texture if enabled and not Default theme
-            // Unified fill mode: Texture also uses cover
             if (!isDefaultTheme && texture !== 'none') {
                 const textureUrl = texture === 'point' ? pointTextureBg : xTextureBg;
 
@@ -182,15 +180,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 } else {
                     root.style.setProperty('--background-custom', `url(${textureUrl})`);
                 }
-
-                root.style.setProperty('--background-size', 'cover');
-                root.style.setProperty('--background-position', 'center');
-            } else if (!wallpaper) {
-                // Unified fill method: consistent cover for all backgrounds
-                root.style.setProperty('--background-size', 'cover');
-                root.style.setProperty('--background-position', 'center');
             }
         }
+
+        // ALWAYS set cover and center for consistent fill behavior across all themes
+        root.style.setProperty('--background-size', 'cover');
+        root.style.setProperty('--background-position', 'center');
     }, [wallpaper, gradientId, texture, isDefaultTheme, theme]);
 
     return (

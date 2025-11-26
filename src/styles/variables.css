@@ -112,11 +112,17 @@ body {
 /* Light Theme Background */
 [data-theme="light"] body {
   background: var(--background-custom, #F3F3F3);
+  background-size: var(--background-size, auto);
+  background-position: var(--background-position, initial);
+  background-repeat: no-repeat;
 }
 
 /* Dark Theme Background */
 [data-theme="dark"] body {
   background: var(--background-custom, #404040);
+  background-size: var(--background-size, auto);
+  background-position: var(--background-position, initial);
+  background-repeat: no-repeat;
 }
 
 #root {
