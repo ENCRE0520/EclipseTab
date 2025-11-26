@@ -59,7 +59,7 @@
   color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
-  transition: background 0.2s;
+  transition: background var(--duration-fast);
 }
 
 .input:focus {
@@ -115,7 +115,7 @@
   color: var(--color-text-primary);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--duration-fast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,7 +149,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s;
+  transition: all var(--duration-fast);
 }
 
 .cancelButton {

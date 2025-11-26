@@ -7,11 +7,11 @@
   width: 64px;
   height: 64px;
   cursor: pointer;
-  transition: transform 300ms var(--ease-out-quint);
+  transition: transform var(--duration-medium) var(--ease-out-quint);
 }
 
 .dockItem.editMode {
-  animation: jiggle 0.3s ease-in-out infinite;
+  animation: jiggle var(--duration-medium) ease-in-out infinite;
 }
 
 .dockItem.dragging {
@@ -23,8 +23,8 @@
   height: 100%;
   border-radius: var(--radius-default);
   overflow: hidden;
-  transition: transform 300ms var(--ease-out-quint),
-    box-shadow 300ms var(--ease-out-quint);
+  transition: transform var(--duration-medium) var(--ease-out-quint),
+    box-shadow var(--duration-medium) var(--ease-out-quint);
 }
 
 .nonFolderBg {
@@ -92,7 +92,7 @@
   align-items: center;
   justify-content: center;
   z-index: 10;
-  transition: transform 150ms ease-out;
+  transition: transform var(--duration-fast) ease-out;
 }
 
 .deleteButton:hover {
@@ -134,5 +134,5 @@
 .dropTarget .iconContainer {
   transform: scale(1.05);
   box-shadow: 0 8px 24px var(--blue-alpha-40), 0 0 0 2px var(--blue-alpha-50);
-  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all var(--duration-fast) var(--ease-out-quint);
 }

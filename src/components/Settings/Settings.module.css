@@ -13,7 +13,7 @@
     border-radius: var(--radius-default);
     padding: var(--spacing-border-default);
     cursor: pointer;
-    transition: opacity 200ms var(--ease-out-quint), transform 300ms var(--ease-out-quint);
+    transition: opacity var(--duration-fast) var(--ease-out-quint), transform var(--duration-medium) var(--ease-out-quint);
     opacity: 0;
     pointer-events: none;
     z-index: 3000;

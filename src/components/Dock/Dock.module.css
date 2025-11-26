@@ -109,7 +109,7 @@
     border-radius: var(--radius-default);
     background: var(--color-bg-secondary);
     border: 2px dashed var(--color-border);
-    transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all var(--duration-fast) var(--ease-out-quint);
 }
 
 /* Edit Mode Animation */
@@ -120,10 +120,10 @@
     opacity: 0;
     margin-right: 0;
     gap: var(--spacing-gap-small);
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        gap 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width var(--duration-medium) var(--ease-material),
+        opacity var(--duration-fast) var(--ease-material),
+        margin-right var(--duration-medium) var(--ease-material),
+        gap var(--duration-medium) var(--ease-material);
 }
 
 .editTools.visible {
@@ -138,8 +138,8 @@
     height: 64px;
     flex-shrink: 0;
     margin-right: 0;
-    transition: width 0.2s cubic-bezier(0.2, 0, 0, 1),
-        margin-right 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: width var(--duration-fast) cubic-bezier(0.2, 0, 0, 1),
+        margin-right var(--duration-fast) cubic-bezier(0.2, 0, 0, 1);
     border-radius: var(--radius-default);
     /* No border/bg by default */
 }

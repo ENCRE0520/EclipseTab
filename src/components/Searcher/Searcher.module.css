@@ -22,7 +22,7 @@
   box-shadow: var(--shadow-small);
   position: relative;
   transform: translateY(0);
-  transition: transform 200ms var(--ease-out-quint), box-shadow 200ms var(--ease-out-quint), filter 200ms var(--ease-out-quint);
+  transition: transform var(--duration-fast) var(--ease-out-quint), box-shadow var(--duration-fast) var(--ease-out-quint), filter var(--duration-fast) var(--ease-out-quint);
 }
 
 .divider {

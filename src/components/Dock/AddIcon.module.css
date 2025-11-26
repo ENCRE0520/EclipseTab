@@ -11,9 +11,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 200ms var(--ease-out-quint),
-    opacity 200ms var(--ease-out-quint),
-    box-shadow 200ms var(--ease-out-quint);
+  transition: transform var(--duration-fast) var(--ease-out-quint),
+    opacity var(--duration-fast) var(--ease-out-quint),
+    box-shadow var(--duration-fast) var(--ease-out-quint);
   box-shadow: var(--shadow-small);
 }
 

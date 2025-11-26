@@ -19,7 +19,7 @@
     display: flex;
     gap: 4px;
     /* Match FolderView animation */
-    animation: folder-pop 0.2s cubic-bezier(0.2, 0, 0.13, 1.5);
+    animation: folder-pop var(--duration-fast) var(--ease-spring);
 }
 
 @keyframes folder-pop {
@@ -70,7 +70,7 @@
     justify-content: center;
     padding: 12px 20px;
     cursor: pointer;
-    transition: background 0.2s ease;
+    transition: background var(--duration-fast) ease;
 }
 
 .defaultTheme:hover {
@@ -103,7 +103,7 @@
     height: 40px;
     background: var(--color-bg-tertiary);
     border-radius: 4px;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-fast) var(--ease-material);
     z-index: 0;
 }
 
@@ -138,10 +138,10 @@
     overflow: hidden;
     transform: scale(0.95);
     transition:
-        height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-        margin-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        height var(--duration-medium) var(--ease-material),
+        opacity var(--duration-fast) var(--ease-material),
+        margin-bottom var(--duration-medium) var(--ease-material),
+        transform var(--duration-medium) var(--ease-material);
 }
 
 .textureSectionWrapperOpen {
@@ -174,7 +174,7 @@
     cursor: pointer;
     padding: 0;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: all var(--duration-fast) ease;
 }
 
 .textureOption:hover {
@@ -298,7 +298,7 @@
     justify-content: center;
     cursor: pointer;
     z-index: 10;
-    transition: background 0.2s;
+    transition: background var(--duration-fast);
 }
 
 .removeWallpaperBtn:hover {

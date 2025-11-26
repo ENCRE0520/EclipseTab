@@ -13,11 +13,11 @@
     box-shadow: var(--shadow-combined);
     z-index: 4000;
     width: 280px;
-    animation: modalEnter 200ms var(--ease-out-quint);
+    animation: modalEnter var(--duration-fast) var(--ease-out-quint);
 }
 
 .modal.closing {
-    animation: modalExit 200ms var(--ease-out-quint);
+    animation: modalExit var(--duration-fast) var(--ease-out-quint);
 }
 
 @keyframes modalEnter {
@@ -61,7 +61,7 @@
     padding: 12px;
     border-radius: var(--radius-small);
     cursor: pointer;
-    transition: background 150ms ease-out, transform 150ms ease-out;
+    transition: background var(--duration-fast) ease-out, transform var(--duration-fast) ease-out;
     background: transparent;
 }
 
