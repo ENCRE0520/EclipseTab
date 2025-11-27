@@ -1,7 +1,7 @@
-/*
-文件描述: Dock 项目样式
-作用: 定义 Dock 中每个图标项的外观和交互
-*/
+/* ===== Dock 图标项目样式 ===== */
+/* 定义 Dock 中每个图标项目的外观和交互 */
+
+/* Dock 项目容器 - 基本布局 */
 .dockItem {
     position: relative;
     width: 64px;
@@ -10,14 +10,17 @@
     transition: transform var(--transition-normal);
 }
 
+/* Dock 项目编辑模式 - 抖动动画 */
 .dockItem.editMode {
     animation: jiggle var(--duration-normal) var(--ease-in-out) infinite;
 }
 
+/* 拖拽中的项目 */
 .dockItem.dragging {
     opacity: 1;
 }
 
+/* 图标容器 - 包裹图标图片 */
 .iconContainer {
     width: 100%;
     height: 100%;
@@ -27,15 +30,18 @@
         box-shadow var(--transition-normal);
 }
 
+/* 非文件夹图标的背景色 */
 .nonFolderBg {
     background: var(--color-bg-white);
 }
 
+/* 图标悬停状态 - 向上举起效果 */
 .iconContainer.hovered {
     transform: translateY(-4px);
     box-shadow: var(--shadow-medium);
 }
 
+/* 图标图片 */
 .icon {
     width: 100%;
     height: 100%;
@@ -43,6 +49,7 @@
     pointer-events: none;
 }
 
+/* 文件夹图标 - 2x2 网格布局 */
 .folderIcon {
     width: 100%;
     height: 100%;
@@ -55,6 +62,7 @@
     border-radius: var(--radius-default);
 }
 
+/* 文件夹图标块 - 单个网格元素 */
 .folderIconTile {
     width: 100%;
     height: 100%;
@@ -63,18 +71,21 @@
     background: var(--color-bg-white);
 }
 
+/* 文件夹网格内的图片 */
 .folderIconTile img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
+/* 默认图标占位符 */
 .fallbackIcon {
     width: 100%;
     height: 100%;
     background: var(--color-bg-secondary);
 }
 
+/* 删除按钮 - 编辑模式下显示 */
 .deleteButton {
     position: absolute;
     top: -8px;
@@ -95,10 +106,12 @@
     transition: transform var(--transition-fast);
 }
 
+/* 删除按钮悬停效果 */
 .deleteButton:hover {
     transform: scale(1.1);
 }
 
+/* 遗留动画 - 已移至全局 keyframes */
 @keyframes shake {
 
     0%,
@@ -115,10 +128,9 @@
     }
 }
 
-/* 1. 抖动优化：±2° 旋转，0.3s，无限，错峰通过行内 animation-delay 控制 */
-/* jiggle animation moved to global keyframes in variables.css */
+/* 抖动动画已移至全局 variables.css */
 
-/* 拖拽目标高亮（用于文件夹放大） */
+/* 拖拽目标高亮 - 文件夹放大效果 */
 .dropTarget .iconContainer {
     transform: scale(1.05);
     box-shadow: 0 8px 24px var(--blue-alpha-40), 0 0 0 2px var(--blue-alpha-50);

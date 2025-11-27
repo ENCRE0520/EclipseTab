@@ -1,7 +1,7 @@
-/*
-文件描述: 编辑器样式
-作用: 定义编辑器弹出面板的外观和交互
-*/
+/* ===== 编辑器按钮样式 ===== */
+/* 定义右上角编辑按钮的外观和交互 */
+
+/* 编辑器容器 - 右上角定位 */
 .editor {
   position: absolute;
   top: 24px;
@@ -18,15 +18,18 @@
   pointer-events: none;
 }
 
+/* 鼠标移入父元素时显示编辑器 */
 .editorArea:hover .editor {
   opacity: 1;
   pointer-events: auto;
 }
 
+/* 编辑器悬停放大效果 */
 .editor:hover {
   transform: scale(1.05);
 }
 
+/* 编辑器内容容器 */
 .innerContainer {
   background: var(--color-bg-secondary);
   border-radius: var(--radius-default-in);
@@ -39,6 +42,7 @@
   height: 40px;
 }
 
+/* 编辑器图标 */
 .icon {
   width: var(--editor-icon-size);
   height: var(--editor-icon-size);

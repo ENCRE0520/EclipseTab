@@ -1,7 +1,7 @@
-/*
-文件描述: 添加/编辑模态框样式
-作用: 定义添加或编辑弹窗的外观和交互
-*/
+/* ===== 添加/编辑图标模态框样式 ===== */
+/* 定义添加或编辑图标弹窗的外观和交互 */
+
+/* 模态框容器 */
 .container {
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -20,6 +20,7 @@
   border: 1px solid var(--color-border);
 }
 
+/* 头部区域 */
 .header {
   display: flex;
   align-items: center;
@@ -31,6 +32,7 @@
   margin-bottom: 4px;
 }
 
+/* 分隔线 */
 .divider {
   height: 1px;
   background: var(--color-border);
@@ -38,6 +40,7 @@
   margin-bottom: 8px;
 }
 
+/* 表单组 */
 .formGroup {
   display: flex;
   flex-direction: column;
@@ -45,12 +48,14 @@
   margin-bottom: 12px;
 }
 
+/* 表单标签 */
 .label {
   font-size: 14px;
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
+/* 输入框 */
 .input {
   background: var(--color-bg-secondary);
   border: none;
@@ -62,19 +67,23 @@
   transition: background var(--transition-medium);
 }
 
+/* 输入框焦点状态 */
 .input:focus {
   background: var(--color-bg-tertiary);
 }
 
+/* 输入框占位符 */
 .input::placeholder {
   color: var(--color-text-secondary);
 }
 
+/* 图标区域 */
 .iconSection {
   display: flex;
   gap: 12px;
 }
 
+/* 图标预览容器 */
 .iconPreview {
   width: 64px;
   height: 64px;
@@ -86,12 +95,14 @@
   flex-shrink: 0;
 }
 
+/* 图标图片 */
 .iconImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* 图标占位符 */
 .iconPlaceholder {
   width: 24px;
   height: 24px;
@@ -99,6 +110,7 @@
   border-radius: 50%;
 }
 
+/* 图标操作按钮组 */
 .iconActions {
   display: flex;
   flex-direction: column;
@@ -106,6 +118,7 @@
   flex: 1;
 }
 
+/* 操作按钮 */
 .actionButton {
   background: var(--color-bg-secondary);
   border: none;
@@ -122,21 +135,25 @@
   gap: 6px;
 }
 
+/* 操作按钮悬停效果 */
 .actionButton:hover {
   background: var(--color-bg-tertiary);
 }
 
+/* 操作按钮禁用状态 */
 .actionButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
+/* 底部按钮区域 */
 .footer {
   display: flex;
   gap: 8px;
   margin-top: 8px;
 }
 
+/* 底部按钮通用样式 */
 .footerButton {
   flex: 1;
   height: 32px;
@@ -152,24 +169,29 @@
   transition: all var(--transition-medium);
 }
 
+/* 取消按钮 */
 .cancelButton {
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
 }
 
+/* 取消按钮悬停效果 */
 .cancelButton:hover {
   background: var(--color-bg-tertiary);
 }
 
+/* 添加按钮 */
 .addButton {
   background: var(--color-bg-white);
   color: var(--color-text-tertiary);
 }
 
+/* 添加按钮悬停效果 */
 .addButton:hover {
   background: var(--color-bg-tertiary);
 }
 
+/* 添加按钮禁用状态 */
 .addButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -1,7 +1,7 @@
-/*
-文件描述: 设置器样式
-作用: 定义设置按钮的外观和交互
-*/
+/* ===== 设置按钮样式 ===== */
+/* 定义左上角设置按钮的外观和交互 */
+
+/* 设置容器 - 左上角定位 */
 .settings {
     position: absolute;
     top: 24px;
@@ -19,10 +19,12 @@
     z-index: 3000;
 }
 
+/* 设置按钮悬停放大效果 */
 .settings:hover {
     transform: scale(1.05);
 }
 
+/* 设置按钮内容容器 */
 .innerContainer {
     background: var(--color-bg-secondary);
     border-radius: var(--radius-default-in);
@@ -35,6 +37,7 @@
     height: 40px;
 }
 
+/* 设置按钮图标 */
 .icon {
     width: var(--editor-icon-size);
     height: var(--editor-icon-size);

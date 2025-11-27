@@ -1,3 +1,5 @@
+/* ===== 通用模态框样式 ===== */
+/* 模态框背景遮罩 */
 .backdrop {
   position: fixed;
   top: 0;
@@ -11,6 +13,7 @@
   background: var(--black-alpha-30);
 }
 
+/* 模态框容器 - 玻璃态效果 */
 .container {
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -23,6 +26,7 @@
   max-width: 600px;
 }
 
+/* 模态框头部 */
 .header {
   display: flex;
   align-items: center;
@@ -30,6 +34,7 @@
   margin-bottom: var(--spacing-padding-large);
 }
 
+/* 模态框标题 */
 .title {
   font-family: var(--font-family);
   font-weight: var(--font-weight-medium);
@@ -38,6 +43,7 @@
   margin: 0;
 }
 
+/* 关闭按钮 */
 .closeButton {
   background: none;
   border: none;
@@ -53,17 +59,20 @@
   transition: background var(--transition-medium);
 }
 
+/* 关闭按钮悬停效果 */
 .closeButton:hover {
   background: var(--color-bg-primary);
 }
 
+/* 模态框内容区域 */
 .content {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-gap-large);
 }
 
-/* Popover mode */
+/* ===== 弹出菜单模式 ===== */
+/* 弹出菜单根容器 */
 .popoverRoot {
   position: fixed;
   inset: 0;
@@ -71,6 +80,7 @@
   pointer-events: none;
 }
 
+/* 弹出菜单内容 */
 .popover {
   pointer-events: auto;
   box-shadow: var(--shadow-combined);
@@ -79,6 +89,7 @@
   z-index: 1;
 }
 
+/* 点击外部关闭区域 */
 .clickAway {
   position: fixed;
   inset: 0;

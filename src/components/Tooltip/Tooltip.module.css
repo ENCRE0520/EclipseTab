@@ -1,3 +1,5 @@
+/* ===== 工具提示样式 ===== */
+/* 工具提示容器 - 固定定位 */
 .tooltipContainer {
     position: fixed;
     z-index: 10000;
@@ -17,4 +19,4 @@
     animation: fadeIn var(--transition-medium);
 }
 
-/* Global keyframes moved to variables.css: fadeIn */
+/* 全局关键帧动画已移至 variables.css：fadeIn */

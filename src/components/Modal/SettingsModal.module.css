@@ -1,4 +1,7 @@
-/* Settings Modal Styles - 100% Figma Fidelity */
+/* ===== 设置模态框样式 ===== */
+/* 100% Figma 设计还原 */
+
+/* 背景遮罩层 */
 .backdrop {
     position: fixed;
     inset: 0;
@@ -6,10 +9,10 @@
     pointer-events: auto;
 }
 
+/* 模态框外层容器 - 玻璃态效果 */
 .modal {
     position: fixed;
     z-index: 3000;
-    /* Outer container with backdrop-blur and padding */
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     background: var(--color-bg-primary);
@@ -18,11 +21,11 @@
     padding: 4px;
     display: flex;
     gap: 4px;
-    /* Match FolderView animation */
+    /* 匹配 FolderView 动画 */
     animation: folderPop var(--transition-bounce);
 }
 
-/* Inner Container - exact Figma specs */
+/* 内层容器 - 精确的 Figma 规格 */
 .innerContainer {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -30,11 +33,12 @@
     padding: 8px;
     display: flex;
     flex-direction: column;
-    /* gap: 8px; - Removed to allow smooth height animation */
+    /* 移除 gap 以实现平滑的高度动画 */
     width: 264px;
 }
 
-/* Icon Container (Theme Section) - exact Figma specs */
+/* ===== 主题选择区域 ===== */
+/* 主题图标容器 */
 .iconContainer {
     display: flex;
     flex-direction: row;
@@ -43,7 +47,7 @@
     margin-bottom: 8px;
 }
 
-/* DefaultTheme Button - exact Figma specs */
+/* 默认主题按钮 */
 .defaultTheme {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -59,15 +63,17 @@
     transition: background var(--transition-medium);
 }
 
+/* 默认主题按钮悬停效果 */
 .defaultTheme:hover {
     background: var(--color-bg-tertiary);
 }
 
+/* 默认主题激活状态 */
 .defaultThemeActive {
     background: var(--color-bg-tertiary);
 }
 
-/* Theme Group Container (Light/Dark/Auto) - exact Figma specs */
+/* 主题组容器 (Light/Dark/Auto) */
 .themeGroupContainer {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -80,7 +86,7 @@
     isolation: isolate;
 }
 
-/* Highlight Background - exact Figma specs */
+/* 高亮背景 - 跟随选中项移动 */
 .highlightBackground {
     position: absolute;
     left: 4px;
@@ -93,7 +99,7 @@
     z-index: 0;
 }
 
-/* Theme Option in Group - exact Figma specs */
+/* 主题选项（Light/Dark/Auto） */
 .themeGroupOption {
     width: 56px;
     height: 40px;
@@ -108,7 +114,7 @@
     z-index: 1;
 }
 
-/* Dark mode icon fix: Invert colors for visibility if needed */
+/* 暗色模式下图标颜色反转 - 提高可见性 */
 [data-theme='dark'] .themeGroupOption img,
 [data-theme='dark'] .defaultTheme img,
 [data-theme='dark'] .textureOption img,
@@ -116,7 +122,8 @@
     filter: invert(1);
 }
 
-/* Texture Section Wrapper for Animation */
+/* ===== 纹理选择区域 ===== */
+/* 纹理区域包装器 - 支持动画 */
 .textureSectionWrapper {
     height: 0;
     opacity: 0;
@@ -130,6 +137,7 @@
         transform var(--transition-normal);
 }
 
+/* 纹理区域打开状态 */
 .textureSectionWrapperOpen {
     height: 48px;
     opacity: 1;
@@ -137,7 +145,7 @@
     transform: scale(1);
 }
 
-/* Texture Section - exact Figma specs */
+/* 纹理选择容器 */
 .textureSection {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -148,6 +156,7 @@
     height: 48px;
 }
 
+/* 纹理选项按钮 */
 .textureOption {
     background: var(--color-bg-tertiary);
     border: 1px solid transparent;
@@ -163,17 +172,19 @@
     transition: all var(--transition-medium);
 }
 
+/* 纹理选项悬停效果 */
 .textureOption:hover {
     background: var(--color-bg-tertiary);
-    /* Unified hover */
     filter: brightness(0.95);
 }
 
+/* 纹理选项激活状态 */
 .textureOptionActive {
     border-color: var(--blue-400);
     background: var(--color-bg-secondary);
 }
 
+/* 无纹理预览 */
 .texturePreviewNone {
     width: 100%;
     height: 100%;
@@ -182,13 +193,15 @@
     justify-content: center;
 }
 
+/* 纹理预览图片 */
 .texturePreviewImage {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* Color Options Container - 2x5 Grid */
+/* ===== 颜色选择区域 ===== */
+/* 颜色选项容器 - 2x5 网格 */
 .colorOptionsContainer {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -201,34 +214,36 @@
     margin-bottom: 8px;
 }
 
-/* Color Option */
+/* 颜色选项 */
 .colorOption {
     width: 100%;
     height: 48px;
-    /* Slightly taller for better touch target */
     border-radius: 4px;
     border: 2px solid transparent;
     cursor: pointer;
     transition: all var(--transition-instant);
 }
 
+/* 颜色选项悬停效果 */
 .colorOption:hover {
     transform: scale(1.05);
 }
 
+/* 颜色选项激活状态 */
 .colorOptionActive {
     border-color: var(--blue-500);
     box-shadow: 0 0 0 1px var(--black-alpha-10);
 }
 
-/* Wallpaper Section - Bottom Row */
+/* ===== 壁纸区域 ===== */
+/* 壁纸选择区域 */
 .wallpaperSection {
     display: flex;
     gap: 8px;
     height: 48px;
 }
 
-/* Wallpaper Upload Button */
+/* 壁纸上传按钮 */
 .wallpaperUploadBtn {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
@@ -244,15 +259,15 @@
     flex-shrink: 0;
 }
 
+/* 壁纸上传按钮悬停效果 */
 .wallpaperUploadBtn:hover {
     background: var(--color-bg-tertiary);
 }
 
-/* Wallpaper Preview Container */
+/* 壁纸预览容器 */
 .wallpaperPreviewContainer {
     flex: 1;
     background: var(--color-bg-secondary);
-    /* Default background color */
     box-shadow: var(--shadow-small);
     border-radius: 8px;
     position: relative;
@@ -260,6 +275,7 @@
     height: 48px;
 }
 
+/* 壁纸图片 */
 .wallpaperImage {
     width: 100%;
     align-items: center;
@@ -267,6 +283,7 @@
     object-fit: cover;
 }
 
+/* 移除壁纸按钮 */
 .removeWallpaperBtn {
     position: absolute;
     top: 4px;
@@ -275,9 +292,7 @@
     height: 20px;
     border-radius: 50%;
     background: var(--gray-200);
-    /* Updated background */
     color: var(--red-400);
-    /* Updated color */
     border: none;
     display: flex;
     align-items: center;
@@ -287,23 +302,25 @@
     transition: background var(--transition-medium);
 }
 
+/* 移除壁纸按钮悬停效果 */
 .removeWallpaperBtn:hover {
     background: var(--gray-300);
-    /* Slightly darker on hover */
 }
 
-/* Disabled State */
+/* ===== 通用状态 ===== */
+/* 禁用状态 */
 .disabled {
     opacity: 0.5;
     pointer-events: none;
     filter: grayscale(100%);
 }
 
+/* 隐藏状态 */
 .hidden {
     display: none;
 }
 
-/* Error Message */
+/* 错误提示信息 */
 .error {
     position: absolute;
     bottom: -36px;

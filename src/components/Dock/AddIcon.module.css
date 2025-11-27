@@ -1,7 +1,7 @@
-/*
-文件描述: Dock 添加图标样式
-作用: 定义 .addIcon 的外观和交互效果
-*/
+/* ===== Dock 添加图标样式 ===== */
+/* 定义添加新图标按钮的外观和交互效果 */
+
+/* 添加图标按钮 */
 .addIcon {
     width: 64px;
     height: 64px;
@@ -17,12 +17,14 @@
     box-shadow: var(--shadow-small);
 }
 
+/* 悬停效果 - 向上举起 */
 .addIcon:hover {
     transform: translateY(-4px);
     opacity: 0.95;
     box-shadow: var(--shadow-medium);
 }
 
+/* 加号图标 */
 .icon {
     width: 32px;
     height: 32px;

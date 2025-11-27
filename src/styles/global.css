@@ -1,10 +1,15 @@
+/* ===== 全局基础样式 ===== */
+/* 导入 CSS 变量定义 */
 @import './variables.css';
 
+/* 重置所有元素的盒模型为 border-box */
 * {
   box-sizing: border-box;
 }
 
-body, html {
+/* 重置 body 和 html 的默认样式 */
+body,
+html {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -14,4 +19,3 @@ body, html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-

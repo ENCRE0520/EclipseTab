@@ -1,7 +1,8 @@
 /* Design System Variables - 从Figma提取的设计变量 */
 
 :root {
-  /* Spacing */
+  /* ===== 间距变量 ===== */
+  /* 用于定义统一的边距、内边距和间隙 */
   --spacing-none: 0px;
   --spacing-border-default: 4px;
   --spacing-padding-extrasmall: 4px;
@@ -12,18 +13,19 @@
   --spacing-gap-large: 12px;
   --spacing-gap-extralarge: 14px;
 
-  /* Radius */
+  /* ===== 圆角半径变量 ===== */
+  /* 用于定义统一的圆角大小 */
   --radius-default: 16px;
   --radius-default-in: 12px;
   --radius-large: 20px;
   --radius-small: 8px;
 
-  /* Primitives */
-  /* White & Black */
+  /* ===== 原始颜色变量 ===== */
+  /* 白色和黑色基础色 */
   --white: #FFFFFF;
   --black: #000000;
 
-  /* Gray Scale */
+  /* 灰度色阶 - 从浅到深 */
   --gray-100: #F5F5F7;
   --gray-200: #E8E8ED;
   --gray-300: #D1D1D6;
@@ -36,32 +38,33 @@
   --gray-900: #1C1C1E;
   --gray-950: #1D1D1F;
 
-  /* Blue Scale */
+  /* 蓝色色阶 - 用于交互元素和焦点状态 */
   --blue-400: #5798FF;
   --blue-500: #007AFF;
   --blue-focus: rgba(59, 130, 246, 0.9);
   --blue-alpha-40: rgba(59, 130, 246, 0.4);
   --blue-alpha-50: rgba(59, 130, 246, 0.5);
 
-  /* Red Scale */
+  /* 红色色阶 - 用于错误提示和删除操作 */
   --red-400: #FF4D4D;
   --red-500: #FF3B30;
   --red-error: rgba(255, 59, 48, 0.9);
 
-  /* Alpha Colors (White based) */
+  /* 白色透明度变量 - 用于玻璃态效果 */
   --white-alpha-16: rgba(255, 255, 255, 0.16);
   --white-alpha-20: rgba(255, 255, 255, 0.20);
   --white-alpha-36: rgba(255, 255, 255, 0.36);
   --white-alpha-60: rgba(255, 255, 255, 0.60);
   --white-alpha-85: rgba(255, 255, 255, 0.85);
 
-  /* Alpha Colors (Black based) */
+  /* 黑色透明度变量 - 用于阴影和遮罩 */
   --black-alpha-10: rgba(0, 0, 0, 0.10);
   --black-alpha-15: rgba(0, 0, 0, 0.15);
   --black-alpha-18: rgba(0, 0, 0, 0.18);
   --black-alpha-30: rgba(0, 0, 0, 0.30);
 
-  /* Colors - Default Theme (Glassmorphism) */
+  /* ===== 默认主题颜色变量（玻璃态效果）===== */
+  /* 这些颜色变量会根据主题自动切换 */
   --color-bg-primary: var(--white-alpha-16);
   --color-bg-secondary: var(--white-alpha-36);
   --color-bg-tertiary: var(--white-alpha-60);
@@ -71,19 +74,22 @@
   --color-text-secondary: var(--white-alpha-85);
   --color-text-tertiary: var(--gray-600);
 
-  /* Shadows */
+  /* ===== 阴影变量 ===== */
+  /* 用于创建层次感和深度 */
   --shadow-small: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
   --shadow-medium: 0px 4px 12px 0px rgba(0, 0, 0, 0.08);
   --shadow-combined: 0px 4px 12px 0px rgba(0, 0, 0, 0.08), 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
 
-  /* Font */
+  /* ===== 字体变量 ===== */
+  /* 定义统一的字体族、字重、字号和行高 */
   --font-family: 'Bricolage Grotesque', sans-serif;
   --font-weight-medium: 500;
   --font-size-small: 12px;
   --font-size-medium: 16px;
   --line-height-none: 1;
 
-  /* Layout */
+  /* ===== 布局变量 ===== */
+  /* 定义容器尺寸和图标大小 */
   --container-max-width: 1280px;
   --container-min-width: 640px;
   --icon-size: 64px;
@@ -92,14 +98,16 @@
   --search-icon-size: 18px;
   --editor-icon-size: 25px;
 
-  /* Animation - Duration (统一时间标准) */
+  /* ===== 动画时长变量 ===== */
+  /* 标准化的动画持续时间 */
   --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-medium: 200ms;
   --duration-normal: 300ms;
   --duration-slow: 500ms;
 
-  /* Animation - Easing Functions (标准化缓动函数) */
+  /* ===== 动画缓动函数 ===== */
+  /* 标准化的缓动曲线函数 */
   --ease-linear: linear;
   --ease-in: ease-in;
   --ease-out: ease-out;
@@ -107,13 +115,14 @@
   --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
   --ease-bounce: cubic-bezier(0.2, 0, 0.13, 1.5);
-  /* 弹性效果 */
+  /* 弹性缓动 - 带有轻微回弹效果 */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-  /* 平滑过渡 */
+  /* 平滑缓动 - Material Design 风格 */
   --ease-swift: cubic-bezier(0.2, 0, 0, 1);
-  /* 快速响应 */
+  /* 快速缓动 - 用于即时响应 */
 
-  /* Animation - Common Transitions (组合式变量) */
+  /* ===== 组合过渡变量 ===== */
+  /* 将时长和缓动函数组合，可直接使用 */
   --transition-instant: var(--duration-instant) var(--ease-out);
   --transition-fast: var(--duration-fast) var(--ease-out);
   --transition-medium: var(--duration-medium) var(--ease-out);
@@ -122,7 +131,8 @@
   --transition-smooth: var(--duration-normal) var(--ease-smooth);
   --transition-bounce: var(--duration-medium) var(--ease-bounce);
 
-  /* Animation - Special Effects */
+  /* ===== 特殊动画效果变量 ===== */
+  /* 用于模糊、缩放、平移等动画效果 */
   --blur-amount-subtle: 2px;
   --blur-amount-medium: 5px;
   --scale-hover: 1.05;
@@ -130,9 +140,10 @@
   --translate-hover: -4px;
 }
 
-/* Light Theme */
+/* ===== 亮色主题 ===== */
+/* 覆盖默认主题的颜色变量 */
 [data-theme="light"] {
-  /* Colors - Light Theme */
+  /* 亮色主题颜色变量 */
   --color-bg-primary: var(--gray-100);
   --color-bg-secondary: var(--white);
   --color-bg-tertiary: var(--gray-200);
@@ -142,15 +153,16 @@
   --color-text-secondary: var(--gray-600);
   --color-text-tertiary: var(--gray-600);
 
-  /* Shadows - Light Theme */
+  /* 亮色主题阴影 - 比默认主题更明显 */
   --shadow-small: 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
   --shadow-medium: 0px 4px 12px 0px rgba(0, 0, 0, 0.1);
   --shadow-combined: 0px 4px 12px 0px rgba(0, 0, 0, 0.1), 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark Theme */
+/* ===== 暗色主题 ===== */
+/* 覆盖默认主题的颜色变量 */
 [data-theme="dark"] {
-  /* Colors - Dark Theme */
+  /* 暗色主题颜色变量 */
   --color-bg-primary: var(--gray-900);
   --color-bg-secondary: var(--gray-800);
   --color-bg-tertiary: var(--gray-700);
@@ -160,13 +172,14 @@
   --color-text-secondary: var(--gray-300);
   --color-text-tertiary: var(--gray-300);
 
-  /* Shadows - Dark Theme */
+  /* 暗色主题阴影 - 更深更柔和 */
   --shadow-small: 0px 0px 8px 0px rgba(0, 0, 0, 0.4);
   --shadow-medium: 0px 4px 16px 0px rgba(0, 0, 0, 0.5);
   --shadow-combined: 0px 4px 16px 0px rgba(0, 0, 0, 0.5), 0px 0px 8px 0px rgba(0, 0, 0, 0.4);
 }
 
-/* Background Gradient */
+/* ===== 全局背景设置 ===== */
+/* 默认主题背景 - 渐变效果 */
 body {
   margin: 0;
   padding: 0;
@@ -183,7 +196,7 @@ body {
   transition: background 0.3s ease-out;
 }
 
-/* Light Theme Background */
+/* 亮色主题背景 - 纯色 */
 [data-theme="light"] body {
   background: var(--background-custom, #F3F3F3);
   background-size: var(--background-size, auto);
@@ -192,7 +205,7 @@ body {
   background-blend-mode: var(--background-blend-mode, normal);
 }
 
-/* Dark Theme Background */
+/* 暗色主题背景 - 深灰色 */
 [data-theme="dark"] body {
   background: var(--background-custom, #404040);
   background-size: var(--background-size, auto);
@@ -201,12 +214,16 @@ body {
   background-blend-mode: var(--background-blend-mode, normal);
 }
 
+/* 根元素容器 */
 #root {
   width: 100%;
   height: 100%;
 }
 
-/* Common Keyframe Animations */
+/* ===== 全局关键帧动画 ===== */
+/* 可在所有组件中复用的动画定义 */
+
+/* 淡入动画 */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -217,6 +234,7 @@ body {
   }
 }
 
+/* 淡出动画 */
 @keyframes fadeOut {
   from {
     opacity: 1;
@@ -227,6 +245,7 @@ body {
   }
 }
 
+/* 向上滑入动画 */
 @keyframes slideUp {
   from {
     transform: translateY(var(--translate-hover));
@@ -239,6 +258,7 @@ body {
   }
 }
 
+/* 文件夹弹出动画 */
 @keyframes folderPop {
   from {
     transform: scale(var(--scale-active));
@@ -253,6 +273,7 @@ body {
   }
 }
 
+/* 模态框进入动画 */
 @keyframes modalEnter {
   from {
     opacity: 0;
@@ -265,6 +286,7 @@ body {
   }
 }
 
+/* 模态框退出动画 */
 @keyframes modalExit {
   from {
     opacity: 1;
@@ -277,6 +299,7 @@ body {
   }
 }
 
+/* 图标抖动动画 - 用于编辑模式 */
 @keyframes jiggle {
 
   0%,
@@ -289,6 +312,7 @@ body {
   }
 }
 
+/* 图标进入动画 */
 @keyframes iconIn {
   from {
     transform: translateY(6px) scale(0.8);

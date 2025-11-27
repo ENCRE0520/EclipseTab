@@ -1,7 +1,7 @@
-/*
-文件描述: Dock 样式
-作用: 定义 Dock 容器及其子元素的布局和外观
-*/
+/* ===== Dock 组件样式 ===== */
+/* 定义 Dock 容器及其子元素的布局和外观 */
+
+/* Dock 外层容器 - 玻璃态效果 */
 .dock {
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
@@ -13,9 +13,10 @@
     display: inline-block;
     position: relative;
     z-index: 2000;
-    /* 使 Dock 宽度由其内部元素决定 */
+    /* 宽度由内部元素决定 */
 }
 
+/* Dock 内容容器 - 图标排列区域 */
 .dockContent {
     background: var(--color-bg-secondary);
     border-radius: var(--radius-large);
@@ -23,42 +24,50 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    /* Remove gap to allow manual margin control for animations */
-    /* gap: var(--spacing-gap-small); */
+    /* 移除 gap 以使用手动控制的 margin 实现动画效果 */
 }
 
+/* Dock 项目包装器 - 控制间距 */
 .dockItemWrapper {
     margin-right: var(--spacing-gap-small);
 }
 
+/* 编辑模式下第 4 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(4) .dockItem {
     animation-delay: 120ms;
 }
 
+/* 编辑模式下第 5 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(5) .dockItem {
     animation-delay: 160ms;
 }
 
+/* 编辑模式下第 6 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(6) .dockItem {
     animation-delay: 200ms;
 }
 
+/* 编辑模式下第 7 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(7) .dockItem {
     animation-delay: 240ms;
 }
 
+/* 编辑模式下第 8 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(8) .dockItem {
     animation-delay: 280ms;
 }
 
+/* 编辑模式下第 9 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(9) .dockItem {
     animation-delay: 320ms;
 }
 
+/* 编辑模式下第 10 个图标的动画延迟 */
 .dockContent.editMode>div:nth-child(10) .dockItem {
     animation-delay: 360ms;
 }
 
+/* 分隔线 - 用于分隔固定图标和其他图标 */
 .divider {
     display: flex;
     flex-direction: row;
@@ -70,6 +79,7 @@
     position: relative;
 }
 
+/* 分隔线 SVG 图标 */
 .divider svg {
     position: absolute;
     bottom: 0;
@@ -80,10 +90,12 @@
     height: 48px;
 }
 
+/* 分隔线条样式 */
 .divider svg line {
     stroke: var(--color-border);
 }
 
+/* Dock 导航器容器（预留） */
 .dockNavigator {
     display: flex;
     gap: var(--spacing-gap-small);
@@ -92,6 +104,7 @@
     width: 128px;
 }
 
+/* 导航器图标（预留） */
 .navigatorIcon {
     flex: 1 0 0;
     background: var(--color-text-tertiary);
@@ -102,6 +115,7 @@
     flex-shrink: 0;
 }
 
+/* 拖拽占位符 - 显示放置目标位置 */
 .placeholder {
     width: 64px;
     height: 64px;
@@ -112,7 +126,8 @@
     transition: all var(--transition-medium);
 }
 
-/* Edit Mode Animation */
+/* ===== 编辑模式动画 ===== */
+/* 编辑工具容器 - 包含删除按钮等 */
 .editTools {
     display: flex;
     align-items: center;
@@ -126,13 +141,15 @@
         gap var(--transition-normal);
 }
 
+/* 编辑工具可见状态 */
 .editTools.visible {
     width: calc(64px + 8px + var(--spacing-gap-small));
-    /* 64px icon + 16px gap roughly, or adjust to fit content */
+    /* 64px 图标 + 8px 间距，或根据内容调整 */
     opacity: 1;
 }
 
-/* Drag Reordering Animation - Gap Strategy */
+/* ===== 拖拽动画 - 间隙策略 ===== */
+/* 动态间隙元素 - 用于重排序动画 */
 .gap {
     width: 0;
     height: 64px;
@@ -141,9 +158,10 @@
     transition: width var(--transition-medium),
         margin-right var(--transition-medium);
     border-radius: var(--radius-default);
-    /* No border/bg by default */
+    /* 默认无边框和背景 */
 }
 
+/* 间隙激活状态 - 显示放置区域 */
 .gap.active {
     width: 64px;
     margin-right: var(--spacing-gap-small);
@@ -151,6 +169,7 @@
     border: 2px dashed var(--color-border);
 }
 
+/* 禁用过渡 - 用于即时重置 */
 .gap.noTransition {
     transition: none !important;
 }
