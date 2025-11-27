@@ -22,10 +22,11 @@
     display: flex;
     gap: 4px;
     /* 匹配 FolderView 动画 */
-    animation: folderPop var(--transition-bounce);
+    /* 匹配 FolderView 动画 - 移除 CSS 动画，使用 JS 动画避免冲突 */
+    /* animation: folderPop var(--transition-bounce); */
 }
 
-/* 内层容器 - 精确的 Figma 规格 */
+/* 内层容器 */
 .innerContainer {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);

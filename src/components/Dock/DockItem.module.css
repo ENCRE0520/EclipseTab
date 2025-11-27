@@ -6,114 +6,119 @@
     position: relative;
     width: 64px;
     height: 64px;
-    cursor: pointer;
-    transition: transform var(--transition-normal);
+
+    /* 图标容器 - 包裹图标图片 */
+    .iconContainer {
+        width: 100%;
+        height: 100%;
+        border-radius: var(--radius-default);
+        overflow: hidden;
+        transition: transform var(--transition-normal),
+            box-shadow var(--transition-normal);
+    }
+
+    /* 非文件夹图标的背景色 */
+    .nonFolderBg {
+        background: var(--color-bg-white);
+    }
+
+    /* 图标悬停状态 - 向上举起效果 */
+    .iconContainer.hovered {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-medium);
+    }
+
+    /* 图标图片 */
+    .icon {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    /* 文件夹图标 - 2x2 网格布局 */
+    .folderIcon {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 4px;
+        background: var(--color-bg-tertiary);
+        padding: 6px;
+        border-radius: var(--radius-default);
+    }
+
+    /* 文件夹图标块 - 单个网格元素 */
+    .folderIconTile {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--color-bg-white);
+    }
+
+    /* 文件夹网格内的图片 */
+    .folderIconTile img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* 默认图标占位符 */
+    .fallbackIcon {
+        width: 100%;
+        height: 100%;
+        background: var(--color-bg-secondary);
+    }
+
+    /* 删除按钮 - 编辑模式下显示 */
+    .deleteButton {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--gray-200);
+        color: var(--red-400);
+        border: none;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: transform var(--transition-fast);
+    }
+
+    /* 删除按钮悬停效果 */
+    .deleteButton:hover {
+        transform: scale(1.1);
+    }
+
+    /* 拖拽目标高亮 - 文件夹放大效果 */
+    .dropTarget .iconContainer {
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px var(--blue-alpha-40), 0 0 0 2px var(--blue-alpha-50);
+        transition: all var(--transition-medium);
+    }
+
+    /* 编辑模式下的抖动动画 */
+    &.editMode {
+        animation: jiggle var(--duration-normal) var(--ease-in-out) infinite;
+    }
 }
 
-/* Dock 项目编辑模式 - 抖动动画 */
-.dockItem.editMode {
-    animation: jiggle var(--duration-normal) var(--ease-in-out) infinite;
-}
+@keyframes jiggle {
 
-/* 拖拽中的项目 */
-.dockItem.dragging {
-    opacity: 1;
-}
+    0%,
+    100% {
+        transform: rotate(-2deg);
+    }
 
-/* 图标容器 - 包裹图标图片 */
-.iconContainer {
-    width: 100%;
-    height: 100%;
-    border-radius: var(--radius-default);
-    overflow: hidden;
-    transition: transform var(--transition-normal),
-        box-shadow var(--transition-normal);
-}
-
-/* 非文件夹图标的背景色 */
-.nonFolderBg {
-    background: var(--color-bg-white);
-}
-
-/* 图标悬停状态 - 向上举起效果 */
-.iconContainer.hovered {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-medium);
-}
-
-/* 图标图片 */
-.icon {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
-}
-
-/* 文件夹图标 - 2x2 网格布局 */
-.folderIcon {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 4px;
-    background: var(--color-bg-tertiary);
-    padding: 6px;
-    border-radius: var(--radius-default);
-}
-
-/* 文件夹图标块 - 单个网格元素 */
-.folderIconTile {
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--color-bg-white);
-}
-
-/* 文件夹网格内的图片 */
-.folderIconTile img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* 默认图标占位符 */
-.fallbackIcon {
-    width: 100%;
-    height: 100%;
-    background: var(--color-bg-secondary);
-}
-
-/* 删除按钮 - 编辑模式下显示 */
-.deleteButton {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--gray-200);
-    color: var(--red-400);
-    border: none;
-    font-size: 16px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    transition: transform var(--transition-fast);
-}
-
-/* 删除按钮悬停效果 */
-.deleteButton:hover {
-    transform: scale(1.1);
-}
-
-/* 拖拽目标高亮 - 文件夹放大效果 */
-.dropTarget .iconContainer {
-    transform: scale(1.05);
-    box-shadow: 0 8px 24px var(--blue-alpha-40), 0 0 0 2px var(--blue-alpha-50);
-    transition: all var(--transition-medium);
+    50% {
+        transform: rotate(2deg);
+    }
 }
