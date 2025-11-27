@@ -31,6 +31,59 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const MAX_WALLPAPER_SIZE = 2 * 1024 * 1024; // 2MB limit
 
+/**
+ * Determines if a background color/gradient is light or dark
+ * Returns true if the background is light (needs dark text)
+ */
+const isBackgroundLight = (backgroundValue: string): boolean => {
+    // If it's a wallpaper URL, assume light background (can't analyze image)
+    if (backgroundValue.startsWith('url(')) {
+        return true;
+    }
+
+    // Extract color from gradient or solid color
+    let color = '';
+
+    // For gradients, extract the first color
+    if (backgroundValue.includes('gradient')) {
+        const colorMatch = backgroundValue.match(/#[0-9A-Fa-f]{6}|rgba?\([^)]+\)/);
+        if (colorMatch) {
+            color = colorMatch[0];
+        }
+    } else {
+        // Solid color
+        color = backgroundValue;
+    }
+
+    if (!color) return false;
+
+    // Convert color to RGB values
+    let r = 0, g = 0, b = 0;
+
+    if (color.startsWith('#')) {
+        // Hex color
+        const hex = color.substring(1);
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+    } else if (color.startsWith('rgb')) {
+        // RGB/RGBA color
+        const match = color.match(/\d+/g);
+        if (match && match.length >= 3) {
+            r = parseInt(match[0]);
+            g = parseInt(match[1]);
+            b = parseInt(match[2]);
+        }
+    }
+
+    // Calculate relative luminance using sRGB formula
+    // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // If luminance > 0.5, it's a light background
+    return luminance > 0.5;
+};
+
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const systemTheme = useSystemTheme();
 
@@ -147,6 +200,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (wallpaper) {
             // Wallpaper takes precedence - always fill entire page
             root.style.setProperty('--background-custom', `url(${wallpaper})`);
+
+            // For wallpapers, assume light background (can't analyze image brightness)
+            // Only apply this for default theme
+            if (isDefaultTheme) {
+                root.setAttribute('data-background-brightness', 'light');
+            } else {
+                root.removeAttribute('data-background-brightness');
+            }
         } else {
             // Determine background color/gradient
             let backgroundValue = '';
@@ -193,6 +254,14 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 } else {
                     root.style.setProperty('--background-custom', `url(${textureUrl})`);
                 }
+            }
+
+            // Detect background brightness for default theme only
+            if (isDefaultTheme && backgroundValue) {
+                const isLight = isBackgroundLight(backgroundValue);
+                root.setAttribute('data-background-brightness', isLight ? 'light' : 'dark');
+            } else {
+                root.removeAttribute('data-background-brightness');
             }
         }
 

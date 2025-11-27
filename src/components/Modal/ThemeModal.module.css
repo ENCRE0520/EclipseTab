@@ -46,24 +46,47 @@
     padding: 12px;
     border-radius: var(--radius-small);
     cursor: pointer;
-    transition: background var(--transition-fast), transform var(--transition-fast);
+    transition:
+        background var(--transition-medium),
+        transform var(--transition-medium),
+        box-shadow var(--transition-medium);
     background: transparent;
+    position: relative;
 }
 
 /* ===== 主题选项悬停效果 ===== */
+/* 悬停时背景变亮并轻微缩放 */
 .themeOption:hover {
     background: var(--color-bg-primary);
-    transform: translateX(2px);
+    transform: scale(1.02);
+}
+
+/* ===== 主题选项按下效果 ===== */
+/* 按下时轻微缩小，提供触觉反馈 */
+.themeOption:active {
+    transform: scale(0.98);
+    transition:
+        background var(--transition-instant),
+        transform var(--transition-instant);
 }
 
 /* ===== 已选中主题样式 ===== */
+/* 选中状态使用更深的背景色 */
 .themeOption.selected {
     background: var(--color-bg-tertiary);
 }
 
 /* ===== 已选中主题悬停保持样式 ===== */
+/* 选中项悬停时保持背景色但仍有缩放效果 */
 .themeOption.selected:hover {
     background: var(--color-bg-tertiary);
+    transform: scale(1.02);
+}
+
+/* ===== 已选中主题按下效果 ===== */
+/* 选中项按下时也有缩小效果 */
+.themeOption.selected:active {
+    transform: scale(0.98);
 }
 
 /* ===== 主题信息容器 ===== */
@@ -93,7 +116,7 @@
 }
 
 /* ===== 勾选标记 ===== */
-/* 选中主题时显示的对号图标 */
+/* 选中主题时显示的对号图标，带淡入和缩放动画 */
 .checkmark {
     display: flex;
     align-items: center;
@@ -101,4 +124,18 @@
     color: var(--color-text-primary);
     width: 20px;
     height: 20px;
+    animation: checkmarkAppear var(--transition-medium);
+}
+
+/* ===== 勾选标记出现动画 ===== */
+@keyframes checkmarkAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }

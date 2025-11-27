@@ -4,17 +4,17 @@
     position: fixed;
     z-index: 10000;
     pointer-events: none;
-    background-color: var(--white-alpha-20);
+    background-color: var(--color-bg-secondary);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    color: var(--white-alpha-85);
+    color: var(--color-text-primary);
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 14px;
     font-family: var(--font-family);
     white-space: nowrap;
     box-shadow: 0 2px 8px var(--black-alpha-15);
-    border: 0.5px solid var(--black-alpha-10);
+    border: 0.5px solid var(--color-border);
     transform: translateX(-50%);
     animation: fadeIn var(--transition-medium);
 }

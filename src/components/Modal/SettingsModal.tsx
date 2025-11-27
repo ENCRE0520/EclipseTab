@@ -231,10 +231,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                 displayColor = isDefaultTheme ? preset.gradient : preset.solid;
                             }
 
+                            // 当使用壁纸时，不显示颜色选项的选中状态
+                            const isActive = !wallpaper && gradientId === preset.id;
+
                             return (
                                 <button
                                     key={preset.id}
-                                    className={`${styles.colorOption} ${gradientId === preset.id ? styles.colorOptionActive : ''}`}
+                                    className={`${styles.colorOption} ${isActive ? styles.colorOptionActive : ''}`}
                                     onClick={() => handleGradientSelect(preset.id)}
                                     title={preset.name}
                                     style={{
@@ -263,7 +266,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                     {/* Wallpaper Section - Moved to bottom */}
                     <div className={styles.wallpaperSection}>
                         {/* Upload Wallpaper Button */}
-                        <div className={styles.wallpaperUploadBtn} onClick={handleWallpaperClick} title="Upload Wallpaper">
+                        <div
+                            className={`${styles.wallpaperUploadBtn} ${wallpaper ? styles.wallpaperUploadBtnActive : ''}`}
+                            onClick={handleWallpaperClick}
+                            title="Upload Wallpaper"
+                        >
                             <input
                                 ref={fileInputRef}
                                 type="file"
