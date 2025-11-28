@@ -9,7 +9,6 @@ interface TooltipProps {
 
 export const Tooltip: React.FC<TooltipProps> = ({ text, targetRef }) => {
     const [position, setPosition] = useState<{ bottom: number; left: number } | null>(null);
-    const [isFadingOut, setIsFadingOut] = useState(false);
 
     useEffect(() => {
         const updatePosition = () => {
@@ -34,13 +33,6 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, targetRef }) => {
         };
     }, [targetRef]);
 
-    // Handle fade-out animation before unmounting
-    useEffect(() => {
-        return () => {
-            setIsFadingOut(true);
-        };
-    }, []);
-
     if (!position) return null;
 
     const style: React.CSSProperties = {
@@ -50,10 +42,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, targetRef }) => {
     };
 
     return createPortal(
-        <div
-            className={`${styles.tooltipContainer} ${isFadingOut ? styles.fadeOut : ''}`}
-            style={style}
-        >
+        <div className={styles.tooltipContainer} style={style}>
             {text}
         </div>,
         document.body
