@@ -130,6 +130,7 @@
     opacity: 0;
     margin-bottom: 0;
     transform: scale(0.95);
+    overflow: hidden;
     transition:
         height var(--transition-normal),
         opacity var(--transition-medium),
