@@ -21,6 +21,7 @@ interface ThemeContextType {
     wallpaper: string | null;
     setWallpaper: (wallpaper: string | null) => void;
     uploadWallpaper: (file: File) => Promise<void>;
+    lastWallpaper: string | null;
     gradientId: string | null;
     setGradientId: (gradientId: string | null) => void;
     texture: Texture;
@@ -99,6 +100,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [wallpaper, setWallpaperState] = useState<string | null>(() => {
         return storage.getWallpaper();
+    });
+
+    const [lastWallpaper] = useState<string | null>(() => {
+        return storage.getLastWallpaper();
     });
 
     const [gradientId, setGradientIdState] = useState<string | null>(() => {
@@ -279,6 +284,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             wallpaper,
             setWallpaper,
             uploadWallpaper,
+            lastWallpaper,
             gradientId,
             setGradientId,
             texture,

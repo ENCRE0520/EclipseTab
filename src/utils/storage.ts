@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   THEME: 'EclipseTab_theme',
   FOLLOW_SYSTEM: 'EclipseTab_followSystem',
   WALLPAPER: 'EclipseTab_wallpaper',
+  LAST_WALLPAPER: 'EclipseTab_lastWallpaper',
   GRADIENT: 'EclipseTab_gradient',
   TEXTURE: 'EclipseTab_texture',
 } as const;
@@ -90,11 +91,33 @@ export const storage = {
     try {
       if (wallpaper) {
         localStorage.setItem(STORAGE_KEYS.WALLPAPER, wallpaper);
+        // Also save as last wallpaper when setting a new one
+        localStorage.setItem(STORAGE_KEYS.LAST_WALLPAPER, wallpaper);
       } else {
         localStorage.removeItem(STORAGE_KEYS.WALLPAPER);
       }
     } catch (error) {
       console.error('Failed to save wallpaper:', error);
+    }
+  },
+
+  getLastWallpaper(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.LAST_WALLPAPER);
+    } catch {
+      return null;
+    }
+  },
+
+  saveLastWallpaper(wallpaper: string | null): void {
+    try {
+      if (wallpaper) {
+        localStorage.setItem(STORAGE_KEYS.LAST_WALLPAPER, wallpaper);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.LAST_WALLPAPER);
+      }
+    } catch (error) {
+      console.error('Failed to save last wallpaper:', error);
     }
   },
 

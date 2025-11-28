@@ -30,6 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         wallpaper,
         setWallpaper,
         uploadWallpaper,
+        lastWallpaper,
         gradientId,
         setGradientId,
         texture,
@@ -80,6 +81,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
 
     const handleThemeSelect = (selectedTheme: Theme) => {
         setTheme(selectedTheme);
+        // Reset gradientId to theme-default when selecting default theme
+        if (selectedTheme === 'default') {
+            setGradientId('theme-default');
+        }
         if (followSystem) {
             setFollowSystem(false);
         }
@@ -118,6 +123,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
 
     const handleTextureSelect = (selectedTexture: Texture) => {
         setTexture(selectedTexture);
+    };
+
+    const handleWallpaperPreviewClick = () => {
+        // If there's a last wallpaper and no current wallpaper, reuse the last one
+        if (lastWallpaper && !wallpaper) {
+            setWallpaper(lastWallpaper);
+        }
     };
 
     const modalStyle: React.CSSProperties = {
@@ -282,15 +294,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                         </div>
 
                         {/* Wallpaper Preview Area - Always render */}
-                        <div className={styles.wallpaperPreviewContainer}>
-                            {wallpaper && (
+                        <div
+                            className={`${styles.wallpaperPreviewContainer} ${lastWallpaper && !wallpaper ? styles.wallpaperPreviewClickable : ''
+                                }`}
+                            onClick={lastWallpaper && !wallpaper ? handleWallpaperPreviewClick : undefined}
+                            title={lastWallpaper && !wallpaper ? 'Click to use this wallpaper' : undefined}
+                        >
+                            {wallpaper ? (
                                 <>
                                     <img src={wallpaper} alt="Current wallpaper" className={styles.wallpaperImage} />
                                     <button className={styles.removeWallpaperBtn} onClick={handleRemoveWallpaper}>
                                         <img src={closeIcon} alt="Remove" width={12} height={12} />
                                     </button>
                                 </>
-                            )}
+                            ) : lastWallpaper ? (
+                                <img
+                                    src={lastWallpaper}
+                                    alt="Last used wallpaper"
+                                    className={`${styles.wallpaperImage} ${styles.wallpaperImageInactive}`}
+                                />
+                            ) : null}
                         </div>
                     </div>
 
