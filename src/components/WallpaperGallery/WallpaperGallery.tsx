@@ -21,7 +21,7 @@ export const WallpaperGallery: React.FC = () => {
         // Create thumbnails
         const newThumbnails: Record<string, string> = {};
         wallpapers.forEach(wp => {
-            newThumbnails[wp.id] = createWallpaperUrl(wp.data);
+            newThumbnails[wp.id] = createWallpaperUrl(wp.thumbnail || wp.data);
         });
         setThumbnails(newThumbnails);
     };

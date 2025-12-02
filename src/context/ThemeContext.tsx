@@ -10,8 +10,8 @@ export type Theme = 'default' | 'light' | 'dark';
 export type Texture = 'none' | 'point' | 'x';
 
 export const DEFAULT_THEME_COLORS = {
-    light: '#F3F3F3',
-    dark: '#404040',
+    light: '#f1f1f1',
+    dark: '#2C2C2E',
 };
 
 interface ThemeContextType {
@@ -29,6 +29,8 @@ interface ThemeContextType {
     setTexture: (texture: Texture) => void;
     wallpaperId: string | null;
     setWallpaperId: (id: string) => Promise<void>;
+    backgroundValue: string;
+    backgroundBlendMode: string;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -222,89 +224,78 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, [theme]);
 
     // Apply wallpaper or gradient/solid/texture to body background
+    // Compute background value and blend mode
+    const { backgroundValue, backgroundBlendMode } = React.useMemo(() => {
+        let bgValue = '';
+        let blendMode = 'normal';
+
+        if (wallpaper) {
+            bgValue = `url(${wallpaper})`;
+        } else {
+            if (gradientId) {
+                const preset = GRADIENT_PRESETS.find(g => g.id === gradientId);
+                if (preset) {
+                    if (preset.id === 'theme-default') {
+                        if (isDefaultTheme) {
+                            bgValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%)';
+                        } else {
+                            const isDarkTheme = theme === 'dark';
+                            bgValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
+                        }
+                    } else if (isDefaultTheme) {
+                        bgValue = preset.gradient;
+                    } else {
+                        bgValue = preset.solid;
+                    }
+
+                    if ('blendMode' in preset && preset.blendMode) {
+                        blendMode = preset.blendMode;
+                    }
+                }
+            } else {
+                if (isDefaultTheme) {
+                    bgValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%)';
+                } else {
+                    const isDarkTheme = theme === 'dark';
+                    bgValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
+                }
+            }
+
+            if (!isDefaultTheme && texture !== 'none') {
+                const textureUrl = texture === 'point' ? pointTextureBg : xTextureBg;
+                bgValue = `url(${textureUrl}), ${bgValue}`;
+            }
+        }
+
+        return { backgroundValue: bgValue, backgroundBlendMode: blendMode };
+    }, [wallpaper, gradientId, texture, isDefaultTheme, theme]);
+
+    // Apply theme to document and set CSS variables for backward compatibility
     useEffect(() => {
         const root = document.documentElement;
 
         // Remove data-texture attribute
         root.removeAttribute('data-texture');
 
-        // Determine background value
-        let backgroundValue = '';
-
-        if (wallpaper) {
-            // Wallpaper takes precedence - always fill entire page
-            backgroundValue = `url(${wallpaper})`;
-
-            // For wallpapers, assume light background (can't analyze image brightness)
-            // Only apply this for default theme
-            if (isDefaultTheme) {
-                root.setAttribute('data-background-brightness', 'light');
-            } else {
-                root.removeAttribute('data-background-brightness');
-            }
+        // Detect background brightness for default theme only
+        if (isDefaultTheme && backgroundValue) {
+            const isLight = isBackgroundLight(backgroundValue);
+            root.setAttribute('data-background-brightness', isLight ? 'light' : 'dark');
         } else {
-            // Determine background color/gradient based on theme and gradient selection
-            if (gradientId) {
-                const preset = GRADIENT_PRESETS.find(g => g.id === gradientId);
-                if (preset) {
-                    if (preset.id === 'theme-default') {
-                        // Use dynamic color based on current theme
-                        if (isDefaultTheme) {
-                            // Default theme specific gradient
-                            backgroundValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%)';
-                        } else {
-                            // Light/Dark theme solid colors
-                            const isDarkTheme = theme === 'dark';
-                            backgroundValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
-                        }
-                    } else if (isDefaultTheme) {
-                        backgroundValue = preset.gradient;
-                    } else {
-                        backgroundValue = preset.solid;
-                    }
-                }
-            } else {
-                // No gradient selected, use default theme backgrounds
-                if (isDefaultTheme) {
-                    backgroundValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #8BA9D4 100%)';
-                } else {
-                    const isDarkTheme = theme === 'dark';
-                    backgroundValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
-                }
-            }
-
-            // Apply blend mode if present in the selected gradient
-            if (gradientId) {
-                const preset = GRADIENT_PRESETS.find(g => g.id === gradientId);
-                if (preset && 'blendMode' in preset && preset.blendMode) {
-                    root.style.setProperty('--background-blend-mode', preset.blendMode);
-                } else {
-                    root.style.removeProperty('--background-blend-mode');
-                }
-            } else {
-                root.style.removeProperty('--background-blend-mode');
-            }
-
-            // Apply texture if enabled and not Default theme
-            if (!isDefaultTheme && texture !== 'none') {
-                const textureUrl = texture === 'point' ? pointTextureBg : xTextureBg;
-                backgroundValue = `url(${textureUrl}), ${backgroundValue}`;
-            }
-
-            // Detect background brightness for default theme only
-            if (isDefaultTheme && backgroundValue) {
-                const isLight = isBackgroundLight(backgroundValue);
-                root.setAttribute('data-background-brightness', isLight ? 'light' : 'dark');
-            } else {
-                root.removeAttribute('data-background-brightness');
-            }
+            root.removeAttribute('data-background-brightness');
         }
 
-        // ALWAYS set the background value explicitly (never rely on CSS fallback)
+        // Set CSS variables
         root.style.setProperty('--background-custom', backgroundValue);
         root.style.setProperty('--background-size', 'cover');
         root.style.setProperty('--background-position', 'center');
-    }, [wallpaper, gradientId, texture, isDefaultTheme, theme]);
+
+        if (backgroundBlendMode !== 'normal') {
+            root.style.setProperty('--background-blend-mode', backgroundBlendMode);
+        } else {
+            root.style.removeProperty('--background-blend-mode');
+        }
+    }, [backgroundValue, backgroundBlendMode, isDefaultTheme]);
 
     return (
         <ThemeContext.Provider value={{
@@ -322,6 +313,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setTexture,
             wallpaperId,
             setWallpaperId,
+            backgroundValue,
+            backgroundBlendMode,
         }}>
             {children}
         </ThemeContext.Provider>

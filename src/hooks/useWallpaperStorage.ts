@@ -56,6 +56,65 @@ const compressImage = async (file: File): Promise<Blob> => {
     });
 };
 
+const generateThumbnail = async (file: File | Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const canvas = document.createElement('canvas');
+            const targetSize = 200;
+            canvas.width = targetSize;
+            canvas.height = targetSize;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('Failed to get canvas context'));
+                return;
+            }
+
+            // Calculate cover dimensions (center crop)
+            const minDimension = Math.min(img.width, img.height);
+            const sourceX = (img.width - minDimension) / 2;
+            const sourceY = (img.height - minDimension) / 2;
+            const sourceWidth = minDimension;
+            const sourceHeight = minDimension;
+
+            ctx.drawImage(
+                img,
+                sourceX,
+                sourceY,
+                sourceWidth,
+                sourceHeight,
+                0,
+                0,
+                targetSize,
+                targetSize
+            );
+
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Failed to generate thumbnail blob'));
+                    }
+                },
+                'image/webp',
+                0.6
+            );
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load image for thumbnail'));
+        };
+
+        img.src = url;
+    });
+};
+
 export const useWallpaperStorage = (): UseWallpaperStorageReturn => {
     const [isSupported, setIsSupported] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -95,12 +154,20 @@ export const useWallpaperStorage = (): UseWallpaperStorageReturn => {
 
         setIsProcessing(true);
         try {
-            const blobToSave = await compressImage(file);
+            const [blobToSave, thumbnailBlob] = await Promise.all([
+                compressImage(file),
+                generateThumbnail(file).catch(err => {
+                    console.warn('Failed to generate thumbnail:', err);
+                    return undefined;
+                })
+            ]);
+
             const id = `wallpaper_${Date.now()}`;
 
             const item: WallpaperItem = {
                 id,
                 data: blobToSave,
+                thumbnail: thumbnailBlob,
                 createdAt: Date.now()
             };
 

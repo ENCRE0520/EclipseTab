@@ -49,7 +49,7 @@
 .defaultTheme {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
-    border-radius: 8px;
+    border-radius: var(--radius-small);
     border: 2px solid transparent;
     width: 64px;
     height: 48px;
@@ -63,7 +63,7 @@
 
 /* 默认主题按钮悬停效果 */
 .defaultTheme:hover {
-    background: var(--color-bg-tertiary);
+    filter: brightness(1.05);
 }
 
 /* 默认主题激活状态 */
@@ -217,6 +217,7 @@
 
 /* 颜色选项 */
 .colorOption {
+    background: var(--color-bg-secondary);
     width: 100%;
     height: 48px;
     border-radius: 4px;
@@ -227,7 +228,7 @@
 
 /* 颜色选项悬停效果 */
 .colorOption:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.05);
 }
 
 /* 颜色选项激活状态 */

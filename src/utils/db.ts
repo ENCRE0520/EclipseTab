@@ -5,6 +5,7 @@ const DB_VERSION = 1;
 export interface WallpaperItem {
     id: string;
     data: Blob;
+    thumbnail?: Blob;
     createdAt: number;
 }
 

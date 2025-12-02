@@ -1,0 +1,34 @@
+.container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.5s ease-in-out;
+    will-change: opacity;
+}
+
+/* For img tags (wallpapers) */
+.layer img,
+img.layer {
+    object-fit: cover;
+    object-position: center;
+}
+
+/* For div tags (gradients/solid colors) */
+div.layer {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}

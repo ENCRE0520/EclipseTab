@@ -11,6 +11,7 @@ import { FolderView } from './components/FolderView/FolderView';
 import { AddEditModal } from './components/Modal/AddEditModal';
 import { SearchEngineModal } from './components/Modal/SearchEngineModal';
 import { SettingsModal } from './components/Modal/SettingsModal.tsx';
+import { Background } from './components/Background/Background';
 import styles from './App.module.css';
 
 function App() {
@@ -443,6 +444,7 @@ function App() {
 
   return (
     <div className={styles.app}>
+      <Background />
       <div className={styles.container}>
         <Searcher
           searchEngine={selectedSearchEngine}

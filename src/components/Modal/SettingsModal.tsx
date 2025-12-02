@@ -201,9 +201,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                             const isThemeDefault = preset.id === 'theme-default';
 
                             if (isThemeDefault) {
-                                // Use #404040 for dark theme, #F3F3F3 for light theme
-                                const isDarkTheme = theme === 'dark' || (followSystem && systemTheme === 'dark');
-                                displayColor = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
+                                displayColor = 'var(--color-bg-secondary)';
                             } else {
                                 displayColor = isDefaultTheme ? preset.gradient : preset.solid;
                             }
