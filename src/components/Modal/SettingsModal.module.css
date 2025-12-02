@@ -92,7 +92,7 @@
     top: 4px;
     width: 56px;
     height: 40px;
-    background: var(--color-bg-tertiary);
+    background: var(--color-bg-primary);
     border-radius: 4px;
     transition: transform var(--transition-smooth);
     z-index: 0;
@@ -128,7 +128,6 @@
     opacity: 0;
     margin-bottom: 0;
     transform: scale(0.95);
-    overflow: hidden;
     transition:
         height var(--transition-normal),
         opacity var(--transition-medium),
@@ -181,7 +180,6 @@
 /* 纹理选项激活状态 */
 .textureOptionActive {
     border-color: var(--blue-500);
-    background: var(--color-bg-tertiary);
     box-shadow: 0 0 0 1px var(--black-alpha-10);
 }
 
