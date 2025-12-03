@@ -4,7 +4,7 @@ Eclipse Tab 是一个浏览器插件，旨在为用户提供一个高度可定�
 
 <img width="2000" height="1080" alt="Default" src="https://github.com/user-attachments/assets/68a369b7-3c01-44ba-b033-a1dbc38fbcd3" />
 
-> 这是一个完全使用 VibeCoding 进行开发的项目
+> 这是一个90%使用 VibeCoding 进行开发的项目
 
 ## ✨ 核心功能
 
