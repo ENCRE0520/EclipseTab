@@ -86,8 +86,10 @@
 .divider svg {
     position: absolute;
     bottom: 0;
-    left: 0px;
-    right: 0px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    /* Center the line horizontally */
     top: 8px;
     width: 1px;
     height: 48px;
@@ -136,7 +138,8 @@
     align-items: center;
     width: 0;
     opacity: 0;
-    margin-right: 0;
+    margin-right: -8px;
+    /* Counteract the flex gap when hidden */
     gap: var(--spacing-gap-small);
     transition: width var(--transition-normal),
         opacity var(--transition-medium),
@@ -149,4 +152,6 @@
     width: calc(64px + 8px + var(--spacing-gap-small));
     /* 64px 图标 + 8px 间距，或根据内容调整 */
     opacity: 1;
+    margin-right: 0;
+    /* Reset margin to restore gap */
 }
