@@ -41,6 +41,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
 
   const {
     dragState,
+    placeholderIndex,
     isDraggingOut,
     itemRefs,
     handleMouseDown,
@@ -150,14 +151,33 @@ export const FolderView: React.FC<FolderViewProps> = ({
                     itemRefs.current[index] = el;
                   }}
                   className={styles.gridItem}
-                  style={isDragging ? {
-                    position: 'absolute',
-                    width: 0,
-                    height: 0,
-                    overflow: 'hidden',
-                    opacity: 0,
-                    pointerEvents: 'none',
-                  } : {
+                  style={isDragging ? (
+                    // When cursor is far from folder (placeholderIndex null), collapse size
+                    // When cursor is over folder (placeholderIndex set), keep size for transform-based gap
+                    placeholderIndex === null && !isDraggingOut ? {
+                      width: 0,
+                      height: 0,
+                      minWidth: 0,
+                      minHeight: 0,
+                      overflow: 'hidden',
+                      opacity: 0,
+                      pointerEvents: 'none',
+                      transition: isInteracting
+                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1), min-width 200ms cubic-bezier(0.2, 0, 0, 1), min-height 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                        : 'none',
+                    } : {
+                      width: 64,
+                      height: 64,
+                      minWidth: 64,
+                      minHeight: 64,
+                      opacity: 0,
+                      pointerEvents: 'none',
+                      transform: `translate(${transformOffset.x}px, ${transformOffset.y}px)`,
+                      transition: isInteracting
+                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                        : 'none',
+                    }
+                  ) : {
                     width: 64,
                     height: 64,
                     transform: `translate(${transformOffset.x}px, ${transformOffset.y}px)`,
