@@ -656,6 +656,71 @@ export const useDragAndDrop = ({
         if (onDragEnd) onDragEnd();
     }, [onReorder, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd]);
 
+    /**
+     * Calculate transform offset for each item during drag.
+     * 
+     * Since dragged item keeps its width (opacity:0), the dock layout stays constant.
+     * We use transforms to create the visual effect of items sliding to make a gap.
+     * 
+     * Example: [A][B][C][D][E] - drag B (index 1) to between C and D (targetSlot 3)
+     * - B stays in place but is invisible - THIS becomes visually the gap
+     * - Items between B and targetSlot (C only: index 2) shift LEFT to fill B's visual spot
+     * - Items at targetSlot and beyond (D, E) stay in place
+     * - Visual result: [A][C][gap][D][E] where gap is at B's original position
+     * 
+     * Wait, that's not right. The gap should appear between C and D, not at B's position.
+     * 
+     * Let me reconsider: 
+     * - We want the gap to appear at targetSlot position
+     * - Items from (draggedIndex+1) to (targetSlot-1) should shift LEFT to close up
+     * - The dragged item (invisible) stays at its index but we don't care about its visual
+     * 
+     * @param index - The index of the item in the items array
+     * @returns The translateX offset in pixels
+     */
+    const getItemTransform = useCallback((index: number): number => {
+        const targetSlot = placeholderRef.current;
+        if (targetSlot === null) return 0;
+
+        const state = dragRef.current;
+        const itemGap = 72; // 64px width + 8px gap
+
+        if (state.isDragging && state.originalIndex !== -1) {
+            const draggedIndex = state.originalIndex;
+
+            // Dragged item: move it visually to near the target slot (optional, for visual polish)
+            if (index === draggedIndex) {
+                // This item is invisible anyway, but we could move it to the gap position
+                // For now, keep it in place
+                return 0;
+            }
+
+            if (draggedIndex < targetSlot) {
+                // Dragging RIGHT: B is at index 1, target is slot 3 (between C and D)
+                // Items C (index 2) should shift LEFT to fill B's spot
+                // Items D, E stay in place
+                // Gap appears at position 2 (where B was, after C moves there)
+                // But we want gap at position 2 (before D's original position 3)
+                if (index > draggedIndex && index < targetSlot) {
+                    return -itemGap; // Shift LEFT
+                }
+            } else if (draggedIndex > targetSlot) {
+                // Dragging LEFT: B is at some position, target is before it
+                // Items between targetSlot and draggedIndex-1 should shift RIGHT
+                if (index >= targetSlot && index < draggedIndex) {
+                    return itemGap; // Shift RIGHT
+                }
+            }
+        } else if (externalDragItem) {
+            // External drag: items at or after targetSlot shift RIGHT to make room
+            if (index >= targetSlot) {
+                return itemGap;
+            }
+        }
+
+        return 0;
+    }, [externalDragItem]);
+
     return {
         dragState,
         placeholderIndex,
@@ -667,5 +732,6 @@ export const useDragAndDrop = ({
         dockRef,
         handleMouseDown,
         handleAnimationComplete,
+        getItemTransform,
     };
 };

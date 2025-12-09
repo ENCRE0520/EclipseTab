@@ -60,13 +60,8 @@
   -ms-user-select: none;
 }
 
-/* 拖拽占位符 */
-.placeholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: var(--color-bg-secondary);
-  border: 2px dashed var(--color-border);
-  transition: all var(--transition-medium);
-  pointer-events: none;
+/* 网格项目 - 支持 transform 动画 */
+.gridItem {
+  will-change: transform;
+  flex-shrink: 0;
 }

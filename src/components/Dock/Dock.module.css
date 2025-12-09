@@ -25,12 +25,14 @@
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    /* 移除 gap 以使用手动控制的 margin 实现动画效果 */
+    gap: 8px;
+    /* Fixed gap - items slide using transform for smooth animation */
 }
 
-/* Dock 项目包装器 - 控制间距 */
+/* Dock 项目包装器 - 控制间距和动画 */
 .dockItemWrapper {
-    margin-right: var(--spacing-gap-small);
+    will-change: transform;
+    flex-shrink: 0;
 }
 
 /* 编辑模式下第 4 个图标的动画延迟 */
@@ -147,30 +149,4 @@
     width: calc(64px + 8px + var(--spacing-gap-small));
     /* 64px 图标 + 8px 间距，或根据内容调整 */
     opacity: 1;
-}
-
-/* ===== 拖拽动画 - 间隙策略 ===== */
-/* 动态间隙元素 - 用于重排序动画 */
-.gap {
-    width: 0;
-    height: 64px;
-    flex-shrink: 0;
-    margin-right: 0;
-    transition: width var(--transition-medium),
-        margin-right var(--transition-medium);
-    border-radius: var(--radius-default);
-    /* 默认无边框和背景 */
-}
-
-/* 间隙激活状态 - 显示放置区域 */
-.gap.active {
-    width: 64px;
-    margin-right: var(--spacing-gap-small);
-    background: var(--color-bg-secondary);
-    border: 2px dashed var(--color-border);
-}
-
-/* 禁用过渡 - 用于即时重置 */
-.gap.noTransition {
-    transition: none !important;
 }

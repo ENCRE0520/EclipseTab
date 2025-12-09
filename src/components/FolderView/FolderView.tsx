@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { DockItem } from '../../types';
 import { DockItem as DockItemComponent } from '../Dock/DockItem';
@@ -41,11 +41,11 @@ export const FolderView: React.FC<FolderViewProps> = ({
 
   const {
     dragState,
-    placeholderIndex,
     isDraggingOut,
     itemRefs,
     handleMouseDown,
     handleAnimationComplete,
+    getItemTransform,
   } = useFolderDragAndDrop({
     items: folder.items || [],
     isEditMode,
@@ -138,40 +138,45 @@ export const FolderView: React.FC<FolderViewProps> = ({
               alignContent: 'start',
             }}
           >
-            {placeholderIndex === 0 && (
-              <div className={styles.placeholder} />
-            )}
             {folder.items.map((item, index) => {
               const isDragging = dragState.item?.id === item.id;
+              const isInteracting = dragState.isDragging || dragState.isAnimatingReturn || !!externalDragItem;
+              const transformOffset = getItemTransform(index, columns);
+
               return (
-                <React.Fragment key={item.id}>
-                  <div
-                    ref={(el) => {
-                      itemRefs.current[index] = el;
-                    }}
-                    style={{
-                      display: isDragging ? 'none' : undefined,
-                      width: 64,
-                      height: 64,
-                      opacity: isDragging ? 0 : 1,
-                      transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
-                    }}
-                  >
-                    <DockItemComponent
-                      item={item}
-                      isEditMode={isEditMode}
-                      onClick={() => onItemClick(item)}
-                      onEdit={(rect) => onItemEdit(item, rect)}
-                      onDelete={() => onItemDelete(item)}
-                      isDragging={isDragging}
-                      staggerIndex={index}
-                      onMouseDown={(e) => handleMouseDown(e, item, index)}
-                    />
-                  </div>
-                  {placeholderIndex === index + 1 && (
-                    <div className={styles.placeholder} />
-                  )}
-                </React.Fragment>
+                <div
+                  key={item.id}
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  className={styles.gridItem}
+                  style={isDragging ? {
+                    position: 'absolute',
+                    width: 0,
+                    height: 0,
+                    overflow: 'hidden',
+                    opacity: 0,
+                    pointerEvents: 'none',
+                  } : {
+                    width: 64,
+                    height: 64,
+                    transform: `translate(${transformOffset.x}px, ${transformOffset.y}px)`,
+                    transition: isInteracting
+                      ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                      : 'none',
+                  }}
+                >
+                  <DockItemComponent
+                    item={item}
+                    isEditMode={isEditMode}
+                    onClick={() => onItemClick(item)}
+                    onEdit={(rect) => onItemEdit(item, rect)}
+                    onDelete={() => onItemDelete(item)}
+                    isDragging={isDragging}
+                    staggerIndex={index}
+                    onMouseDown={(e) => handleMouseDown(e, item, index)}
+                  />
+                </div>
               );
             })}
           </div>

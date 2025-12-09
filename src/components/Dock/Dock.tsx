@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { DockItem as DockItemType } from '../../types';
 import { DockItem } from './DockItem';
@@ -54,6 +54,7 @@ export const Dock: React.FC<DockProps> = ({
         dockRef,
         handleMouseDown,
         handleAnimationComplete,
+        getItemTransform,
     } = useDragAndDrop({
         items,
         isEditMode,
@@ -137,45 +138,59 @@ export const Dock: React.FC<DockProps> = ({
                     const isMergeTarget = mergeTargetId === item.id;
                     const isDragging = dragState.item?.id === item.id;
 
-                    // Gap strategy:
-                    // We render a gap before every item.
-                    // If placeholderIndex === index, this gap expands.
-                    const isGapActive = placeholderIndex === index;
+                    // Transform-based animation: calculate horizontal offset for smooth sliding
+                    const translateX = getItemTransform(index);
 
                     return (
-                        <React.Fragment key={item.id}>
-                            <div className={`${styles.gap} ${isGapActive ? styles.active : ''} ${!isInteracting ? styles.noTransition : ''}`} />
-                            <div
-                                ref={el => { itemRefs.current[index] = el; }}
-                                className={styles.dockItemWrapper}
-                                data-dock-item-wrapper="true"
-                                style={isDragging ? {
-                                    position: 'absolute',
+                        <div
+                            key={item.id}
+                            ref={el => { itemRefs.current[index] = el; }}
+                            className={styles.dockItemWrapper}
+                            data-dock-item-wrapper="true"
+                            style={isDragging ? (
+                                // When cursor is far from dock, collapse width so dock shrinks
+                                // When cursor is over dock (placeholderIndex set), keep width for transform-based gap
+                                placeholderIndex === null ? {
                                     width: 0,
-                                    height: 0,
+                                    minWidth: 0,
                                     overflow: 'hidden',
                                     opacity: 0,
-                                    pointerEvents: 'none'
-                                } : undefined}
-                            >
-                                <DockItem
-                                    item={item}
-                                    isEditMode={isEditMode}
-                                    onClick={rect => onItemClick(item, rect)}
-                                    onEdit={rect => onItemEdit(item, rect)}
-                                    onDelete={() => onItemDelete(item)}
-                                    isDragging={isDragging}
-                                    staggerIndex={index}
-                                    isDropTarget={isMergeTarget}
-                                    onLongPress={onLongPressEdit}
-                                    onMouseDown={e => handleMouseDown(e, item, index)}
-                                />
-                            </div>
-                        </React.Fragment>
+                                    pointerEvents: 'none',
+                                    transition: isInteracting
+                                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), min-width 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                                        : 'none',
+                                } : {
+                                    width: 64,
+                                    minWidth: 64,
+                                    opacity: 0,
+                                    pointerEvents: 'none',
+                                    transform: `translateX(${translateX}px)`,
+                                    transition: isInteracting
+                                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), min-width 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                                        : 'none',
+                                }
+                            ) : {
+                                transform: `translateX(${translateX}px)`,
+                                transition: isInteracting
+                                    ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                                    : 'none',
+                            }}
+                        >
+                            <DockItem
+                                item={item}
+                                isEditMode={isEditMode}
+                                onClick={rect => onItemClick(item, rect)}
+                                onEdit={rect => onItemEdit(item, rect)}
+                                onDelete={() => onItemDelete(item)}
+                                isDragging={isDragging}
+                                staggerIndex={index}
+                                isDropTarget={isMergeTarget}
+                                onLongPress={onLongPressEdit}
+                                onMouseDown={e => handleMouseDown(e, item, index)}
+                            />
+                        </div>
                     );
                 })}
-                {/* Gap at the end */}
-                <div className={`${styles.gap} ${placeholderIndex === items.length ? styles.active : ''} ${!isInteracting ? styles.noTransition : ''}`} />
                 <div className={styles.divider}>
                     <svg width="1" height="48" viewBox="0 0 1 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <line x1="0.5" y1="0" x2="0.5" y2="48" strokeWidth="1" />

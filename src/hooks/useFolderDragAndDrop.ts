@@ -538,6 +538,64 @@ export const useFolderDragAndDrop = ({
         if (onDragEnd) onDragEnd();
     }, [onReorder, onDragOut, onDragEnd]);
 
+    /**
+     * Calculate transform offset for each item during drag in 2D grid.
+     * Returns { x, y } offset in pixels for CSS transform.
+     * 
+     * Key insight: When dragged item hides, the grid naturally shifts.
+     * We use transforms to create a visible gap at targetSlot.
+     * Items at or after targetSlot shift RIGHT (with row wrapping).
+     * 
+     * @param index - The index of the item in the items array
+     * @param columns - Number of columns in the grid (default 4)
+     * @returns The { x, y } transform offset in pixels
+     */
+    const getItemTransform = useCallback((index: number, columns: number = 4): { x: number; y: number } => {
+        const targetSlot = placeholderRef.current;
+        if (targetSlot === null) return { x: 0, y: 0 };
+
+        const state = dragRef.current;
+        const itemSize = 72; // 64px width + 8px gap
+
+        const shiftRight = (idx: number): { x: number; y: number } => {
+            const currentCol = idx % columns;
+            if (currentCol === columns - 1) {
+                // Last column, wrap to start of next row
+                return { x: -itemSize * (columns - 1), y: itemSize };
+            } else {
+                return { x: itemSize, y: 0 };
+            }
+        };
+
+        if (state.isDragging && state.originalIndex !== -1) {
+            const draggedIndex = state.originalIndex;
+
+            // Don't transform the dragged item itself
+            if (index === draggedIndex) return { x: 0, y: 0 };
+
+            // Items after draggedIndex naturally shifted left when it hid
+            // Items at or after targetSlot should shift RIGHT to create gap
+            if (index > draggedIndex) {
+                // This item naturally shifted left; shift right if it's at/after target
+                if (index >= targetSlot) {
+                    return shiftRight(index);
+                }
+            } else if (index < draggedIndex) {
+                // This item didn't naturally move; shift right if at/after target
+                if (index >= targetSlot) {
+                    return shiftRight(index);
+                }
+            }
+        } else if (externalDragItem) {
+            // External drag: items at or after targetSlot shift RIGHT
+            if (index >= targetSlot) {
+                return shiftRight(index);
+            }
+        }
+
+        return { x: 0, y: 0 };
+    }, [externalDragItem]);
+
     return {
         dragState,
         placeholderIndex,
@@ -545,5 +603,6 @@ export const useFolderDragAndDrop = ({
         itemRefs,
         handleMouseDown,
         handleAnimationComplete,
+        getItemTransform,
     };
 };
