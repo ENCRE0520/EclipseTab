@@ -43,6 +43,7 @@ export const useDragAndDrop = ({
         thresholdListenerRef,
         startDragging,
         captureLayoutSnapshot,
+        dragElementRef,
     } = useDragBase<DockDragState>({
         items,
         isEditMode,
@@ -100,7 +101,13 @@ export const useDragAndDrop = ({
         if (state.isDragging) {
             const x = e.clientX - state.offset.x;
             const y = e.clientY - state.offset.y;
-            setDragState(prev => ({ ...prev, currentPosition: { x, y } }));
+            // setDragState(prev => ({ ...prev, currentPosition: { x, y } }));
+
+            // Direct DOM manipulation
+            if (dragElementRef.current) {
+                dragElementRef.current.style.left = `${x}px`;
+                dragElementRef.current.style.top = `${y}px`;
+            }
         }
 
         const mouseX = e.clientX;
@@ -630,5 +637,6 @@ export const useDragAndDrop = ({
         handleMouseDown,
         handleAnimationComplete,
         getItemTransform,
+        dragElementRef,
     };
 };

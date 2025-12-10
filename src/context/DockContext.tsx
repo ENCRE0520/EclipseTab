@@ -33,20 +33,29 @@ interface DockUIContextType {
     isEditMode: boolean;
     openFolderId: string | null;
     folderAnchor: DOMRect | null;
-    draggingItem: DockItem | null;
     setIsEditMode: (value: boolean) => void;
     setOpenFolderId: (id: string | null) => void;
     setFolderAnchor: (rect: DOMRect | null) => void;
-    setDraggingItem: (item: DockItem | null) => void;
 }
 
 const DockUIContext = createContext<DockUIContextType | undefined>(undefined);
 
 // ============================================================================
+// Drag Context (频繁变化/拖拽相关)
+// ============================================================================
+
+interface DockDragContextType {
+    draggingItem: DockItem | null;
+    setDraggingItem: (item: DockItem | null) => void;
+}
+
+const DockDragContext = createContext<DockDragContextType | undefined>(undefined);
+
+// ============================================================================
 // 组合 Context (用于需要同时访问数据和 UI 的场景)
 // ============================================================================
 
-interface DockContextType extends DockDataContextType, DockUIContextType {
+interface DockContextType extends DockDataContextType, DockUIContextType, DockDragContextType {
     handleItemClick: (item: DockItem, rect?: DOMRect) => void;
     handleItemEdit: (item: DockItem, rect?: DOMRect) => void;
     handleHoverOpenFolder: (item: DockItem, folder: DockItem) => void;
@@ -460,24 +469,28 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isEditMode,
         openFolderId,
         folderAnchor,
-        draggingItem,
         setIsEditMode,
         setOpenFolderId,
         setFolderAnchor,
-        setDraggingItem,
     }), [
         isEditMode,
         openFolderId,
         folderAnchor,
-        draggingItem,
         setIsEditMode,
         setOpenFolderId,
     ]);
 
+    const dragValue: DockDragContextType = useMemo(() => ({
+        draggingItem,
+        setDraggingItem,
+    }), [draggingItem]);
+
     return (
         <DockDataContext.Provider value={dataValue}>
             <DockUIContext.Provider value={uiValue}>
-                {children}
+                <DockDragContext.Provider value={dragValue}>
+                    {children}
+                </DockDragContext.Provider>
             </DockUIContext.Provider>
         </DockDataContext.Provider>
     );
@@ -512,6 +525,17 @@ export const useDockUI = () => {
 };
 
 /**
+ * 获取 Dock 拖拽状态
+ */
+export const useDockDrag = () => {
+    const context = useContext(DockDragContext);
+    if (context === undefined) {
+        throw new Error('useDockDrag must be used within a DockProvider');
+    }
+    return context;
+};
+
+/**
  * 获取完整的 Dock 上下文 (兼容层)
  * 组合 DockDataContext 和 DockUIContext，提供完整功能
  * 
@@ -520,8 +544,9 @@ export const useDockUI = () => {
 export const useDock = (): DockContextType => {
     const dataContext = useContext(DockDataContext);
     const uiContext = useContext(DockUIContext);
+    const dragContext = useContext(DockDragContext);
 
-    if (dataContext === undefined || uiContext === undefined) {
+    if (dataContext === undefined || uiContext === undefined || dragContext === undefined) {
         throw new Error('useDock must be used within a DockProvider');
     }
 
@@ -553,6 +578,7 @@ export const useDock = (): DockContextType => {
     return {
         ...dataContext,
         ...uiContext,
+        ...dragContext,
         handleItemClick,
         handleItemEdit,
         handleHoverOpenFolder,

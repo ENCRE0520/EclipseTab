@@ -46,6 +46,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
     itemRefs,
     handleMouseDown,
     handleAnimationComplete,
+    dragElementRef,
   } = useFolderDragAndDrop({
     items: folder.items || [],
     isEditMode,
@@ -245,14 +246,15 @@ export const FolderView: React.FC<FolderViewProps> = ({
       {/* Drag preview overlay */}
       {(dragState.isDragging || dragState.isAnimatingReturn) && dragState.item && createPortal(
         <div
+          ref={el => {
+            if (dragElementRef) {
+              dragElementRef.current = el;
+            }
+          }}
           style={{
             position: 'fixed',
-            left: dragState.isAnimatingReturn && dragState.targetPosition
-              ? dragState.targetPosition.x
-              : dragState.currentPosition.x,
-            top: dragState.isAnimatingReturn && dragState.targetPosition
-              ? dragState.targetPosition.y
-              : dragState.currentPosition.y,
+            left: dragState.currentPosition.x,
+            top: dragState.currentPosition.y,
             width: 64,
             height: 64,
             pointerEvents: 'none',

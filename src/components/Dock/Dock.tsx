@@ -55,6 +55,7 @@ export const Dock: React.FC<DockProps> = ({
         handleMouseDown,
         handleAnimationComplete,
         getItemTransform,
+        dragElementRef,
     } = useDragAndDrop({
         items,
         isEditMode,
@@ -206,15 +207,17 @@ export const Dock: React.FC<DockProps> = ({
             </div>
             {(dragState.isDragging || dragState.isAnimatingReturn) && dragState.item && createPortal(
                 <div
+                    ref={el => {
+                        // Keep internal strict ref for DOM updates
+                        if (dragElementRef) {
+                            dragElementRef.current = el;
+                        }
+                    }}
                     className={dragState.isAnimatingReturn ? styles.dragPreviewReturn : ''}
                     style={{
                         position: 'fixed',
-                        left: dragState.isAnimatingReturn && dragState.targetPosition
-                            ? dragState.targetPosition.x
-                            : dragState.currentPosition.x,
-                        top: dragState.isAnimatingReturn && dragState.targetPosition
-                            ? dragState.targetPosition.y
-                            : dragState.currentPosition.y,
+                        left: dragState.currentPosition.x, // Initial position
+                        top: dragState.currentPosition.y,  // Initial position
                         width: 64,
                         height: 64,
                         pointerEvents: 'none',
@@ -223,7 +226,7 @@ export const Dock: React.FC<DockProps> = ({
                         filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))',
                         transition: dragState.isAnimatingReturn
                             ? 'left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), top 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.2s cubic-bezier(0.4,0,0.2,1)'
-                            : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+                            : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)', // removed left/top transition during drag
                     }}
                     onTransitionEnd={(e) => {
                         // 只在归位动画的 left/top 过渡完成时触发回调

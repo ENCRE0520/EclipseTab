@@ -16,7 +16,7 @@ interface DockItemProps {
   onMouseDown?: (e: React.MouseEvent) => void;
 }
 
-export const DockItem: React.FC<DockItemProps> = ({
+const DockItemComponent: React.FC<DockItemProps> = ({
   item,
   isEditMode,
   onClick,
@@ -115,9 +115,6 @@ export const DockItem: React.FC<DockItemProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       ref={rootRef}
-      // draggable={isEditMode} // Removed
-      // onDragStart removed
-      // onDragEnd removed
       onMouseDown={handleMouseDownInternal}
       onMouseUp={() => {
         if (pressTimer) {
@@ -164,3 +161,21 @@ export const DockItem: React.FC<DockItemProps> = ({
   );
 };
 
+// Custom comparison function for React.memo
+const arePropsEqual = (prev: DockItemProps, next: DockItemProps) => {
+  return (
+    prev.item.id === next.item.id &&
+    prev.item.name === next.item.name &&
+    prev.item.icon === next.item.icon &&
+    // Check items length for folder icon updates
+    (prev.item.items?.length === next.item.items?.length) &&
+    prev.isEditMode === next.isEditMode &&
+    prev.isDragging === next.isDragging &&
+    prev.isDropTarget === next.isDropTarget &&
+    prev.staggerIndex === next.staggerIndex
+    // Ignore function props (onClick, onEdit, etc.) as they are recreated on every render of parent
+    // but the underlying logic relies on the same item data which we checked above.
+  );
+};
+
+export const DockItem = React.memo(DockItemComponent, arePropsEqual);

@@ -49,6 +49,7 @@ export const useFolderDragAndDrop = ({
         thresholdListenerRef,
         startDragging,
         captureLayoutSnapshot,
+        dragElementRef,
     } = useDragBase<FolderDragState>({
         items,
         isEditMode,
@@ -149,7 +150,13 @@ export const useFolderDragAndDrop = ({
         if (state.isDragging) {
             const x = e.clientX - state.offset.x;
             const y = e.clientY - state.offset.y;
-            setDragState(prev => ({ ...prev, currentPosition: { x, y } }));
+            // setDragState(prev => ({ ...prev, currentPosition: { x, y } }));
+
+            // Direct DOM manipulation
+            if (dragElementRef.current) {
+                dragElementRef.current.style.left = `${x}px`;
+                dragElementRef.current.style.top = `${y}px`;
+            }
         }
 
         const mouseX = e.clientX;
@@ -407,5 +414,6 @@ export const useFolderDragAndDrop = ({
         handleMouseDown,
         handleAnimationComplete,
         getItemTransform,
+        dragElementRef,
     };
 };

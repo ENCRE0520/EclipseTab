@@ -110,6 +110,7 @@ export interface UseDragBaseReturn<T extends BaseDragState> {
     hasMovedRef: React.MutableRefObject<boolean>;
     thresholdListenerRef: React.MutableRefObject<((e: MouseEvent) => void) | null>;
     lastPlaceholderRef: React.MutableRefObject<number | null>;
+    dragElementRef: React.MutableRefObject<HTMLElement | null>;
     containerRef?: React.RefObject<HTMLElement>;
     startDragging: (item: DockItem) => void;
     handleDragThresholdCheck: (
@@ -149,6 +150,7 @@ export const useDragBase = <T extends BaseDragState>(
     const hasMovedRef = useRef(false);
     const thresholdListenerRef = useRef<((e: MouseEvent) => void) | null>(null);
     const lastPlaceholderRef = useRef<number | null>(null);
+    const dragElementRef = useRef<HTMLElement | null>(null);
 
     // 同步 refs
     useEffect(() => { dragRef.current = dragState; }, [dragState]);
@@ -229,6 +231,7 @@ export const useDragBase = <T extends BaseDragState>(
         hasMovedRef,
         thresholdListenerRef,
         lastPlaceholderRef,
+        dragElementRef,
         containerRef,
         startDragging,
         handleDragThresholdCheck,
