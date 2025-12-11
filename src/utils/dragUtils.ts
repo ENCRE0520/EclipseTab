@@ -46,6 +46,19 @@ export const createInitialDragState = <T extends BaseDragState>(
 };
 
 /**
+ * 布局快照项
+ */
+export interface LayoutItem {
+    id: string;
+    index: number;
+    rect: DOMRect;
+    centerX: number;
+    centerY: number;
+}
+
+
+
+/**
  * 重置拖拽状态
  */
 export const resetDragState = <T extends BaseDragState>(
@@ -240,4 +253,67 @@ export const createMouseDownHandler = <T extends BaseDragState>(
     thresholdListenerRef.current = moveThresholdCheck;
     window.addEventListener('mousemove', moveThresholdCheck);
     window.addEventListener('mouseup', cleanupMouseUp);
+};
+
+
+/**
+ * 计算文件夹内的落点索引 (Geometry-based)
+ */
+export const calculateFolderDropIndex = (
+    mouseX: number,
+    mouseY: number,
+    layoutSnapshot: LayoutItem[],
+    itemCount: number,
+    containerRect?: DOMRect | null
+): number => {
+    // 0. 空文件夹处理
+    if (layoutSnapshot.length === 0) {
+        return 0;
+    }
+
+    // 1. 尾部追加检测 (Append Handling)
+    // 如果有容器区域，且鼠标位于最后一个元素下方一定距离，或者是容器底部空白区域
+    if (containerRect) {
+        // 获取最后一个元素
+        const lastItem = layoutSnapshot[layoutSnapshot.length - 1];
+        // 判定：鼠标Y > 最后元素底部 (宽松判定)
+        // 或者 鼠标Y > 容器底部 - 底部Padding区域 (比如最后 40px)
+        // 这里简单判定：如果 Y 大于最后一个元素的 bottom，大致就是追加
+        if (mouseY > lastItem.rect.bottom) {
+            return itemCount;
+        }
+    }
+
+    // 2. 最近邻检测 (Nearest Neighbor)
+    let closestItem: LayoutItem | null = null;
+    let minDistance = Infinity;
+
+    for (const item of layoutSnapshot) {
+        // 简单欧几里得距离
+        const dist = Math.hypot(mouseX - item.centerX, mouseY - item.centerY);
+        if (dist < minDistance) {
+            minDistance = dist;
+            closestItem = item;
+        }
+    }
+
+    // Fallback
+    if (!closestItem) {
+        return itemCount;
+    }
+
+    // 3. 插入方向判定 (Insertion Direction)
+    // 阈值：10px
+    const THRESHOLD = 10;
+    const { centerX, index } = closestItem;
+
+    // 逻辑：
+    // 左侧/上方 -> Target Index
+    // 右侧/下方 -> Target Index + 1
+    // 这里主要基于 X 轴流动方向判定，辅以阈值防抖
+    if (mouseX < centerX + THRESHOLD) {
+        return index;
+    } else {
+        return index + 1;
+    }
 };

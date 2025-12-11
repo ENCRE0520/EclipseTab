@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+
+import { useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DockItem } from '../../types';
 import { DockItem as DockItemComponent } from '../Dock/DockItem';
@@ -22,6 +23,14 @@ interface FolderViewProps {
   onDragEnd?: () => void;
 }
 
+// Consants for Grid Layout
+const COLUMNS = 4;
+const ITEM_WIDTH = 64;
+const ITEM_HEIGHT = 64;
+const GAP = 8;
+const CELL_WIDTH = ITEM_WIDTH + GAP;
+const CELL_HEIGHT = ITEM_HEIGHT + GAP;
+
 export const FolderView: React.FC<FolderViewProps> = ({
   folder,
   isEditMode,
@@ -42,10 +51,10 @@ export const FolderView: React.FC<FolderViewProps> = ({
   const {
     dragState,
     isDraggingOut,
+    placeholderIndex,
     itemRefs,
     handleMouseDown,
-    getItemTransform,
-    dragElementRef,
+    dragElementRef, // For Portal
   } = useFolderDragAndDrop({
     items: folder.items || [],
     isEditMode,
@@ -57,20 +66,90 @@ export const FolderView: React.FC<FolderViewProps> = ({
     onDragEnd,
   });
 
-  // 判断是否正在交互（拖拽中或有外部拖入项）
-  const isInteracting = dragState.isDragging || dragState.isAnimatingReturn || !!externalDragItem;
-
-  // 使用原始列表 + transform 动画（而非投影式重排）
-  // 保持 DOM 顺序不变，通过 CSS transform 实现视觉上的平滑移动
   const items = folder.items || [];
 
-  // 计算实际渲染的项目数量（考虑外部拖入时的额外占位）
-  const effectiveItemCount = externalDragItem && !isDraggingOut
-    ? items.length + 1
-    : items.length;
+  // ==================================================================================
+  // Snake-like Fluid Grid Layout Calculation
+  // ==================================================================================
 
-  // 归位动画现在由 useFolderDragAndDrop 通过直接 DOM 操作处理
-  // 不再需要 React 状态驱动的两阶段动画
+  // Calculate effective layout indices for render
+  const layoutPositions = useMemo(() => {
+    const positions: { [key: string]: { x: number; y: number; visualIndex: number } } = {};
+
+    // Internal state
+    const srcIndex = dragState.originalIndex; // -1 if not dragging internally
+    const dstIndex = placeholderIndex;        // null if no target slot
+    const isInternal = dragState.isDragging && srcIndex !== -1;
+
+
+    items.forEach((item, index) => {
+      // Step 1: Determine "Flow Index" (Layout Order)
+      // If internal drag, the source item is conceptually removed from the flow.
+      let flowIndex = index;
+
+      if (isInternal) {
+        if (index === srcIndex) {
+          // The source item is "floating". 
+          // We can either position it at the placeholder for symmetry or just hide it.
+          // Let's give it the dstIndex so if it *were* to be shown, it shows there.
+          // But wait, if we give it dstIndex, it might overlap with the item currently pushed there.
+          // We'll calculate it, but "isBeingDragged" class usually hides it.
+          flowIndex = -1; // Special marker
+        } else if (index > srcIndex) {
+          // Items after source shift backward to fill the gap
+          flowIndex = index - 1;
+        }
+      }
+
+      // Step 2: Determine "Visual Index" (Screen Position)
+      // Apply the gap for the placeholder
+      let visualIndex = flowIndex;
+
+      if (flowIndex !== -1 && dstIndex !== null) {
+        // If this item is at or after the target gap, shift it forward
+        if (flowIndex >= dstIndex) {
+          visualIndex = flowIndex + 1;
+        }
+      }
+
+      // Special handling for the dragged source item to let it "fly" towards target if needed (e.g. drop animation)
+      // But drag hook handles return animation via separate ref/portal usually.
+      // If we drop, isAnimatingReturn is true.
+      // However, here we just calculating static layout.
+      if (flowIndex === -1 && dstIndex !== null) {
+        // If we really wanted to position the hidden source somewhere, it would be dstIndex
+        visualIndex = dstIndex;
+      }
+
+      // Step 3: Map to Pixels
+      const col = visualIndex % COLUMNS;
+      const row = Math.floor(visualIndex / COLUMNS);
+      const x = col * CELL_WIDTH;
+      const y = row * CELL_HEIGHT;
+
+      positions[item.id] = { x, y, visualIndex };
+    });
+
+    return positions;
+  }, [items, dragState.originalIndex, dragState.isDragging, placeholderIndex, externalDragItem]);
+
+  // Calculate Container Dimensions
+  // Total visible slots = Items count (internal drag: N, external: N+1)
+  // Actually, if internal drag: N items. Source is hidden (count-1), Gap is adding (count+1-1 = N). Total N.
+  // If external drag: N items. Gap is adding. Total N+1.
+  const visualCount = externalDragItem ? items.length + 1 : items.length;
+  // But wait, if internal drag, we have N items in the list. Source is 1.
+  // We effectively show N visual slots (the source is hidden, but the placeholder takes a spot).
+  // So count is items.length.
+
+  const totalRows = Math.ceil(Math.max(visualCount, 1) / COLUMNS);
+  const gridHeight = totalRows * CELL_HEIGHT - GAP; // Remove last gap
+
+
+
+  // ==================================================================================
+  // Render
+  // ==================================================================================
 
   // Animate entry
   useEffect(() => {
@@ -79,7 +158,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
     }
   }, []);
 
-  // Close when clicking outside... (logic unchanged)
+  // Close logic
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -109,23 +188,25 @@ export const FolderView: React.FC<FolderViewProps> = ({
     }
   };
 
-  // If folder is empty and no external drag item, don't render
   if (items.length === 0 && !externalDragItem) {
     return null;
   }
 
-  // Layout calculations based on effective item count (includes external drag placeholder)
-  const columns = Math.min(4, Math.max(effectiveItemCount, 1));
+  // Positioning
+  // Logic from original FolderView: Center logic using estimated width.
+  // We can reuse `gridWidth` calculated above? Or standard max width.
+  const displayWidth = Math.min(items.length, COLUMNS) * 64 + (Math.max(Math.min(items.length, COLUMNS) - 1, 0) * 8) + 16;
+  const halfWidth = displayWidth / 2;
 
-  // Calculate width
-  const popupWidth = (columns * 64) + ((Math.max(columns - 1, 0)) * 8) + 16;
-  const halfWidth = popupWidth / 2;
+  // Wait, `gridWidth` we calculated includes gaps properly.
+  // Let's use `gridWidth` + padding (16) for wrapper centering?
+  // But `items.length` changes visually during drag? No, layout positions change.
+  // The container width should theoretically stabilize to "Max columns used".
 
   return createPortal(
     <>
       <div
         className={styles.popupWrapper}
-        data-folder-view="true"
         style={{
           left: `${Math.min(
             Math.max(Math.round((anchorRect?.left ?? 0) + (anchorRect?.width ?? 0) / 2),
@@ -138,66 +219,28 @@ export const FolderView: React.FC<FolderViewProps> = ({
         <div
           ref={containerRef}
           className={`${styles.container} ${styles.popover}`}
+          data-folder-view="true"
           style={{
-            width: `${popupWidth}px`,
-            height: 'auto',
-            overflow: 'visible'
+            // 宽度: Padding(8*2) + Width
+            // If items < COLUMNS, width adapts.
+            // But we want to avoid jitter.
+            width: (Math.min(visualCount, COLUMNS) * CELL_WIDTH - GAP) + 16,
+            height: 'auto', // Controlled by grid height + padding
+            transition: 'width 200ms cubic-bezier(0.25, 1, 0.5, 1)'
           }}
         >
           <div
             ref={gridRef}
             className={styles.grid}
             style={{
-              gridTemplateColumns: `repeat(${columns}, 64px)`,
-              gridAutoRows: 'min-content',
-              gridAutoFlow: 'row dense',
-              justifyContent: 'start',
-              alignContent: 'start',
+              // Absolute Layout Container needs explicit height
+              height: gridHeight,
+              width: '100%' // matches parent
             }}
           >
             {items.map((item, index) => {
-              // 检查是否是正在拖拽的源项（包括归位动画期间）
+              const pos = layoutPositions[item.id] || { x: 0, y: 0, visualIndex: 0 };
               const isDraggingSource = (dragState.isDragging || dragState.isAnimatingReturn) && dragState.item?.id === item.id;
-
-              // 获取 2D 变换偏移量（x 和 y）
-              const transform = getItemTransform(index);
-
-              // 拖拽源项的样式：
-              // - 当拖到文件夹外(isDraggingOut)时，收缩为0让其他项填补空隙
-              // - 当在文件夹内时，保持尺寸让 transform 创造视觉空隙
-              const sourceItemStyle = isDraggingSource ? (
-                isDraggingOut ? {
-                  // 拖出文件夹：收缩为0，让[A][C]紧凑排列
-                  width: 0,
-                  height: 0,
-                  minWidth: 0,
-                  minHeight: 0,
-                  overflow: 'hidden',
-                  opacity: 0,
-                  visibility: 'hidden' as const,
-                  transition: isInteracting
-                    ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
-                    : 'none',
-                } : {
-                  // 在文件夹内：保持尺寸，让其他项通过 transform 创造空隙
-                  width: 64,
-                  height: 64,
-                  opacity: 0,
-                  visibility: 'hidden' as const,
-                  transform: `translate(${transform.x}px, ${transform.y}px)`,
-                  transition: isInteracting
-                    ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
-                    : 'none',
-                }
-              ) : {
-                // 普通项
-                width: 64,
-                height: 64,
-                transform: `translate(${transform.x}px, ${transform.y}px)`,
-                transition: isInteracting
-                  ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
-                  : 'none',
-              };
 
               return (
                 <div
@@ -205,8 +248,12 @@ export const FolderView: React.FC<FolderViewProps> = ({
                   ref={(el) => {
                     itemRefs.current[index] = el;
                   }}
-                  className={styles.gridItem}
-                  style={sourceItemStyle}
+                  className={`${styles.gridItem} ${isDraggingSource ? styles.isBeingDragged : ''}`}
+                  style={{
+                    width: ITEM_WIDTH,
+                    height: ITEM_HEIGHT,
+                    transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+                  }}
                 >
                   <DockItemComponent
                     item={item}
@@ -215,7 +262,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
                     onEdit={(rect) => onItemEdit(item, rect)}
                     onDelete={() => onItemDelete(item)}
                     isDragging={isDraggingSource}
-                    staggerIndex={index}
+                    staggerIndex={index} // Maybe use visualIndex for stagger delay?
                     onMouseDown={(e) => handleMouseDown(e, item, index)}
                   />
                 </div>
@@ -234,7 +281,6 @@ export const FolderView: React.FC<FolderViewProps> = ({
           }}
           style={{
             position: 'fixed',
-            // 位置由 currentPosition 初始化，归位动画通过 hook 直接操作 DOM
             left: dragState.currentPosition.x,
             top: dragState.currentPosition.y,
             width: 64,
@@ -243,10 +289,10 @@ export const FolderView: React.FC<FolderViewProps> = ({
             zIndex: 9999,
             transform: isDraggingOut ? 'scale(1.0)' : 'scale(1.0)',
             filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))',
-            // 拖拽时禁用过渡，归位动画由 hook 直接设置
-            transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+            transition: dragState.isAnimatingReturn
+              ? 'transform 0.2s cubic-bezier(0.4,0,0.2,1), left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), top 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+              : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
           }}
-        // onTransitionEnd 不再需要 - hook 直接监听 DOM
         >
           <DockItemComponent
             item={dragState.item}

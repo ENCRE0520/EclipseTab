@@ -38,17 +38,17 @@
   pointer-events: none;
 }
 
-/* 文件夹图标网格布局 */
+/* 文件夹图标布局 - Fluid Grid (Absolute Positioning for snake layout) */
 .grid {
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-  align-items: start;
-  grid-auto-rows: min-content;
-  grid-template-rows: repeat(auto-fill, min-content);
+  position: relative;
+  /* 宽度固定：4 columns * 64px + 3 gaps * 8px = 256 + 24 = 280px */
+  /* 或者让JS动态计算 maxWidth，这里我们设为 max-content 或由 JS 控制 width */
+  width: 100%;
+  /* Height will be controlled by JS for transition */
+  transition: height 300ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-/* 文件夹容器 - 玻璃态效果 */
+/* 文件夹容器 - 玻璃态效果 (匹配 Dock 的 inline-block 模式) */
 .container {
   background: var(--color-bg-primary);
   backdrop-filter: blur(20px);
@@ -60,16 +60,26 @@
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  /* 宽度由内部元素决定 - 匹配 Dock 模式 */
+  display: inline-block;
   height: fit-content;
   overflow: visible;
-  display: flex;
-  flex-direction: column;
-  /* 容器高度平滑过渡，与拖拽动画保持一致 */
-  transition: height 200ms cubic-bezier(0.2, 0, 0, 1);
+  /* 容器尺寸平滑过渡 */
+  transition: width 200ms cubic-bezier(0.2, 0, 0, 1), height 200ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* 网格项目 - 支持 transform 动画 */
+/* 网格项目包装器 - Absolute Positioning */
 .gridItem {
+  position: absolute;
+  top: 0;
+  left: 0;
   will-change: transform;
-  flex-shrink: 0;
+  /* Standard transition for snake movement */
+  transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 拖拽时隐藏源项目 */
+.isBeingDragged {
+  opacity: 0 !important;
+  visibility: hidden !important;
 }

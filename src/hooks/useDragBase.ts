@@ -10,18 +10,10 @@ import {
     resetDragState,
     calculateDistance,
     toggleDraggingClass,
+    LayoutItem,
 } from '../utils/dragUtils';
 
-/**
- * 布局快照项
- */
-export interface LayoutItem {
-    id: string;
-    index: number;
-    rect: DOMRect;
-    centerX: number;
-    centerY: number;
-}
+
 
 /**
  * Dock 拖拽状态 - 扩展基础状态

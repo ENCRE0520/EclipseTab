@@ -2,6 +2,7 @@
 import { DockItem } from '../types';
 import { useDragBase, createDockDragState, resetDockDragState, DockDragState } from './useDragBase';
 import { createMouseDownHandler } from '../utils/dragUtils';
+import { isMouseOverFolderView, getFolderViewRect, hasFolderActivePlaceholder } from '../utils/dragDetection';
 
 interface UseDragAndDropOptions {
     items: DockItem[];
@@ -69,6 +70,7 @@ export const useDragAndDrop = ({
     const isPreMergeRef = useRef(false);
     const hoverStartTime = useRef<number>(0);
     const potentialMergeTarget = useRef<string | null>(null);
+    const lastMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
     // 同步 Refs
     useEffect(() => { hoveredFolderRef.current = hoveredFolderId; }, [hoveredFolderId]);
@@ -112,27 +114,20 @@ export const useDragAndDrop = ({
 
         const mouseX = e.clientX;
         const mouseY = e.clientY;
+        // 存储最后的鼠标位置，供 mouseUp 使用
+        lastMousePositionRef.current = { x: mouseX, y: mouseY };
 
-        // Check if mouse is over an open folder view
-        const folderViewElement = document.querySelector('[data-folder-view="true"]');
-        if (folderViewElement && activeItem?.type !== 'folder') {  // Don't allow folders into folders
-            const folderRect = folderViewElement.getBoundingClientRect();
-            if (
-                mouseX >= folderRect.left &&
-                mouseX <= folderRect.right &&
-                mouseY >= folderRect.top &&
-                mouseY <= folderRect.bottom
-            ) {
-                // Over folder view - reset dock-related states
-                setIsOverFolderView(true);
-                setPlaceholderIndex(null);
-                setHoveredFolderId(null);
-                setHoveredAppId(null);
-                setMergeTargetId(null);
-                setIsPreMerge(false);
-                potentialMergeTarget.current = null;
-                return;
-            }
+        // 使用共享工具函数检测是否在文件夹视图内 - 确保与落点判断一致
+        if (activeItem?.type !== 'folder' && isMouseOverFolderView(mouseX, mouseY)) {
+            // Over folder view - reset dock-related states
+            setIsOverFolderView(true);
+            setPlaceholderIndex(null);
+            setHoveredFolderId(null);
+            setHoveredAppId(null);
+            setMergeTargetId(null);
+            setIsPreMerge(false);
+            potentialMergeTarget.current = null;
+            return;
         }
         setIsOverFolderView(false);
 
@@ -140,7 +135,7 @@ export const useDragAndDrop = ({
 
         if (dockRef.current) {
             const dockRect = dockRef.current.getBoundingClientRect();
-            const buffer = 150;
+            const buffer = 50; // 减小缓冲区，只在靠近 Dock 时触发
             if (
                 mouseX >= dockRect.left - buffer &&
                 mouseX <= dockRect.right + buffer &&
@@ -339,15 +334,16 @@ export const useDragAndDrop = ({
         let action: DockDragState['targetAction'] = null;
         let actionData: any = null;
 
-        // ... Action Detection Logic ... uses snapshot for cleaner lookups if needed, but refs are fine
+        // 判断是否应该放入文件夹：以文件夹的占位符状态为准
+        // 如果文件夹显示了占位符，就放入文件夹，无论鼠标当前位置在哪
+        const shouldDropToFolder = state.item.type !== 'folder' && hasFolderActivePlaceholder();
 
-        if (isOverFolderView && onDragToOpenFolder && state.item.type !== 'folder') {
-            const folderViewElement = document.querySelector('[data-folder-view="true"]');
-            if (folderViewElement) {
-                const rect = folderViewElement.getBoundingClientRect();
+        if (shouldDropToFolder && onDragToOpenFolder && state.item.type !== 'folder') {
+            const folderRect = getFolderViewRect();
+            if (folderRect) {
                 targetPos = {
-                    x: rect.left + rect.width / 2 - 32,
-                    y: rect.top + rect.height / 2 - 32,
+                    x: folderRect.left + folderRect.width / 2 - 32,
+                    y: folderRect.top + folderRect.height / 2 - 32,
                 };
                 action = 'dragToOpenFolder';
                 actionData = { item: state.item };

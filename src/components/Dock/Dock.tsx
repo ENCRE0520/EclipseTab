@@ -194,16 +194,45 @@ export const Dock: React.FC<DockProps> = ({
                         </div>
                     );
                 })}
-                <div className={styles.divider}>
+                {/* 右侧分隔线 - 需要跟随项目移动 */}
+                <div
+                    className={styles.divider}
+                    style={{
+                        transform: `translateX(${getItemTransform(items.length)}px)`,
+                        transition: isInteracting
+                            ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                            : 'none',
+                    }}
+                >
                     <svg width="1" height="48" viewBox="0 0 1 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <line x1="0.5" y1="0" x2="0.5" y2="48" strokeWidth="1" />
                     </svg>
                 </div>
-                <div className={styles.dockNavigator}>
+                <div
+                    className={styles.dockNavigator}
+                    style={{
+                        transform: `translateX(${getItemTransform(items.length)}px)`,
+                        transition: isInteracting
+                            ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                            : 'none',
+                    }}
+                >
                     <div className={styles.navigatorIcon}>
                         {/* AddIcon removed in non-edit mode as per request */}
                     </div>
                 </div>
+                {/* 动态占位元素 - 仅当需要扩展时渲染，避免 flex gap 造成多余间距 */}
+                {getItemTransform(items.length) > 0 && (
+                    <div
+                        style={{
+                            width: getItemTransform(items.length),
+                            flexShrink: 0,
+                            transition: isInteracting
+                                ? 'width 200ms cubic-bezier(0.2, 0, 0, 1)'
+                                : 'none',
+                        }}
+                    />
+                )}
             </div>
             {(dragState.isDragging || dragState.isAnimatingReturn) && dragState.item && createPortal(
                 <div

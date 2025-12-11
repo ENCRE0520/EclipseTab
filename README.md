@@ -194,8 +194,8 @@ npm run build
 4. 添加监听器：`mousemove` 和 `mouseup`
 
 **移动阈值检测**
-- 阈值：移动距离 > 5 像素
-- 计算：`Math.hypot(currentX - startX, currentY - startY) > 5`
+- 阈值：移动距离 > 8 像素
+- 计算：`Math.hypot(currentX - startX, currentY - startY) > 8`
 - 目的：区分点击和拖拽操作
 - **未达阈值**：视为点击，松开后触发编辑模态框
 - **达到阈值**：
@@ -203,16 +203,19 @@ npm run build
   - 标记：`document.body.classList.add('is-dragging')`
   - 回调：`onDragStart(item)` 通知父组件
   - 作用：禁用文件夹点击关闭，防止拖拽时误关闭
+  - **布局快照**：捕获所有图标的初始位置（`layoutSnapshot`），用于后续动画计算
 
-#### Dock 内拖拽
+#### Dock 内拖拽 - 挤压动画（Squeeze Animation）
 
-**重新排序应用**
+**核心设计理念**：复刻 macOS/iPadOS 的物理质感交互
 
 1. **拖拽中状态**：
    - **原图标**：
-     - CSS：`position: absolute; width: 0; height: 0; opacity: 0`
-     - 目的：视觉隐藏但保持 DOM 位置不变
-     - 原因：避免影响其他图标的 ref 索引
+     - 视觉隐藏：`opacity: 0; visibility: hidden`
+     - 空间处理：
+       - 鼠标不在 Dock 区域时：`width: 0` 完全收缩，Dock 宽度缩小
+       - 鼠标在 Dock 区域时：保持 `width: 64px`，为 transform 动画预留空间
+     - 目的：避免影响其他图标的 ref 索引
    - **拖拽预览**：
      - 渲染：`createPortal` 到 `document.body`
      - 位置：`position: fixed; left/top` 跟随 `currentPosition`
@@ -226,7 +229,7 @@ npm run build
    - **算法：中心交叉规则**
    - 流程：
      ```
-     遍历所有 Dock 图标：
+     遍历所有 Dock 图标的布局快照：
        计算图标中心 X = rect.left + rect.width / 2
        如果 mouseX < 中心 X：
          插入索引 = 当前索引
@@ -236,23 +239,49 @@ npm run build
      ```
    - 状态更新：`setPlaceholderIndex(计算的索引)`
 
-3. **插入间隙视觉反馈**：
-   - **实现方式**：在每个图标前后渲染 `gap` 元素
-   - **激活条件**：`placeholderIndex === 当前位置`
-   - **激活效果**：
-     - 宽度过渡：`0 → 72px`（64px 图标 + 8px 间距）
-     - 过渡动画：`transition: width 200ms ease`
-     - 视觉：半透明蓝色指示器
-   - **其他图标**：通过 CSS 过渡自动平移
-   - **禁用条件**：
-     - 鼠标不在 Dock 区域（缓冲区 150px 外）
-     - 鼠标在打开的文件夹区域内
+3. **挤压动画视觉反馈**（核心特性）：
+   - **实现方式**：CSS `transform: translateX()` 平移动画
+   - **动画逻辑**（`getItemTransform` 函数）：
+     
+     **内部拖拽（移动已有图标）**：
+     ```typescript
+     // 源图标保持 64px 宽度但隐藏，为动画预留空间
+     if (index === draggedIndex) return 0; // 被拖拽项不移动
+     
+     // 向右拖拽（draggedIndex < targetSlot）
+     if (index > draggedIndex && index < targetSlot) {
+       return -72px; // 中间项向左移动，填补源位置
+     }
+     
+     // 向左拖拽（draggedIndex > targetSlot）
+     if (index >= targetSlot && index < draggedIndex) {
+       return +72px; // 中间项向右移动，为目标位置开口
+     }
+     ```
+     
+     **外部拖入（从文件夹拖入）**：
+     ```typescript
+     // 插入点及之后的所有图标向右移动
+     if (index >= targetSlot) {
+       return +72px; // 为新图标开辟空间
+     }
+     ```
+   
+   - **过渡动画**：
+     - 属性：`transition: transform 200ms cubic-bezier(0.2, 0, 0, 1)`
+     - 效果：平滑的挤压和滑动
+     - 触发：`placeholderIndex` 变化时自动触发
+   
+   - **Dock 宽度自适应**：
+     - 动态占位元素：当 `getItemTransform(items.length) > 0` 时渲染
+     - 宽度：等于最后一个图标的偏移量
+     - 作用：确保 Dock 容器宽度随图标移动平滑扩展
+     - 过渡：`transition: width 200ms cubic-bezier(0.2, 0, 0, 1)`
 
 4. **释放鼠标（MouseUp）**：
    - **计算目标位置**：
-     - 找到 `placeholderIndex` 对应的 DOM 元素
-     - 获取其 `getBoundingClientRect()`
-     - 补偿间隙：如果元素在 placeholder 之后，坐标减 72px
+     - 从布局快照中找到 `placeholderIndex` 对应的位置
+     - 坐标：`targetX = snapshot[placeholderIndex].rect.left`
    - **触发归位动画**：
      - 状态：`isAnimatingReturn = true`
      - 目标：`targetPosition = { x, y }`
@@ -320,24 +349,105 @@ npm run build
   - 防止嵌套：文件夹内不允许再包含文件夹
 - 视觉反馈：文件夹图标放大或边框高亮
 
-#### 文件夹内拖拽
+#### 文件夹内拖拽 - Z 字形流动动画（Z-Shaped Flow）
 
-**文件夹内重排序**
+**核心设计理念**：实现多行网格的物理质感交互，图标沿 Z 字形路径平滑流动
 
 1. **前提**：文件夹已打开，处于编辑模式
-2. **拖拽启动**：与 Dock 拖拽机制相同（5px 阈值）
+2. **拖拽启动**：与 Dock 拖拽机制相同（8px 阈值）
 3. **Hook**：`useFolderDragAndDrop`（独立状态管理）
-4. **网格布局调整**：
-   - **布局**：CSS Grid
-     - 列数：`min(4, items.length)`
-     - 行数：`ceil(items.length / columns)`
+4. **网格布局配置**：
+   - **布局**：Flexbox + `flex-wrap: wrap`
+     - 列数：最多 4 列
+     - 行数：自动计算 `ceil(items.length / 4)`
      - 间距：8px
-   - **Placeholder 系统**：
-     - 实现：在 `placeholderIndex` 位置渲染空 `<div>`
-     - 尺寸：64×64px，占据一个网格单元
-     - CSS Grid 特性：自动重排
-   - **其他图标**：grid 布局自动调整位置，带过渡动画
-5. **释放完成**：
+     - 单元格大小：72px（64px 图标 + 8px 间距）
+   - **源项处理**（内部拖拽）：
+     - 宽度收缩：`width: 0; min-width: 0`
+     - 视觉隐藏：`opacity: 0; visibility: hidden`
+     - 过渡：`transition: width 200ms cubic-bezier(0.2, 0, 0, 1)`
+     - 作用：Flexbox 自动重排，其他图标向左填补空位
+
+5. **Z 字形流动动画**（`getItemTransform` 函数）：
+   
+   **核心逻辑**：
+   - **锚定区**（插入点之前）：保持 `{x: 0, y: 0}` 纹丝不动
+   - **顺延区**（插入点及之后）：向后移动一格，支持跨行滑落
+   
+   **内部拖拽**：
+   ```typescript
+   // 计算移除源项后的视觉索引
+   const visualIndex = index > draggedIndex ? index - 1 : index;
+   
+   if (visualIndex < targetSlot) {
+     // 锚定区：不动
+     return { x: 0, y: 0 };
+   } else {
+     // 顺延区：计算新位置 (visualIndex + 1)
+     const currentCol = visualIndex % 4;
+     const currentRow = Math.floor(visualIndex / 4);
+     const newIndex = visualIndex + 1;
+     const newCol = newIndex % 4;
+     const newRow = Math.floor(newIndex / 4);
+     
+     // 同行移动：X +72px
+     // 跨行滑落：X 回到第一列，Y +72px
+     const xOffset = (newCol - currentCol) * 72;
+     const yOffset = (newRow - currentRow) * 72;
+     
+     return { x: xOffset, y: yOffset };
+   }
+   ```
+   
+   **外部拖入**：
+   ```typescript
+   if (index < targetSlot) {
+     return { x: 0, y: 0 }; // 锚定区
+   } else {
+     // 计算跨行偏移
+     const currentCol = index % 4;
+     const currentRow = Math.floor(index / 4);
+     const newIndex = index + 1;
+     const newCol = newIndex % 4;
+     const newRow = Math.floor(newIndex / 4);
+     
+     return {
+       x: (newCol - currentCol) * 72,
+       y: (newRow - currentRow) * 72
+     };
+   }
+   ```
+   
+   **跨行动画示例**：
+   ```
+   初始布局（4列）：
+   [A] [B] [C] [D]
+   [E] [F] [G]
+   
+   拖拽到 B 和 C 之间：
+   锚定区：A, B 保持不动
+   顺延区：
+   - C: 向右移动 +72px (同行)
+   - D: X -216px (回到第一列), Y +72px (下移一行) → 跨行滑落
+   - E, F, G: 各自向右移动 +72px
+   
+   视觉效果：
+   [A] [B] gap [C]
+   [D] [E] [F] [G]
+   ```
+
+6. **过渡动画**：
+   - 属性：`transition: transform 200ms cubic-bezier(0.2, 0, 0, 1)`
+   - 效果：平滑的 X/Y 轴联合移动
+   - 触发：`placeholderIndex` 变化时自动触发
+
+7. **容器呼吸感**（高度自适应）：
+   - CSS：`transition: height 200ms cubic-bezier(0.2, 0, 0, 1)`
+   - 触发：图标跨行导致行数变化
+   - 效果：容器高度平滑增长/收缩
+   - 示例：4 个图标（1 行）→ 拖入第 5 个 → 容器高度从 80px 增长到 160px
+
+8. **释放完成**：
    - 归位动画到新网格位置
    - 回调：`onItemsReorder(newItems)`
    - 父组件更新文件夹的 `items` 数组
@@ -346,9 +456,9 @@ npm run build
 **从文件夹拖出到 Dock**
 
 1. **拖出检测**：
-   - 判断：鼠标 Y 坐标 < 文件夹区域顶部
+   - 判断：鼠标超出文件夹容器边界
    - 状态：`isDraggingOut = true`
-   - 缓冲：允许一定的误差范围
+   - 缓冲：允许 10px 误差范围
 
 2. **跨组件同步**：
    - **FolderView**：
@@ -366,7 +476,7 @@ npm run build
    - 监听 `externalDragItem` 变化
    - 添加 `mousemove` 监听器
    - 实时计算插入位置（中心交叉规则）
-   - 显示插入间隙
+   - 显示挤压动画
    - 允许合并到文件夹（如果悬停 300ms）
 
 4. **释放位置计算**：
@@ -460,9 +570,9 @@ npm run build
    - FolderView 接收 `externalDragItem`
    - 计算插入位置（网格）：
      - 算法：基于鼠标坐标和网格布局
-     - 计算行列：`row = floor(mouseY / 72)`, `col = floor(mouseX / 72)`
-     - 转换为一维索引：`index = row * columns + col`
-   - 显示 placeholder（空网格单元）
+     - 计算行列：`row = floor((mouseY - padding) / 72)`, `col = floor((mouseX - padding) / 72)`
+     - 转换为一维索引：`index = row * 4 + col`
+   - 显示 Z 字形流动动画
    - 实时更新位置
 
 5. **释放执行**：
@@ -523,7 +633,7 @@ npm run build
    - 原因：防止无限嵌套
 
 2. **拖出 Dock 缓冲区**：
-   - 缓冲：Dock rect 外扩 150px
+   - 缓冲：Dock rect 外扩 50px
    - 检测：鼠标超出缓冲区
    - 响应：清除所有拖拽反馈
      - `placeholderIndex = null`
@@ -536,7 +646,7 @@ npm run build
    - 效果：避免误触发合并或打开
 
 4. **点击与拖拽区分**：
-   - 5px 移动阈值
+   - 8px 移动阈值
    - 未达阈值：`isDragging` 保持 `false`
    - 松开鼠标：清理状态，允许点击事件触发
 
@@ -549,6 +659,36 @@ npm run build
    - 全局标记：`document.body.classList.add('is-dragging')`
    - 禁用：文件夹点击关闭
    - 清理：拖拽结束后移除类
+
+#### 拖拽系统架构总结
+
+**模块化设计**：
+- **useDragBase**：共享拖拽基础逻辑
+  - 状态管理：`isDragging`、`currentPosition`、`targetPosition`
+  - 布局快照：捕获初始位置，避免动态计算
+  - 阈值检测：区分点击和拖拽
+  - Refs 同步：高频状态使用 ref 避免重渲染
+
+- **useDragAndDrop**（Dock）：
+  - 继承 `useDragBase`
+  - 实现：水平挤压动画、合并检测、归位动画
+  - 策略：`createHorizontalStrategy()`
+
+- **useFolderDragAndDrop**（文件夹）：
+  - 继承 `useDragBase`
+  - 实现：Z 字形流动动画、跨行滑落、容器呼吸
+  - 策略：`createGridStrategy(4)`
+
+**工具函数**：
+- **dragStrategies.ts**：策略模式，封装 Dock 和 Folder 的差异化逻辑
+- **dragDetection.ts**：共享区域检测，确保 Dock 和 Folder 判断一致
+- **dragUtils.ts**：通用工具函数（距离计算、索引计算、事件处理）
+
+**性能优化**：
+- 布局快照：拖拽开始时捕获，避免实时查询 DOM
+- Ref 化高频状态：`placeholderIndex`、`currentPosition` 使用 ref
+- 直接 DOM 操作：拖拽预览位置通过 `style.left/top` 更新，避免 React 重渲染
+- CSS 硬件加速：`transform` 和 `will-change` 优化动画性能
 
 ### 5️⃣ 设置面板交互
 

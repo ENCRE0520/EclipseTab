@@ -129,19 +129,6 @@ export const createGridStrategy = (columns: number = 4): DragStrategy => {
     const cellSize = itemSize + gap;
     const padding = 8;
 
-    const getGridPos = (idx: number) => ({
-        col: idx % columns,
-        row: Math.floor(idx / columns)
-    });
-
-    const calcOffset = (fromIdx: number, toIdx: number): Position => {
-        const from = getGridPos(fromIdx);
-        const to = getGridPos(toIdx);
-        return {
-            x: (to.col - from.col) * cellSize,
-            y: (to.row - from.row) * cellSize
-        };
-    };
 
     return {
         layoutConfig: {
@@ -173,22 +160,19 @@ export const createGridStrategy = (columns: number = 4): DragStrategy => {
         calculateTransform: (index, targetSlot, originalIndex, isDragging) => {
             if (targetSlot === null) return { x: 0, y: 0 };
 
-            // 内部拖拽
+            // 内部拖拽：被拖拽元素保持64px隐藏空间，不需要额外位移
+            // 因为隐藏的元素已经提供了1格的空位
             if (isDragging && originalIndex !== -1) {
-                if (index === originalIndex) return { x: 0, y: 0 };
-
-                // 向后拖: 中间项向前移
-                if (targetSlot > originalIndex && index > originalIndex && index <= targetSlot) {
-                    return calcOffset(index, index - 1);
-                }
-                // 向前拖: 中间项向后移
-                if (targetSlot < originalIndex && index >= targetSlot && index < originalIndex) {
-                    return calcOffset(index, index + 1);
-                }
+                // 所有元素保持原位，不需要移动
+                // 被拖拽元素的64px隐藏空间就是视觉上的gap
+                return { x: 0, y: 0 };
             }
-            // 外部拖入
-            else if (originalIndex === -1 && index >= targetSlot) {
-                return calcOffset(index, index + 1);
+            // 外部拖入：容器已扩展一格空间，只需让目标位置及右侧的项向右移一格
+            else if (originalIndex === -1) {
+                if (index >= targetSlot) {
+                    return { x: cellSize, y: 0 };
+                }
+                return { x: 0, y: 0 };
             }
 
             return { x: 0, y: 0 };
