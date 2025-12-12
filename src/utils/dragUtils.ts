@@ -229,6 +229,11 @@ export const createMouseDownHandler = <T extends BaseDragState>(
                 dragDataSet = true;
                 const newState = createDragState(item, index, rect, startX, startY, offset);
                 setDragState(newState);
+
+                // 调用 onDragStart 回调 (触发 captureLayoutSnapshot)
+                if (options.onDragStart) {
+                    options.onDragStart(item);
+                }
             }
 
             window.removeEventListener('mousemove', moveThresholdCheck);

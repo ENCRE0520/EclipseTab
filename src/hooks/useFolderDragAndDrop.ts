@@ -5,6 +5,7 @@ import {
     createMouseDownHandler,
     calculateFolderDropIndex,
 } from '../utils/dragUtils';
+import { setFolderPlaceholderActive } from '../utils/dragDetection';
 import {
     useDragBase,
     createFolderDragState,
@@ -40,6 +41,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         setDragState,
         placeholderIndex,
         setPlaceholderIndex,
+        placeholderRef,
         itemRefs,
         dragRef,
         itemsRef,
@@ -60,6 +62,21 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         resetState: resetFolderDragState,
         containerRef
     });
+
+    // ========== 同步文件夹占位符状态到全局检测系统 ==========
+    // 这允许 Dock 的 handleMouseUp 知道是否应该将拖拽项放入文件夹
+    useEffect(() => {
+        // 只有当存在外部拖拽项时，才同步占位符状态
+        // 内部拖拽不需要同步（由 useFolderDragAndDrop 自己处理）
+        if (externalDragItem) {
+            setFolderPlaceholderActive(placeholderIndex !== null);
+        }
+
+        // 组件卸载或外部拖拽结束时清理
+        return () => {
+            setFolderPlaceholderActive(false);
+        };
+    }, [externalDragItem, placeholderIndex]);
 
     /**
      * 处理鼠标移动 (Internal)
@@ -153,7 +170,8 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
      */
     const handleMouseUp = useCallback(() => {
         const currentDrag = dragRef.current;
-        const currentPlaceholder = placeholderIndex ?? -1;
+        // 使用 ref 获取最新值，避免闭包捕获旧状态
+        const currentPlaceholder = placeholderRef.current ?? -1;
 
         // 清理事件监听
         window.removeEventListener('mousemove', handleMouseMove);
@@ -178,7 +196,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         if (onDragEnd) {
             onDragEnd();
         }
-    }, [dragRef, placeholderIndex, onReorder, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove]);
+    }, [dragRef, placeholderRef, onReorder, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove, onDragOut, itemsRef]);
 
     /**
      * 鼠标按下处理
@@ -218,8 +236,50 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         return result;
     };
 
+    // ========== Z字形位移常量 (Z-Shaped Flow Constants) ==========
+    const FOLDER_COLUMNS = 4;       // 文件夹固定4列布局
+    const CELL_SIZE = 72;           // 单元格尺寸 (包含间距)
+
     /**
-     * 计算 Grid 布局偏移 (Squeeze Animation)
+     * 辅助函数：计算从 originalIndex 到 visualIndex 的 Z字形位移
+     * 
+     * @param originalIndex - 元素在 DOM 中的原始索引
+     * @param visualIndex   - 元素应该显示的目标视觉索引
+     * @returns { x, y } 像素位移值
+     */
+    const calculateZShapedOffset = (originalIndex: number, visualIndex: number): { x: number; y: number } => {
+        if (originalIndex === visualIndex) {
+            return { x: 0, y: 0 };
+        }
+
+        // 当前 DOM 位置 (基于原始索引)
+        const currentCol = originalIndex % FOLDER_COLUMNS;
+        const currentRow = Math.floor(originalIndex / FOLDER_COLUMNS);
+
+        // 目标视觉位置
+        const targetCol = visualIndex % FOLDER_COLUMNS;
+        const targetRow = Math.floor(visualIndex / FOLDER_COLUMNS);
+
+        // 计算像素位移
+        const x = (targetCol - currentCol) * CELL_SIZE;
+        const y = (targetRow - currentRow) * CELL_SIZE;
+
+        return { x, y };
+    };
+
+    /**
+     * 计算 Grid 布局偏移 (Z-Shaped Flow Animation)
+     * 
+     * 核心逻辑：
+     * 1. 外部拖入: index >= placeholderIndex 的所有图标 visualIndex = index + 1
+     * 2. 内部拖拽:
+     *    - 向前拖 (Drag Backwards, src > dst): 范围 [dst, src) 的元素 visualIndex = index + 1
+     *    - 向后拖 (Drag Forwards, src < dst):  范围 (src, dst] 的元素 visualIndex = index - 1
+     * 
+     * Z字形位移算法：
+     * - 当前位置: (currentRow, currentCol) = (floor(index/4), index%4)
+     * - 目标位置: (targetRow, targetCol) = (floor(visualIndex/4), visualIndex%4)
+     * - 位移值: x = (targetCol - currentCol) * 72, y = (targetRow - currentRow) * 72
      */
     const getItemTransform = useCallback((index: number) => {
         // 如果没有占位符，不偏移
@@ -227,66 +287,49 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
             return { x: 0, y: 0 };
         }
 
-        // Case 1: 外部拖入
+        // ========== Case 1: 外部拖入 (External Drag) ==========
         if (externalDragItem) {
-            // 逻辑：所有 index >= placeholderIndex 的元素，都向后移动一格
-            // 注意：这里没有"源空位"，只有"目标占位"
+            // 逻辑：所有 index >= placeholderIndex 的元素，visualIndex = index + 1
             if (index >= placeholderIndex) {
-                const currentDOMIndex = index;
-                const targetVisualIndex = index + 1; // 挤往下一格
-
-                // 计算坐标差异
-                const cols = Math.min(Math.max(items.length, 1), 4);
-                const c1 = currentDOMIndex % cols;
-                const r1 = Math.floor(currentDOMIndex / cols);
-
-                const c2 = targetVisualIndex % cols;
-                const r2 = Math.floor(targetVisualIndex / cols);
-
-                const ITEM_SIZE_WITH_GAP = 72;
-                const x = (c2 - c1) * ITEM_SIZE_WITH_GAP;
-                const y = (r2 - r1) * ITEM_SIZE_WITH_GAP;
-                return { x, y };
+                return calculateZShapedOffset(index, index + 1);
             }
             return { x: 0, y: 0 };
         }
 
-        // Case 2: 内部拖拽
+        // ========== Case 2: 内部拖拽 (Internal Drag) ==========
         if (dragState.isDragging && dragState.originalIndex !== -1) {
-            // 如果是正在拖拽的源项
-            if (index === dragState.originalIndex) {
+            const draggingIndex = dragState.originalIndex;
+
+            // 如果是正在拖拽的源项，不需要位移 (它会被隐藏/跟随鼠标)
+            if (index === draggingIndex) {
                 return { x: 0, y: 0 };
             }
 
-            const src = dragState.originalIndex;
-            const dst = placeholderIndex;
-
-            // 1. 计算"DOM流"位置 (Current DOM Flow Index)
-            // 由于源项视觉上消失(width:0)，在此索引之后的元素会自动前移一位
-            const currentDOMIndex = index > src ? index - 1 : index;
-
-            // 2. 计算"目标视觉"位置 (Target Visual Index)
-            // 我们希望在 dst 处再次空出位置，所以 >= dst 的元素后移一位
-            const targetVisualIndex = currentDOMIndex >= dst ? currentDOMIndex + 1 : currentDOMIndex;
-
-            if (currentDOMIndex === targetVisualIndex) {
-                return { x: 0, y: 0 };
+            // ===== 场景 B1: 向前拖 (Drag Backwards) =====
+            // draggingIndex > placeholderIndex
+            // 范围 [placeholderIndex, draggingIndex) 的元素需要向后移动 +1
+            if (draggingIndex > placeholderIndex) {
+                if (index >= placeholderIndex && index < draggingIndex) {
+                    return calculateZShapedOffset(index, index + 1);
+                }
             }
 
-            const cols = Math.min(Math.max(items.length, 1), 4);
-            const c1 = currentDOMIndex % cols;
-            const r1 = Math.floor(currentDOMIndex / cols);
-            const c2 = targetVisualIndex % cols;
-            const r2 = Math.floor(targetVisualIndex / cols);
-            const ITEM_SIZE_WITH_GAP = 72;
-            const x = (c2 - c1) * ITEM_SIZE_WITH_GAP;
-            const y = (r2 - r1) * ITEM_SIZE_WITH_GAP;
-            return { x, y };
+            // ===== 场景 B2: 向后拖 (Drag Forwards) =====
+            // draggingIndex < placeholderIndex
+            // 范围 (draggingIndex, placeholderIndex] 的元素需要向前移动 -1
+            if (draggingIndex < placeholderIndex) {
+                if (index > draggingIndex && index <= placeholderIndex) {
+                    return calculateZShapedOffset(index, index - 1);
+                }
+            }
+
+            // 不在影响范围内，保持不动
+            return { x: 0, y: 0 };
         }
 
         return { x: 0, y: 0 };
 
-    }, [dragState.isDragging, dragState.originalIndex, placeholderIndex, items.length, externalDragItem]);
+    }, [dragState.isDragging, dragState.originalIndex, placeholderIndex, externalDragItem]);
 
     const isDraggingOut = dragState.targetAction === 'dragOut';
 
