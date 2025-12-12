@@ -5,6 +5,14 @@ import { DockItem } from './DockItem';
 import { AddIcon } from './AddIcon';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { generateFolderIcon } from '../../utils/iconFetcher';
+import {
+    EASE_SWIFT,
+    EASE_SPRING,
+    EASE_SMOOTH,
+    SQUEEZE_ANIMATION_DURATION,
+    RETURN_ANIMATION_DURATION,
+    FADE_DURATION,
+} from '../../constants/layout';
 import styles from './Dock.module.css';
 
 interface DockProps {
@@ -159,7 +167,7 @@ export const Dock: React.FC<DockProps> = ({
                                     visibility: 'hidden', // Force hide
                                     pointerEvents: 'none',
                                     transition: isInteracting
-                                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), min-width 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                                        ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
                                         : 'none',
                                 } : {
                                     width: 64,
@@ -169,13 +177,13 @@ export const Dock: React.FC<DockProps> = ({
                                     pointerEvents: 'none',
                                     transform: `translateX(${translateX}px)`,
                                     transition: isInteracting
-                                        ? 'width 200ms cubic-bezier(0.2, 0, 0, 1), min-width 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms'
+                                        ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
                                         : 'none',
                                 }
                             ) : {
                                 transform: `translateX(${translateX}px)`,
                                 transition: isInteracting
-                                    ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                                    ? `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
                                     : 'none',
                             }}
                         >
@@ -200,7 +208,7 @@ export const Dock: React.FC<DockProps> = ({
                     style={{
                         transform: `translateX(${getItemTransform(items.length)}px)`,
                         transition: isInteracting
-                            ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                            ? `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
                             : 'none',
                     }}
                 >
@@ -213,7 +221,7 @@ export const Dock: React.FC<DockProps> = ({
                     style={{
                         transform: `translateX(${getItemTransform(items.length)}px)`,
                         transition: isInteracting
-                            ? 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'
+                            ? `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
                             : 'none',
                     }}
                 >
@@ -228,7 +236,7 @@ export const Dock: React.FC<DockProps> = ({
                             width: getItemTransform(items.length),
                             flexShrink: 0,
                             transition: isInteracting
-                                ? 'width 200ms cubic-bezier(0.2, 0, 0, 1)'
+                                ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
                                 : 'none',
                         }}
                     />
@@ -254,8 +262,9 @@ export const Dock: React.FC<DockProps> = ({
                         transform: isPreMerge ? 'scale(0.6)' : 'scale(1.0)',
                         filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))',
                         transition: dragState.isAnimatingReturn
-                            ? 'left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), top 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.2s cubic-bezier(0.4,0,0.2,1)'
-                            : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)', // removed left/top transition during drag
+                            // 归位动画：使用 iOS 风格阻尼曲线
+                            ? `left ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, top ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, transform ${SQUEEZE_ANIMATION_DURATION}ms ease-out`
+                            : `transform ${FADE_DURATION}ms ${EASE_SMOOTH}`,
                     }}
                     onTransitionEnd={(e) => {
                         // 只在归位动画的 left/top 过渡完成时触发回调

@@ -2,9 +2,9 @@
  * 拖拽策略模式 - 处理 Dock 和 Folder 的差异化逻辑
  */
 
-import { Position } from './dragUtils';
-import { LayoutItem } from '../hooks/useDragBase';
+import { Position, LayoutItem, calculateFolderDropIndex } from './dragUtils';
 import { DockItem } from '../types';
+
 
 /**
  * 布局配置
@@ -139,40 +139,58 @@ export const createGridStrategy = (columns: number = 4): DragStrategy => {
             hysteresisThreshold: 15,
         },
 
-        calculatePlaceholder: (mouseX, mouseY, _snapshot, itemCount, containerRect) => {
-            if (!containerRect) return 0;
-
-            // 计算相对位置
-            const relX = mouseX - containerRect.left - padding;
-            const relY = mouseY - containerRect.top - padding;
-
-            // 使用中点判断
-            const col = Math.floor(relX / cellSize + 0.5);
-            const row = Math.floor(relY / cellSize + 0.5);
-
-            const safeCol = Math.max(0, Math.min(col, columns));
-            const safeRow = Math.max(0, row);
-
-            const index = safeRow * columns + safeCol;
-            return Math.min(index, itemCount);
+        calculatePlaceholder: (mouseX, mouseY, snapshot, itemCount, containerRect) => {
+            // 使用 dragUtils 中更健壮的计算逻辑 (包含追加检测和最近邻检测)
+            return calculateFolderDropIndex(
+                mouseX,
+                mouseY,
+                snapshot,
+                itemCount,
+                containerRect || null
+            );
         },
 
         calculateTransform: (index, targetSlot, originalIndex, isDragging) => {
             if (targetSlot === null) return { x: 0, y: 0 };
 
-            // 内部拖拽：被拖拽元素保持64px隐藏空间，不需要额外位移
-            // 因为隐藏的元素已经提供了1格的空位
-            if (isDragging && originalIndex !== -1) {
-                // 所有元素保持原位，不需要移动
-                // 被拖拽元素的64px隐藏空间就是视觉上的gap
-                return { x: 0, y: 0 };
-            }
-            // 外部拖入：容器已扩展一格空间，只需让目标位置及右侧的项向右移一格
-            else if (originalIndex === -1) {
+            // Z字形位移计算辅助函数
+            const calculateZShapedOffset = (origIdx: number, visIdx: number): Position => {
+                if (origIdx === visIdx) return { x: 0, y: 0 };
+                const curCol = origIdx % columns;
+                const curRow = Math.floor(origIdx / columns);
+                const tgtCol = visIdx % columns;
+                const tgtRow = Math.floor(visIdx / columns);
+                return {
+                    x: (tgtCol - curCol) * cellSize,
+                    y: (tgtRow - curRow) * cellSize
+                };
+            };
+
+            // 外部拖入
+            if (originalIndex === -1) {
                 if (index >= targetSlot) {
-                    return { x: cellSize, y: 0 };
+                    return calculateZShapedOffset(index, index + 1);
                 }
                 return { x: 0, y: 0 };
+            }
+
+            // 内部拖拽
+            // isDragging 包含了 isAnimatingReturn 的情况 (由调用方控制传入)
+            if (isDragging && originalIndex !== -1) {
+                if (index === originalIndex) return { x: 0, y: 0 };
+
+                // 向前拖 (Drag Backwards): [target, source) -> index + 1
+                if (originalIndex > targetSlot) {
+                    if (index >= targetSlot && index < originalIndex) {
+                        return calculateZShapedOffset(index, index + 1);
+                    }
+                }
+                // 向后拖 (Drag Forwards): (source, target] -> index - 1
+                else if (originalIndex < targetSlot) {
+                    if (index > originalIndex && index <= targetSlot) {
+                        return calculateZShapedOffset(index, index - 1);
+                    }
+                }
             }
 
             return { x: 0, y: 0 };
@@ -180,15 +198,25 @@ export const createGridStrategy = (columns: number = 4): DragStrategy => {
 
         isOutsideContainer: (mouseX, mouseY, containerRect) => {
             const buffer = 10;
-            return (
-                mouseX < containerRect.left - buffer ||
-                mouseX > containerRect.right + buffer ||
-                mouseY < containerRect.top - buffer ||
-                mouseY > containerRect.bottom + buffer
-            );
+            return !isMouseOverRect(mouseX, mouseY, containerRect, buffer);
         },
     };
 };
+
+/**
+ * Helper to check if mouse is over rect (duplicated from detection to keep strategy independent if needed, 
+ * but we can also import. For now, inline simple check or import.)
+ * Actually we can just import from dragDetection if we want, or implementing simple logic here.
+ */
+const isMouseOverRect = (x: number, y: number, rect: DOMRect, buffer: number = 0) => {
+    return (
+        x >= rect.left - buffer &&
+        x <= rect.right + buffer &&
+        y >= rect.top - buffer &&
+        y <= rect.bottom + buffer
+    );
+};
+
 
 /**
  * 重排序项目数组 - 基于ID过滤后直接插入

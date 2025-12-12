@@ -1,24 +1,9 @@
 /**
  * 共享的拖拽区域检测工具
  * 确保 Dock 和 Folder 使用完全相同的检测逻辑
+ * 
+ * 注意：folderPlaceholderActive 状态已迁移到 DockDragContext
  */
-
-// 全局状态：文件夹是否有活动的占位符
-let folderHasActivePlaceholder = false;
-
-/**
- * 设置文件夹占位符状态（由 useFolderDragAndDrop 调用）
- */
-export const setFolderPlaceholderActive = (active: boolean): void => {
-    folderHasActivePlaceholder = active;
-};
-
-/**
- * 检查文件夹是否有活动占位符（由 useDragAndDrop 调用）
- */
-export const hasFolderActivePlaceholder = (): boolean => {
-    return folderHasActivePlaceholder;
-};
 
 /**
  * 检测鼠标是否在打开的文件夹视图内
@@ -66,4 +51,21 @@ export const isMouseOverDock = (mouseX: number, mouseY: number, buffer: number =
 export const getFolderViewRect = (): DOMRect | null => {
     const folderViewElement = document.querySelector('[data-folder-view="true"]');
     return folderViewElement?.getBoundingClientRect() ?? null;
+};
+
+/**
+ * 检测点是否在矩形内
+ */
+export const isMouseOverRect = (
+    x: number,
+    y: number,
+    rect: DOMRect,
+    buffer: number = 0
+): boolean => {
+    return (
+        x >= rect.left - buffer &&
+        x <= rect.right + buffer &&
+        y >= rect.top - buffer &&
+        y <= rect.bottom + buffer
+    );
 };

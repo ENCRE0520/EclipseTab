@@ -1,17 +1,22 @@
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { DockItem } from '../types';
 import {
     createMouseDownHandler,
-    calculateFolderDropIndex,
+    reorderList,
 } from '../utils/dragUtils';
-import { setFolderPlaceholderActive } from '../utils/dragDetection';
+import { createGridStrategy } from '../utils/dragStrategies';
+import { onReturnAnimationComplete } from '../utils/animationUtils';
 import {
     useDragBase,
     createFolderDragState,
     resetFolderDragState,
-    FolderDragState
+    FolderDragState,
 } from './useDragBase';
+import {
+    FOLDER_COLUMNS,
+    FOLDER_CELL_SIZE,
+} from '../constants/layout';
 
 export interface UseFolderDragAndDropOptions {
     items: DockItem[];
@@ -22,6 +27,8 @@ export interface UseFolderDragAndDropOptions {
     containerRef: React.RefObject<HTMLElement>;
     externalDragItem?: DockItem | null;
     onDragOut?: (item: DockItem, mousePosition: { x: number; y: number }) => void;
+    /** 占位符状态变化回调，用于通知父组件同步到 Context */
+    onFolderPlaceholderChange?: (active: boolean) => void;
 }
 
 export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
@@ -33,7 +40,8 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         onDragEnd,
         containerRef,
         externalDragItem,
-        onDragOut
+        onDragOut,
+        onFolderPlaceholderChange,
     } = options;
 
     const {
@@ -52,6 +60,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         resetPlaceholderState,
         dragElementRef,
         captureLayoutSnapshot,
+        cachedContainerRectRef, // 缓存的容器 Rect
     } = useDragBase<FolderDragState>({
         items,
         isEditMode,
@@ -63,20 +72,24 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         containerRef
     });
 
-    // ========== 同步文件夹占位符状态到全局检测系统 ==========
-    // 这允许 Dock 的 handleMouseUp 知道是否应该将拖拽项放入文件夹
+    // 创建网格布局策略
+    const strategy = useMemo(() => createGridStrategy(FOLDER_COLUMNS), []);
+
+    // ========== 同步文件夹占位符状态到父组件 (Context) ==========
     useEffect(() => {
-        // 只有当存在外部拖拽项时，才同步占位符状态
-        // 内部拖拽不需要同步（由 useFolderDragAndDrop 自己处理）
-        if (externalDragItem) {
-            setFolderPlaceholderActive(placeholderIndex !== null);
+        if (externalDragItem && onFolderPlaceholderChange) {
+            onFolderPlaceholderChange(placeholderIndex !== null);
         }
 
-        // 组件卸载或外部拖拽结束时清理
         return () => {
-            setFolderPlaceholderActive(false);
+            if (onFolderPlaceholderChange) {
+                onFolderPlaceholderChange(false);
+            }
         };
-    }, [externalDragItem, placeholderIndex]);
+    }, [externalDragItem, placeholderIndex, onFolderPlaceholderChange]);
+
+    // Track last position for drop events (since we don't update state during drag)
+    const lastPositionRef = useRef<{ x: number; y: number } | null>(null);
 
     /**
      * 处理鼠标移动 (Internal)
@@ -85,53 +98,62 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         const currentDrag = dragRef.current;
         // 如果是内部拖拽
         if (currentDrag.isDragging && currentDrag.item) {
-            // 更新拖拽位置
-            setDragState(prev => ({
-                ...prev,
-                currentPosition: { x: e.clientX, y: e.clientY }
-            }));
+            // Calculate new position
+            const x = e.clientX - currentDrag.offset.x;
+            const y = e.clientY - currentDrag.offset.y;
 
-            // 检查是否拖出文件夹区域 (Drag Out Detection)
-            if (onDragOut && containerRef.current) {
-                const rect = containerRef.current.getBoundingClientRect();
-                const BUFFER = 50; // 50px buffer zone
+            // Update ref for MouseUp handler
+            lastPositionRef.current = { x, y };
+
+            // Direct DOM manipulation for performance (avoids re-renders)
+            if (dragElementRef.current) {
+                dragElementRef.current.style.left = `${x}px`;
+                dragElementRef.current.style.top = `${y}px`;
+            }
+
+            // 检查是否拖出文件夹区域 (Drag Out Detection) - 使用缓存的 Rect
+            const containerRect = cachedContainerRectRef.current || containerRef.current?.getBoundingClientRect();
+            if (onDragOut && containerRect) {
+
 
                 // 如果鼠标超出文件夹边界一定距离
-                const isOutside =
-                    e.clientX < rect.left - BUFFER ||
-                    e.clientX > rect.right + BUFFER ||
-                    e.clientY < rect.top - BUFFER ||
-                    e.clientY > rect.bottom + BUFFER;
+                const isOutside = strategy.isOutsideContainer
+                    ? strategy.isOutsideContainer(e.clientX, e.clientY, containerRect)
+                    : false;
 
                 if (isOutside) {
-                    setDragState(prev => ({
-                        ...prev,
-                        targetAction: 'dragOut'
-                    }));
-                    setPlaceholderIndex(null); // Clear placeholder inside folder
-                    // Optional: trigger onDragOut callback immediately or wait for drop?
-                    // Typically we wait for drop to confirm. Status update is enough for visual feedback.
+                    // Only update state if status changes
+                    if (currentDrag.targetAction !== 'dragOut') {
+                        setDragState(prev => ({
+                            ...prev,
+                            targetAction: 'dragOut'
+                        }));
+                        setPlaceholderIndex(null);
+                    }
                     return;
                 } else {
                     // Back inside
-                    setDragState(prev => ({
-                        ...prev,
-                        targetAction: 'reorder'
-                    }));
+                    if (currentDrag.targetAction === 'dragOut') {
+                        setDragState(prev => ({
+                            ...prev,
+                            targetAction: 'reorder'
+                        }));
+                    }
                 }
             }
 
             // 计算落点
-            const newIndex = calculateFolderDropIndex(
+            // 使用策略计算新的 Index
+            const newIndex = strategy.calculatePlaceholder(
                 e.clientX,
                 e.clientY,
                 layoutSnapshotRef.current,
                 itemsRef.current.length,
-                containerRef.current?.getBoundingClientRect() ?? null
+                cachedContainerRectRef.current || undefined
             );
             setPlaceholderIndex(newIndex);
         }
-    }, [dragRef, itemsRef, layoutSnapshotRef, containerRef, setDragState, setPlaceholderIndex, onDragOut]);
+    }, [dragRef, itemsRef, layoutSnapshotRef, containerRef, setDragState, setPlaceholderIndex, onDragOut, strategy, dragElementRef, cachedContainerRectRef]);
 
     /**
      * 处理外部拖拽 (External Drag)
@@ -148,12 +170,12 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
 
         const handleExternalMouseMove = (e: MouseEvent) => {
             // 计算落点
-            const newIndex = calculateFolderDropIndex(
+            const newIndex = strategy.calculatePlaceholder(
                 e.clientX,
                 e.clientY,
                 layoutSnapshotRef.current,
-                items.length, // 使用当前 items 长度 (外部 item 尚未加入)
-                containerRef.current?.getBoundingClientRect() ?? null
+                items.length,
+                cachedContainerRectRef.current || undefined
             );
             setPlaceholderIndex(newIndex);
         };
@@ -166,7 +188,53 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
 
 
     /**
-     * 处理鼠标松开 (Drop)
+     * 处理归位动画完成 (Stage 2: Commit)
+     * 在动画结束后执行实际的数据更新
+     * 
+     * 关键点：
+     * 1. 此函数应由 transitionend 事件触发，而非 setTimeout
+     * 2. 必须在此函数中才重置 placeholderIndex，以保持挤压动画状态
+     * 3. 数据更新 (onReorder) 必须在所有视觉动画完成后执行
+     */
+    const handleAnimationComplete = useCallback(() => {
+        const currentDrag = dragRef.current;
+
+        if (!currentDrag.isAnimatingReturn) return;
+
+        // 类型安全的动作处理
+        const data = currentDrag.targetActionData;
+        if (data) {
+            switch (data.type) {
+                case 'reorder':
+                    onReorder(data.newItems);
+                    break;
+                case 'dragOut':
+                    if (onDragOut) {
+                        onDragOut(data.item, data.mousePosition);
+                    }
+                    break;
+            }
+        }
+
+        // 重置所有状态
+        setDragState(resetFolderDragState());
+        resetPlaceholderState();
+
+        if (onDragEnd) {
+            onDragEnd();
+        }
+    }, [dragRef, onReorder, onDragOut, onDragEnd, setDragState, resetPlaceholderState]);
+
+    /**
+     * 处理鼠标松开 (Drop) - 两阶段释放
+     * 
+     * Stage 1 (本函数): 触发归位动画，设置 isAnimatingReturn = true
+     * Stage 2 (handleAnimationComplete): 动画结束后提交数据
+     * 
+     * 关键：
+     * 1. 不在此处调用 onReorder
+     * 2. 保留 placeholderIndex 维持挤压动画
+     * 3. 使用 transitionend 监听动画完成
      */
     const handleMouseUp = useCallback(() => {
         const currentDrag = dragRef.current;
@@ -177,26 +245,77 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         window.removeEventListener('mousemove', handleMouseMove);
 
         if (currentDrag.isDragging && currentDrag.item) {
-            // Case: Drag Out
+            // ========== Case: Drag Out ==========
             if (currentDrag.targetAction === 'dragOut' && onDragOut) {
-                onDragOut(currentDrag.item, currentDrag.currentPosition);
+                // DragOut 不需要归位动画，直接执行
+                // Use last known position from ref (since state is not updated during drag)
+                const finalPos = lastPositionRef.current || currentDrag.currentPosition;
+                onDragOut(currentDrag.item, finalPos);
+
+                setDragState(resetFolderDragState());
+                resetPlaceholderState();
+                if (onDragEnd) onDragEnd();
+                return;
             }
-            // Case: Reorder
-            // 执行排序
-            else if (currentPlaceholder !== -1 && currentPlaceholder !== currentDrag.originalIndex) {
-                const newItems = reorderList(itemsRef.current, currentDrag.originalIndex, currentPlaceholder);
-                onReorder(newItems);
+
+            // ========== Case: Reorder with Animation ==========
+            if (currentPlaceholder !== -1 && currentPlaceholder !== currentDrag.originalIndex) {
+                // 计算目标位置 (网格坐标 -> 屏幕坐标)
+                const gridElement = containerRef.current;
+                const gridRect = gridElement?.getBoundingClientRect();
+                if (gridRect && gridElement) {
+                    const CELL_SIZE = FOLDER_CELL_SIZE;
+                    const COLUMNS = FOLDER_COLUMNS;
+
+                    // 获取容器 Padding 偏移量 (CRITICAL: 确保与 CSS Grid 像素级对齐)
+                    const computedStyle = window.getComputedStyle(gridElement);
+                    const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+                    const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+
+                    const targetCol = currentPlaceholder % COLUMNS;
+                    const targetRow = Math.floor(currentPlaceholder / COLUMNS);
+
+                    // 目标屏幕坐标 = 容器左上角 + Padding偏移 + 网格偏移
+                    const targetX = gridRect.left + paddingLeft + targetCol * CELL_SIZE;
+                    const targetY = gridRect.top + paddingTop + targetRow * CELL_SIZE;
+
+                    // 预计算新的 items 顺序 (保存到 state 中，Step 2 使用)
+                    const newItems = reorderList(itemsRef.current, currentDrag.originalIndex, currentPlaceholder);
+
+                    // Stage 1: 触发归位动画
+                    // 关键：isDragging 设为 false，但保留 placeholderIndex 维持挤压效果
+                    setDragState(prev => ({
+                        ...prev,
+                        isDragging: false,
+                        isAnimatingReturn: true,
+                        currentPosition: { x: targetX, y: targetY },
+                        targetPosition: { x: targetX, y: targetY },
+                        targetActionData: {
+                            type: 'reorder',
+                            newItems
+                        }
+                    }));
+
+                    // Stage 2: 使用共享的动画完成工具
+                    onReturnAnimationComplete(dragElementRef.current, () => {
+                        if (dragRef.current.isAnimatingReturn) {
+                            handleAnimationComplete();
+                        }
+                    });
+
+                    return;
+                }
             }
         }
 
-        // 重置状态
+        // Fallback: 无需动画，直接重置
         setDragState(resetFolderDragState());
         resetPlaceholderState();
 
         if (onDragEnd) {
             onDragEnd();
         }
-    }, [dragRef, placeholderRef, onReorder, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove, onDragOut, itemsRef]);
+    }, [dragRef, placeholderRef, containerRef, onDragOut, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove, handleAnimationComplete, itemsRef, dragElementRef]);
 
     /**
      * 鼠标按下处理
@@ -228,58 +347,8 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         );
     }, [isEditMode, setDragState, startDragging, handleMouseMove, handleMouseUp, hasMovedRef, thresholdListenerRef]);
 
-    // 数组重排辅助
-    const reorderList = (list: DockItem[], startIndex: number, endIndex: number) => {
-        const result = Array.from(list);
-        const [removed] = result.splice(startIndex, 1);
-        result.splice(endIndex, 0, removed);
-        return result;
-    };
-
-    // ========== Z字形位移常量 (Z-Shaped Flow Constants) ==========
-    const FOLDER_COLUMNS = 4;       // 文件夹固定4列布局
-    const CELL_SIZE = 72;           // 单元格尺寸 (包含间距)
-
     /**
-     * 辅助函数：计算从 originalIndex 到 visualIndex 的 Z字形位移
-     * 
-     * @param originalIndex - 元素在 DOM 中的原始索引
-     * @param visualIndex   - 元素应该显示的目标视觉索引
-     * @returns { x, y } 像素位移值
-     */
-    const calculateZShapedOffset = (originalIndex: number, visualIndex: number): { x: number; y: number } => {
-        if (originalIndex === visualIndex) {
-            return { x: 0, y: 0 };
-        }
-
-        // 当前 DOM 位置 (基于原始索引)
-        const currentCol = originalIndex % FOLDER_COLUMNS;
-        const currentRow = Math.floor(originalIndex / FOLDER_COLUMNS);
-
-        // 目标视觉位置
-        const targetCol = visualIndex % FOLDER_COLUMNS;
-        const targetRow = Math.floor(visualIndex / FOLDER_COLUMNS);
-
-        // 计算像素位移
-        const x = (targetCol - currentCol) * CELL_SIZE;
-        const y = (targetRow - currentRow) * CELL_SIZE;
-
-        return { x, y };
-    };
-
-    /**
-     * 计算 Grid 布局偏移 (Z-Shaped Flow Animation)
-     * 
-     * 核心逻辑：
-     * 1. 外部拖入: index >= placeholderIndex 的所有图标 visualIndex = index + 1
-     * 2. 内部拖拽:
-     *    - 向前拖 (Drag Backwards, src > dst): 范围 [dst, src) 的元素 visualIndex = index + 1
-     *    - 向后拖 (Drag Forwards, src < dst):  范围 (src, dst] 的元素 visualIndex = index - 1
-     * 
-     * Z字形位移算法：
-     * - 当前位置: (currentRow, currentCol) = (floor(index/4), index%4)
-     * - 目标位置: (targetRow, targetCol) = (floor(visualIndex/4), visualIndex%4)
-     * - 位移值: x = (targetCol - currentCol) * 72, y = (targetRow - currentRow) * 72
+     * 计算 Grid 布局偏移 (使用 Strategy)
      */
     const getItemTransform = useCallback((index: number) => {
         // 如果没有占位符，不偏移
@@ -287,49 +356,17 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
             return { x: 0, y: 0 };
         }
 
-        // ========== Case 1: 外部拖入 (External Drag) ==========
-        if (externalDragItem) {
-            // 逻辑：所有 index >= placeholderIndex 的元素，visualIndex = index + 1
-            if (index >= placeholderIndex) {
-                return calculateZShapedOffset(index, index + 1);
-            }
-            return { x: 0, y: 0 };
-        }
+        // 关键：isAnimatingReturn 期间也要保持挤压效果，直到数据更新
+        const isInternalDragActive = (dragState.isDragging || dragState.isAnimatingReturn) && dragState.originalIndex !== -1;
 
-        // ========== Case 2: 内部拖拽 (Internal Drag) ==========
-        if (dragState.isDragging && dragState.originalIndex !== -1) {
-            const draggingIndex = dragState.originalIndex;
+        return strategy.calculateTransform(
+            index,
+            placeholderIndex,
+            isInternalDragActive ? dragState.originalIndex : (externalDragItem ? -1 : dragState.originalIndex),
+            dragState.isDragging || dragState.isAnimatingReturn
+        );
 
-            // 如果是正在拖拽的源项，不需要位移 (它会被隐藏/跟随鼠标)
-            if (index === draggingIndex) {
-                return { x: 0, y: 0 };
-            }
-
-            // ===== 场景 B1: 向前拖 (Drag Backwards) =====
-            // draggingIndex > placeholderIndex
-            // 范围 [placeholderIndex, draggingIndex) 的元素需要向后移动 +1
-            if (draggingIndex > placeholderIndex) {
-                if (index >= placeholderIndex && index < draggingIndex) {
-                    return calculateZShapedOffset(index, index + 1);
-                }
-            }
-
-            // ===== 场景 B2: 向后拖 (Drag Forwards) =====
-            // draggingIndex < placeholderIndex
-            // 范围 (draggingIndex, placeholderIndex] 的元素需要向前移动 -1
-            if (draggingIndex < placeholderIndex) {
-                if (index > draggingIndex && index <= placeholderIndex) {
-                    return calculateZShapedOffset(index, index - 1);
-                }
-            }
-
-            // 不在影响范围内，保持不动
-            return { x: 0, y: 0 };
-        }
-
-        return { x: 0, y: 0 };
-
-    }, [dragState.isDragging, dragState.originalIndex, placeholderIndex, externalDragItem]);
+    }, [dragState.isDragging, dragState.isAnimatingReturn, dragState.originalIndex, placeholderIndex, externalDragItem, strategy]);
 
     const isDraggingOut = dragState.targetAction === 'dragOut';
 

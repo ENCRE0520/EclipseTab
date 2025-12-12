@@ -50,6 +50,8 @@ function App() {
   const [showEditor, setShowEditor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [dockWidth, setDockWidth] = useState<number | null>(null);
+  // 跟踪拖拽来源，用于区分内部拖拽和外部拖拽
+  const [draggingFromFolder, setDraggingFromFolder] = useState(false);
 
   const handleSearch = (query: string) => {
     const searchUrl = `${selectedSearchEngine.url}${encodeURIComponent(query)}`;
@@ -156,9 +158,10 @@ function App() {
           onItemsReorder={(items) => handleFolderItemsReorder(openFolder.id, items)}
           onItemDragOut={handleDragFromFolder}
           anchorRect={folderAnchor}
-          onDragStart={(item) => setDraggingItem(item)}
-          onDragEnd={() => setDraggingItem(null)}
-          externalDragItem={draggingItem}
+          onDragStart={(item) => { setDraggingItem(item); setDraggingFromFolder(true); }}
+          onDragEnd={() => { setDraggingItem(null); setDraggingFromFolder(false); }}
+          // 只有当拖拽来自 Dock 时才传递 externalDragItem，避免内部拖拽导致宽度扩展
+          externalDragItem={draggingFromFolder ? null : draggingItem}
         />
       )}
       <AddEditModal

@@ -47,6 +47,9 @@ const DockUIContext = createContext<DockUIContextType | undefined>(undefined);
 interface DockDragContextType {
     draggingItem: DockItem | null;
     setDraggingItem: (item: DockItem | null) => void;
+    /** 文件夹是否有活动的占位符 (用于跨组件拖拽检测) */
+    folderPlaceholderActive: boolean;
+    setFolderPlaceholderActive: (active: boolean) => void;
 }
 
 const DockDragContext = createContext<DockDragContextType | undefined>(undefined);
@@ -76,6 +79,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [openFolderId, setOpenFolderIdState] = useState<string | null>(null);
     const [folderAnchor, setFolderAnchor] = useState<DOMRect | null>(null);
     const [draggingItem, setDraggingItem] = useState<DockItem | null>(null);
+    const [folderPlaceholderActive, setFolderPlaceholderActive] = useState(false);
 
     // 加载数据
     useEffect(() => {
@@ -483,7 +487,9 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const dragValue: DockDragContextType = useMemo(() => ({
         draggingItem,
         setDraggingItem,
-    }), [draggingItem]);
+        folderPlaceholderActive,
+        setFolderPlaceholderActive,
+    }), [draggingItem, folderPlaceholderActive]);
 
     return (
         <DockDataContext.Provider value={dataValue}>

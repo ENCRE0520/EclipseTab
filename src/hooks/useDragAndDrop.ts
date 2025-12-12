@@ -1,8 +1,18 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { DockItem } from '../types';
-import { useDragBase, createDockDragState, resetDockDragState, DockDragState } from './useDragBase';
+import { useDragBase, createDockDragState, resetDockDragState, DockDragState, DockActionData } from './useDragBase';
 import { createMouseDownHandler } from '../utils/dragUtils';
-import { isMouseOverFolderView, getFolderViewRect, hasFolderActivePlaceholder } from '../utils/dragDetection';
+import { isMouseOverFolderView, getFolderViewRect } from '../utils/dragDetection';
+
+import { createHorizontalStrategy } from '../utils/dragStrategies';
+import { onReturnAnimationComplete } from '../utils/animationUtils';
+import {
+    DOCK_DRAG_BUFFER,
+    DRAG_THRESHOLD,
+    MERGE_DISTANCE_THRESHOLD,
+    HOVER_OPEN_DELAY,
+    PRE_MERGE_DELAY,
+} from '../constants/layout';
 
 interface UseDragAndDropOptions {
     items: DockItem[];
@@ -15,6 +25,8 @@ interface UseDragAndDropOptions {
     onDragStart?: (item: DockItem) => void;
     onDragEnd?: () => void;
     externalDragItem?: DockItem | null;
+    /** 检查文件夹是否有活动占位符 - 从 Context 读取 */
+    hasFolderPlaceholderActive?: () => boolean;
 }
 
 export const useDragAndDrop = ({
@@ -28,6 +40,7 @@ export const useDragAndDrop = ({
     onDragStart,
     onDragEnd,
     externalDragItem,
+    hasFolderPlaceholderActive,
 }: UseDragAndDropOptions) => {
     // 使用基础 Hook
     const {
@@ -45,6 +58,7 @@ export const useDragAndDrop = ({
         startDragging,
         captureLayoutSnapshot,
         dragElementRef,
+        cleanupDragListeners,
     } = useDragBase<DockDragState>({
         items,
         isEditMode,
@@ -60,10 +74,13 @@ export const useDragAndDrop = ({
     const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
     const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
     const [isPreMerge, setIsPreMerge] = useState(false);
-    const [isOverFolderView, setIsOverFolderView] = useState(false);
+
+    // Create Drag Strategy
+    const strategy = useMemo(() => createHorizontalStrategy(), []);
 
     // Refs
     const dockRef = useRef<HTMLElement | null>(null);
+    const cachedDockRectRef = useRef<DOMRect | null>(null); // 缓存 Dock Rect
     const hoveredFolderRef = useRef<string | null>(null);
     const hoveredAppRef = useRef<string | null>(null);
     const mergeTargetRef = useRef<string | null>(null);
@@ -72,11 +89,25 @@ export const useDragAndDrop = ({
     const potentialMergeTarget = useRef<string | null>(null);
     const lastMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
+    // 拖拽开始时缓存 Dock Rect
+    const cacheDockRect = useCallback(() => {
+        if (dockRef.current) {
+            cachedDockRectRef.current = dockRef.current.getBoundingClientRect();
+        }
+    }, []);
+
     // 同步 Refs
     useEffect(() => { hoveredFolderRef.current = hoveredFolderId; }, [hoveredFolderId]);
     useEffect(() => { hoveredAppRef.current = hoveredAppId; }, [hoveredAppId]);
     useEffect(() => { mergeTargetRef.current = mergeTargetId; }, [mergeTargetId]);
     useEffect(() => { isPreMergeRef.current = isPreMerge; }, [isPreMerge]);
+
+    // Cache dock rect when external drag dragging starts
+    useEffect(() => {
+        if (externalDragItem) {
+            cacheDockRect();
+        }
+    }, [externalDragItem, cacheDockRect]);
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
         const state = dragRef.current;
@@ -85,7 +116,8 @@ export const useDragAndDrop = ({
         // Check if we should start dragging (only for internal items)
         if (!state.isDragging && !externalDragItem && state.item) {
             const dist = Math.hypot(e.clientX - state.startPosition.x, e.clientY - state.startPosition.y);
-            if (dist > 8) { // Increased threshold from 5 to 8px
+            if (dist > DRAG_THRESHOLD) {
+                cacheDockRect(); // 缓存 Dock Rect
                 startDragging(state.item);
             } else {
                 return; // Not dragging yet
@@ -120,7 +152,7 @@ export const useDragAndDrop = ({
         // 使用共享工具函数检测是否在文件夹视图内 - 确保与落点判断一致
         if (activeItem?.type !== 'folder' && isMouseOverFolderView(mouseX, mouseY)) {
             // Over folder view - reset dock-related states
-            setIsOverFolderView(true);
+            // Over folder view - reset dock-related states
             setPlaceholderIndex(null);
             setHoveredFolderId(null);
             setHoveredAppId(null);
@@ -129,13 +161,14 @@ export const useDragAndDrop = ({
             potentialMergeTarget.current = null;
             return;
         }
-        setIsOverFolderView(false);
+
 
         let isInsideDock = false;
 
-        if (dockRef.current) {
-            const dockRect = dockRef.current.getBoundingClientRect();
-            const buffer = 50; // 减小缓冲区，只在靠近 Dock 时触发
+        // 使用缓存的 Dock Rect，减少每帧 DOM 查询
+        const dockRect = cachedDockRectRef.current || dockRef.current?.getBoundingClientRect();
+        if (dockRect) {
+            const buffer = DOCK_DRAG_BUFFER;
             if (
                 mouseX >= dockRect.left - buffer &&
                 mouseX <= dockRect.right + buffer &&
@@ -169,8 +202,8 @@ export const useDragAndDrop = ({
 
             const dist = Math.hypot(draggedCenterX - layoutItem.centerX, draggedCenterY - layoutItem.centerY);
 
-            // Distance threshold for merging (30px)
-            if (dist < 30) {
+            // Distance threshold for merging
+            if (dist < MERGE_DISTANCE_THRESHOLD) {
                 const targetItem = itemsRef.current.find(i => i.id === layoutItem.id);
                 if (targetItem && targetItem.id !== activeItem?.id) {
                     foundMergeTargetId = targetItem.id;
@@ -192,7 +225,7 @@ export const useDragAndDrop = ({
                 const dwellTime = Date.now() - hoverStartTime.current;
 
                 // Case B: Hover to Open (Precise Operation)
-                if (foundMergeType === 'folder' && dwellTime > 500 && !isPreMergeRef.current) {
+                if (foundMergeType === 'folder' && dwellTime > HOVER_OPEN_DELAY && !isPreMergeRef.current) {
                     if (onHoverOpenFolder && activeItem) {
                         const targetFolder = itemsRef.current.find(i => i.id === foundMergeTargetId);
                         if (targetFolder) {
@@ -204,7 +237,7 @@ export const useDragAndDrop = ({
                 }
 
                 // Case A: Direct Drop (Blind Operation)
-                if (dwellTime > 300 && !isPreMergeRef.current) {
+                if (dwellTime > PRE_MERGE_DELAY && !isPreMergeRef.current) {
                     setIsPreMerge(true);
                     setMergeTargetId(foundMergeTargetId);
                     if (foundMergeType === 'folder') {
@@ -274,11 +307,10 @@ export const useDragAndDrop = ({
 
                 setPlaceholderIndex(targetIndex);
             } else {
-                // Fallback if snapshot failed or empty
                 setPlaceholderIndex(0);
             }
         }
-    }, [onDragStart, externalDragItem, startDragging, captureLayoutSnapshot, onHoverOpenFolder, layoutSnapshotRef, itemsRef, setDragState, setPlaceholderIndex, setHoveredFolderId, setHoveredAppId, setMergeTargetId]);
+    }, [strategy, startDragging, captureLayoutSnapshot, onHoverOpenFolder]);
 
     // Handle external drag tracking
     useEffect(() => {
@@ -332,11 +364,11 @@ export const useDragAndDrop = ({
 
         let targetPos: { x: number, y: number } | null = null;
         let action: DockDragState['targetAction'] = null;
-        let actionData: any = null;
+        let actionData: DockActionData = null;
 
         // 判断是否应该放入文件夹：以文件夹的占位符状态为准
         // 如果文件夹显示了占位符，就放入文件夹，无论鼠标当前位置在哪
-        const shouldDropToFolder = state.item.type !== 'folder' && hasFolderActivePlaceholder();
+        const shouldDropToFolder = state.item.type !== 'folder' && hasFolderPlaceholderActive?.();
 
         if (shouldDropToFolder && onDragToOpenFolder && state.item.type !== 'folder') {
             const folderRect = getFolderViewRect();
@@ -346,7 +378,7 @@ export const useDragAndDrop = ({
                     y: folderRect.top + folderRect.height / 2 - 32,
                 };
                 action = 'dragToOpenFolder';
-                actionData = { item: state.item };
+                actionData = { type: 'dragToOpenFolder', item: state.item };
             }
         } else if (isPreMergeState) {
             // ... (Same merge logic) ...
@@ -359,7 +391,7 @@ export const useDragAndDrop = ({
                 const targetFolder = currentItems.find(i => i.id === currentHoveredFolder);
                 if (targetFolder) {
                     action = 'dropToFolder';
-                    actionData = { item: state.item, targetFolder };
+                    actionData = { type: 'dropToFolder', item: state.item, targetFolder };
                 }
             } else if (currentHoveredApp && onMergeFolder) {
                 const targetAppItem = snapshot.find(i => i.id === currentHoveredApp);
@@ -369,7 +401,7 @@ export const useDragAndDrop = ({
                 const targetApp = currentItems.find(i => i.id === currentHoveredApp);
                 if (targetApp) {
                     action = 'mergeFolder';
-                    actionData = { item: state.item, targetItem: targetApp };
+                    actionData = { type: 'mergeFolder', item: state.item, targetItem: targetApp };
                 }
             }
         } else if (currentPlaceholder !== null && currentPlaceholder !== undefined) {
@@ -456,7 +488,7 @@ export const useDragAndDrop = ({
             };
 
             action = 'reorder';
-            actionData = { newItems };
+            actionData = { type: 'reorder', newItems };
         }
 
         if (targetPos && action) {
@@ -477,13 +509,13 @@ export const useDragAndDrop = ({
             potentialMergeTarget.current = null;
             hasMovedRef.current = false;
 
-            // Backup timeout in case transitionend fails
-            setTimeout(() => {
+            // 使用共享的动画完成工具
+            onReturnAnimationComplete(dragElementRef.current, () => {
                 const currentState = dragRef.current;
                 if (currentState.isAnimatingReturn) {
                     handleAnimationComplete();
                 }
-            }, 350); // Slightly longer than CSS transition
+            });
 
         } else {
             // Cancel / Reset
@@ -498,7 +530,13 @@ export const useDragAndDrop = ({
 
             if (onDragEnd) onDragEnd();
         }
-    }, [isOverFolderView, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd, handleMouseMove, setDragState, setPlaceholderIndex, placeholderRef, itemsRef, layoutSnapshotRef, dragRef, hasMovedRef, thresholdListenerRef, hoveredFolderRef, hoveredAppRef, isPreMergeRef]);
+    }, [
+        strategy, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd, onReorder,
+        handleMouseMove,
+        setDragState, setPlaceholderIndex,
+        cleanupDragListeners,
+        hasFolderPlaceholderActive
+    ]); // Optimized dependencies
 
 
     const handleMouseDown = (e: React.MouseEvent, item: DockItem, index: number) => {
@@ -532,28 +570,29 @@ export const useDragAndDrop = ({
             return;
         }
 
-        // Apply Logic
-        switch (state.targetAction) {
-            case 'reorder':
-                if ((state.targetActionData as any)?.newItems) {
-                    onReorder((state.targetActionData as any).newItems);
-                }
-                break;
-            case 'dropToFolder':
-                if ((state.targetActionData as any)?.targetFolder && onDropToFolder) {
-                    onDropToFolder((state.targetActionData as any).item, (state.targetActionData as any).targetFolder);
-                }
-                break;
-            case 'mergeFolder':
-                if ((state.targetActionData as any)?.targetItem && onMergeFolder) {
-                    onMergeFolder((state.targetActionData as any).item, (state.targetActionData as any).targetItem);
-                }
-                break;
-            case 'dragToOpenFolder':
-                if (onDragToOpenFolder) {
-                    onDragToOpenFolder((state.targetActionData as any).item);
-                }
-                break;
+        // 类型安全的动作处理
+        const data = state.targetActionData;
+        if (data) {
+            switch (data.type) {
+                case 'reorder':
+                    onReorder(data.newItems);
+                    break;
+                case 'dropToFolder':
+                    if (onDropToFolder) {
+                        onDropToFolder(data.item, data.targetFolder);
+                    }
+                    break;
+                case 'mergeFolder':
+                    if (onMergeFolder) {
+                        onMergeFolder(data.item, data.targetItem);
+                    }
+                    break;
+                case 'dragToOpenFolder':
+                    if (onDragToOpenFolder) {
+                        onDragToOpenFolder(data.item);
+                    }
+                    break;
+            }
         }
 
         setDragState(resetDockDragState());
@@ -567,48 +606,20 @@ export const useDragAndDrop = ({
         if (targetSlot === null) return 0;
 
         const state = dragRef.current;
-        const itemGap = 72; // 64 (width) + 8 (gap)
 
-        // If dragging internally
-        if (state.isDragging && state.originalIndex !== -1) {
-            const draggedIndex = state.originalIndex;
+        // 关键修复：isAnimatingReturn 期间也要保持挤压效果，直到数据更新
+        const isInternalDragActive = (state.isDragging || state.isAnimatingReturn) && state.originalIndex !== -1;
 
-            // The dragged item itself is hidden or absolute, so its gap is "gone".
-            // But we want to visualize the *new* gap opening up.
+        // 使用策略模式计算偏移
+        const transform = strategy.calculateTransform(
+            index,
+            targetSlot,
+            isInternalDragActive ? state.originalIndex : (externalDragItem ? -1 : state.originalIndex),
+            state.isDragging || state.isAnimatingReturn
+        );
 
-            if (index === draggedIndex) return 0; // It's being dragged
-
-            // Shift items to fill the hole left by draggedIndex
-            // And open a hole at targetSlot.
-
-            // Simplified Logic:
-            // Items between draggedIndex and targetSlot need to shift.
-
-            if (draggedIndex < targetSlot) {
-                // Dragging right
-                // Items from [draggedIndex + 1] to [targetSlot - 1] shift LEFT (-itemGap)
-                if (index > draggedIndex && index < targetSlot) {
-                    return -itemGap;
-                }
-            } else if (draggedIndex > targetSlot) {
-                // Dragging left
-                // Items from [targetSlot] to [draggedIndex - 1] shift RIGHT (+itemGap)
-                if (index >= targetSlot && index < draggedIndex) {
-                    return itemGap;
-                }
-            }
-        }
-        // If external drag
-        else if (externalDragItem) {
-            // Open a hole at targetSlot
-            // Items >= targetSlot shift RIGHT
-            if (index >= targetSlot) {
-                return itemGap;
-            }
-        }
-
-        return 0;
-    }, [externalDragItem, placeholderRef, dragRef]);
+        return transform.x;
+    }, [strategy, externalDragItem, placeholderRef, dragRef]);
 
     // Cleanup when component unmounts
     useEffect(() => {

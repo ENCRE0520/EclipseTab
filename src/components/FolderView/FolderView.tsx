@@ -5,6 +5,18 @@ import { DockItem } from '../../types';
 import { DockItem as DockItemComponent } from '../Dock/DockItem';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import { useFolderDragAndDrop } from '../../hooks/useFolderDragAndDrop';
+import {
+  FOLDER_COLUMNS,
+  FOLDER_ITEM_WIDTH,
+  FOLDER_ITEM_HEIGHT,
+  FOLDER_GAP,
+  FOLDER_CELL_SIZE,
+  EASE_SPRING,
+  EASE_SMOOTH,
+  SQUEEZE_ANIMATION_DURATION,
+  RETURN_ANIMATION_DURATION,
+  FADE_DURATION,
+} from '../../constants/layout';
 import styles from './FolderView.module.css';
 
 interface FolderViewProps {
@@ -21,15 +33,17 @@ interface FolderViewProps {
   externalDragItem?: DockItem | null;
   onDragStart?: (item: DockItem) => void;
   onDragEnd?: () => void;
+  /** 占位符状态变化回调 - 用于同步到 Context */
+  onFolderPlaceholderChange?: (active: boolean) => void;
 }
 
-// Consants for Grid Layout
-const COLUMNS = 4;
-const ITEM_WIDTH = 64;
-const ITEM_HEIGHT = 64;
-const GAP = 8;
-const CELL_WIDTH = ITEM_WIDTH + GAP;
-const CELL_HEIGHT = ITEM_HEIGHT + GAP;
+// Layout Constants (imported from shared constants)
+const COLUMNS = FOLDER_COLUMNS;
+const ITEM_WIDTH = FOLDER_ITEM_WIDTH;
+const ITEM_HEIGHT = FOLDER_ITEM_HEIGHT;
+const GAP = FOLDER_GAP;
+const CELL_WIDTH = FOLDER_CELL_SIZE;
+const CELL_HEIGHT = FOLDER_CELL_SIZE;
 
 export const FolderView: React.FC<FolderViewProps> = ({
   folder,
@@ -44,6 +58,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
   externalDragItem,
   onDragStart,
   onDragEnd,
+  onFolderPlaceholderChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -64,6 +79,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
     externalDragItem,
     onDragStart,
     onDragEnd,
+    onFolderPlaceholderChange,
   });
 
   const items = folder.items || [];
@@ -79,7 +95,8 @@ export const FolderView: React.FC<FolderViewProps> = ({
     // Internal state
     const srcIndex = dragState.originalIndex; // -1 if not dragging internally
     const dstIndex = placeholderIndex;        // null if no target slot
-    const isInternal = dragState.isDragging && srcIndex !== -1;
+    // 关键修复：isAnimatingReturn 期间也要保持挤压效果
+    const isInternal = (dragState.isDragging || dragState.isAnimatingReturn) && srcIndex !== -1;
 
 
     items.forEach((item, index) => {
@@ -131,16 +148,17 @@ export const FolderView: React.FC<FolderViewProps> = ({
     });
 
     return positions;
-  }, [items, dragState.originalIndex, dragState.isDragging, placeholderIndex, externalDragItem]);
+  }, [items, dragState.originalIndex, dragState.isDragging, dragState.isAnimatingReturn, placeholderIndex, externalDragItem]);
 
   // Calculate Container Dimensions
   // Total visible slots = Items count (internal drag: N, external: N+1)
   // Actually, if internal drag: N items. Source is hidden (count-1), Gap is adding (count+1-1 = N). Total N.
   // If external drag: N items. Gap is adding. Total N+1.
   const visualCount = externalDragItem ? items.length + 1 : items.length;
-  // But wait, if internal drag, we have N items in the list. Source is 1.
-  // We effectively show N visual slots (the source is hidden, but the placeholder takes a spot).
-  // So count is items.length.
+
+  // 宽度计算专用：内部拖拽时不扩展宽度（保持 items.length）
+  // 只有外部拖入时才扩展宽度（items.length + 1）
+  const widthItemCount = externalDragItem ? items.length + 1 : items.length;
 
   const totalRows = Math.ceil(Math.max(visualCount, 1) / COLUMNS);
   const gridHeight = totalRows * CELL_HEIGHT - GAP; // Remove last gap
@@ -222,11 +240,13 @@ export const FolderView: React.FC<FolderViewProps> = ({
           data-folder-view="true"
           style={{
             // 宽度: Padding(8*2) + Width
-            // If items < COLUMNS, width adapts.
-            // But we want to avoid jitter.
-            width: (Math.min(visualCount, COLUMNS) * CELL_WIDTH - GAP) + 16,
+            // 内部拖拽时使用 items.length，不扩展宽度
+            // 外部拖入时使用 items.length + 1，扩展宽度
+            width: (Math.min(widthItemCount, COLUMNS) * CELL_WIDTH - GAP) + 16,
             height: 'auto', // Controlled by grid height + padding
-            transition: 'width 200ms cubic-bezier(0.25, 1, 0.5, 1)'
+            transition: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SPRING}`,
+            // 交互安全锁：动画期间禁用交互，防止误操作
+            pointerEvents: dragState.isAnimatingReturn ? 'none' : 'auto'
           }}
         >
           <div
@@ -290,8 +310,9 @@ export const FolderView: React.FC<FolderViewProps> = ({
             transform: isDraggingOut ? 'scale(1.0)' : 'scale(1.0)',
             filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))',
             transition: dragState.isAnimatingReturn
-              ? 'transform 0.2s cubic-bezier(0.4,0,0.2,1), left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), top 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-              : 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+              // 归位动画：使用 iOS 风格阻尼曲线
+              ? `left ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, top ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, transform ${SQUEEZE_ANIMATION_DURATION}ms ease-out`
+              : `transform ${FADE_DURATION}ms ${EASE_SMOOTH}`,
           }}
         >
           <DockItemComponent
