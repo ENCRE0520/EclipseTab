@@ -37,6 +37,7 @@ function App() {
     handleDropOnFolder,
     handleHoverOpenFolder,
     openFolder,
+    setFolderPlaceholderActive, // Add this
   } = useDock();
 
   // 本地 UI 状态 (Modal 相关)
@@ -162,6 +163,7 @@ function App() {
           onDragEnd={() => { setDraggingItem(null); setDraggingFromFolder(false); }}
           // 只有当拖拽来自 Dock 时才传递 externalDragItem，避免内部拖拽导致宽度扩展
           externalDragItem={draggingFromFolder ? null : draggingItem}
+          onFolderPlaceholderChange={setFolderPlaceholderActive} // Add this
         />
       )}
       <AddEditModal

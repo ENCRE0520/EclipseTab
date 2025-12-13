@@ -4,6 +4,7 @@ import { DockItem } from './DockItem';
 import { AddIcon } from './AddIcon';
 import { DragPreview } from '../DragPreview';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
+import { useDockDrag } from '../../context/DockContext';
 import { generateFolderIcon } from '../../utils/iconFetcher';
 import {
     EASE_SWIFT,
@@ -49,6 +50,13 @@ export const Dock: React.FC<DockProps> = ({
     onDragEnd,
 }) => {
     const innerRef = useRef<HTMLDivElement>(null);
+    const { folderPlaceholderActive } = useDockDrag();
+
+    // Sync ref for access in drag callbacks
+    const folderPlaceholderActiveRef = useRef(folderPlaceholderActive);
+    useEffect(() => {
+        folderPlaceholderActiveRef.current = folderPlaceholderActive;
+    }, [folderPlaceholderActive]);
 
     const {
         dragState,
@@ -96,6 +104,7 @@ export const Dock: React.FC<DockProps> = ({
         externalDragItem,
         onDragStart,
         onDragEnd,
+        hasFolderPlaceholderActive: () => folderPlaceholderActiveRef.current,
     });
 
     const isInteracting = dragState.isDragging || dragState.isAnimatingReturn || !!externalDragItem;
