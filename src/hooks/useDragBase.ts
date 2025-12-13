@@ -163,7 +163,7 @@ export const useDragBase = <T extends BaseDragState>(
 
     // 状态
     const [dragState, setDragState] = useState<T>(createInitialState);
-    const [placeholderIndex, setPlaceholderIndex] = useState<number | null>(null);
+    const [placeholderIndex, setPlaceholderIndexState] = useState<number | null>(null);
 
     // Refs
     const itemRefs = useRef<(HTMLElement | null)[]>([]);
@@ -178,10 +178,24 @@ export const useDragBase = <T extends BaseDragState>(
     // 缓存的容器 Rect (拖拽开始时捕获，避免每帧查询 DOM)
     const cachedContainerRectRef = useRef<DOMRect | null>(null);
 
+    // 关键修复：同步更新 state 和 ref，避免渲染时 ref 值滞后
+    const setPlaceholderIndex = useCallback((value: number | null | ((prev: number | null) => number | null)) => {
+        if (typeof value === 'function') {
+            setPlaceholderIndexState(prev => {
+                const newValue = value(prev);
+                placeholderRef.current = newValue; // 同步更新 ref
+                return newValue;
+            });
+        } else {
+            placeholderRef.current = value; // 同步更新 ref
+            setPlaceholderIndexState(value);
+        }
+    }, []);
+
     // 同步 refs
     useEffect(() => { dragRef.current = dragState; }, [dragState]);
     useEffect(() => { itemsRef.current = items; }, [items]);
-    useEffect(() => { placeholderRef.current = placeholderIndex; }, [placeholderIndex]);
+    // placeholderRef 现在由 setPlaceholderIndex 同步更新，不需要 useEffect
 
     // 切换 body class
     useEffect(() => {

@@ -99,8 +99,15 @@ export const createHorizontalStrategy = (): DragStrategy => {
             if (isDragging && originalIndex !== -1) {
                 if (index === originalIndex) return { x: 0, y: 0 };
 
+                // 关键修复：当目标槽位就是当前位置或紧邻右侧时，不需要位移
+                // targetSlot === originalIndex: 放回原位
+                // targetSlot === originalIndex + 1: 占位符在当前项右侧，视觉上是同一位置
+                if (targetSlot === originalIndex || targetSlot === originalIndex + 1) {
+                    return { x: 0, y: 0 };
+                }
+
                 if (originalIndex < targetSlot) {
-                    // 向右拖: 中间项向左移
+                    // 向右拖: 中间项向左移 (originalIndex+1 到 targetSlot-1 范围的项)
                     if (index > originalIndex && index < targetSlot) {
                         return { x: -cellSize, y: 0 };
                     }

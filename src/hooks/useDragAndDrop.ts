@@ -312,6 +312,14 @@ export const useDragAndDrop = ({
         }
     }, [strategy, startDragging, captureLayoutSnapshot, onHoverOpenFolder]);
 
+    // 使用 ref 跟踪外部拖拽状态，避免 React 批量更新导致的时序问题
+    const wasExternalDragActiveRef = useRef(false);
+
+    // 更新外部拖拽状态追踪
+    useEffect(() => {
+        wasExternalDragActiveRef.current = !!externalDragItem;
+    }, [externalDragItem]);
+
     // Handle external drag tracking
     useEffect(() => {
         if (externalDragItem) {
@@ -320,14 +328,30 @@ export const useDragAndDrop = ({
                 window.removeEventListener('mousemove', handleMouseMove);
             };
         } else {
+            // 外部拖拽结束时立即清理所有状态
             setPlaceholderIndex(null);
             setHoveredFolderId(null);
             setHoveredAppId(null);
             setMergeTargetId(null);
             setIsPreMerge(false);
             potentialMergeTarget.current = null;
+            // 清理布局快照，防止陈旧数据影响后续操作
+            layoutSnapshotRef.current = [];
         }
     }, [externalDragItem, handleMouseMove, setPlaceholderIndex]);
+
+    // 关键修复：当 items 变化时，如果之前有外部拖拽活动，立即清理占位符
+    // 使用 ref 而非 state 来判断，避免 React 批量更新导致的时序问题
+    useEffect(() => {
+        // 检查 ref（代表上一次渲染时的状态）而非当前 state
+        if (wasExternalDragActiveRef.current) {
+            // items 变化说明 drop 已经完成，立即清理占位符
+            setPlaceholderIndex(null);
+            layoutSnapshotRef.current = [];
+            // 重置追踪标志
+            wasExternalDragActiveRef.current = false;
+        }
+    }, [items, setPlaceholderIndex]);
 
     // Handle mouse up with animation delay logic
     const handleMouseUp = useCallback(() => {
@@ -418,73 +442,71 @@ export const useDragAndDrop = ({
             }
 
             // Calculate Target Position for "Fly Back"
-            // This is tricky. We need the position of the *slot* where it will land.
-            // We can use the snapshot.
-
-            // If we drop at index 2. The item currently at index 2 (in snapshot) is the visual target?
-            // Or we calculate based on gap.
-
-            // Simplified: Just use the coordinate of the snapshot item at that index?
-            // If I insert at 0, I want to fly to snapshot[0].left.
-            // If I insert at end, I want snapshot[last].right + gap.
-
-            // But wait, if I am reordering from 0 to 1.
-            // Original: [A, B, C]
-            // Snapshot: A(0), B(64), C(128)
-            // Drag A. Target index 2.
-            // List becomes [B, A, C]
-            // A should fly to position of B (in visual flow) or C? 
-            // Position of index 1 (where A lands).
-            // In original snapshot, index 1 is B at 64. 
-            // So A should fly to 64.
-
-            // So, targetX = snapshot[insertIndex] (or effective visual index)
-
-            // Wait, if I shift everything, using original snapshot is good.
-            // Layout: 0:0px, 1:72px, 2:144px.
-            // Insert at 1. Target is 72px.
+            // 
+            // 关键修复：获取第一个可见图标的 **实时** 位置作为基准
+            // 
+            // 问题分析：
+            // - snapshot 是拖拽开始时捕获的静态快照
+            // - 在内部拖拽期间，由于挤压动画，实际布局已经改变了
+            // - 例如：从索引0拖到索引2时，原位置0是空的，index1和index2已经向左挤压
+            // - 使用 snapshot[0].rect.left 作为基准会导致计算出的目标位置偏移
+            //
+            // 解决方案：
+            // 获取当前第一个非拖拽项目的实时位置作为基准
+            // 因为在内部拖拽时，源位置是空的（隐藏状态），其他项目会挤压填充
+            // 所以第一个可见项目的位置就是当前布局的基准点
+            const CELL_SIZE = 72; // DOCK_CELL_SIZE = 64 + 8
 
             let targetX = 0;
+            let targetY = 0;
 
-            if (currentPlaceholder < snapshot.length) {
-                const snapItem = snapshot[currentPlaceholder];
-                if (snapItem) {
-                    targetX = snapItem.rect.left;
+            // 获取第一个非拖拽图标的实时位置
+            const firstVisibleRef = itemRefs.current.find((ref, idx) => ref && idx !== oldIndex);
+            if (firstVisibleRef) {
+                const firstVisibleRect = firstVisibleRef.getBoundingClientRect();
+                // 找到这个图标的原始索引
+                const firstVisibleIndex = itemRefs.current.findIndex((ref, idx) => ref === firstVisibleRef && idx !== oldIndex);
+
+                // 在内部拖拽时，如果这个图标在原索引之后，它已经向左挤压了一格
+                // 所以它的视觉位置对应的是 (firstVisibleIndex - 1) 如果 firstVisibleIndex > oldIndex
+                // 否则对应 firstVisibleIndex
+                let firstVisibleVisualIndex = firstVisibleIndex;
+                if (oldIndex !== -1 && firstVisibleIndex > oldIndex) {
+                    firstVisibleVisualIndex = firstVisibleIndex - 1;
                 }
+
+                // 现在可以计算基准位置了
+                // firstVisibleRect.left 对应的视觉位置是 firstVisibleVisualIndex
+                // 所以基准位置 baseX = firstVisibleRect.left - firstVisibleVisualIndex * CELL_SIZE
+                const baseX = firstVisibleRect.left - firstVisibleVisualIndex * CELL_SIZE;
+                const baseY = firstVisibleRect.top;
+
+                // 目标位置 = 基准位置 + 目标视觉索引 * 单元格尺寸
+                // 对于内部拖拽，我们需要考虑源位置被移除后的视觉布局
+                // visualTargetIndex 是占位符位置
+                // 在挤压后的布局中，目标位置 = baseX + insertIndex * CELL_SIZE
+                // 因为 insertIndex 是最终在数组中的位置，也是挤压后的视觉位置
+                targetX = baseX + insertIndex * CELL_SIZE;
+                targetY = baseY;
+            } else if (snapshot.length > 0 && snapshot[0]) {
+                // Fallback to snapshot if no visible ref (shouldn't happen normally)
+                const baseX = snapshot[0].rect.left;
+                const baseY = snapshot[0].rect.top;
+                targetX = baseX + insertIndex * CELL_SIZE;
+                targetY = baseY;
             } else {
-                // Append to end
-                const lastItem = snapshot[snapshot.length - 1];
-                if (lastItem) {
-                    targetX = lastItem.rect.right + 8; // + gap
-                } else {
-                    // Empty dock
-                    const dockContainer = document.querySelector('[data-dock-container="true"]');
-                    if (dockContainer) {
-                        targetX = dockContainer.getBoundingClientRect().left + 8;
-                    }
+                // Fallback: 使用容器位置
+                const dockContainer = dockRef.current || document.querySelector('[data-dock-container="true"]');
+                const dockRect = dockContainer?.getBoundingClientRect();
+                if (dockRect) {
+                    targetX = dockRect.left + 8 + insertIndex * CELL_SIZE;
+                    targetY = dockRect.top + 8;
                 }
             }
 
-            // Adjust if we are moving the item itself (internal drag)
-            // If dragging item 0 to index 0... 
-            // If dragging item 0 to index 1.
-            // New list: B, A.
-            // Insert index is 1. (Provided we subtracted 1 if needed).
-            // Yes, `insertIndex` is the index in the *new* array.
-            // So we want the position corresponding to `insertIndex` in the *snapshot* array?
-            // Snapshot is static.
-            // Index 0 in Snapshot is at 0px. Index 1 at 72px.
-            // If A ends up at index 1 in new array, it should be at 72px.
-            // So yes, `snapshot[insertIndex].rect.left` is the correct target X.
-            // Unless we appended, then it's after the last one.
-
-            // Correction: If we drag item from left to right, the items in between shift LEFT.
-            // Visual holes are handled by `getItemTransform`.
-            // But the *final* destination is a specific slot.
-
             targetPos = {
                 x: targetX,
-                y: snapshot[0]?.rect.top || (dockRef.current?.getBoundingClientRect().top || 0) + 8
+                y: targetY
             };
 
             action = 'reorder';
@@ -496,6 +518,9 @@ export const useDragAndDrop = ({
                 ...prev,
                 isDragging: false,
                 isAnimatingReturn: true,
+                // 关键修复：更新 currentPosition 以触发 CSS transition
+                // Portal 使用 currentPosition 作为 left/top，更新它才能触发动画
+                currentPosition: targetPos!,
                 targetPosition: targetPos!,
                 targetAction: action,
                 targetActionData: actionData,
@@ -570,8 +595,16 @@ export const useDragAndDrop = ({
             return;
         }
 
-        // 类型安全的动作处理
+        // 关键修复：先清理状态，再执行数据更新
+        // 这避免了在动作执行后、状态清理前的一帧渲染中，
+        // getItemTransform 使用旧的 originalIndex/placeholderIndex 计算新的 items 布局
         const data = state.targetActionData;
+
+        // 先重置所有拖拽状态
+        setDragState(resetDockDragState());
+        setPlaceholderIndex(null);
+
+        // 然后执行数据操作
         if (data) {
             switch (data.type) {
                 case 'reorder':
@@ -594,9 +627,6 @@ export const useDragAndDrop = ({
                     break;
             }
         }
-
-        setDragState(resetDockDragState());
-        setPlaceholderIndex(null);
 
         if (onDragEnd) onDragEnd();
     }, [onReorder, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd, setDragState, setPlaceholderIndex, dragRef]);
