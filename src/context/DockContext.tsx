@@ -427,7 +427,11 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setDockItems(prev => {
             return prev.map(item => {
                 if (item.id === targetFolder.id) {
-                    const mergedItems = [...(item.items || []), ...itemsToAdd];
+                    // Prevent duplicates: Filter out items that are already in the folder
+                    const existingIds = new Set((item.items || []).map(i => i.id));
+                    const uniqueItemsToAdd = itemsToAdd.filter(add => !existingIds.has(add.id));
+
+                    const mergedItems = [...(item.items || []), ...uniqueItemsToAdd];
                     return {
                         ...item,
                         items: mergedItems,

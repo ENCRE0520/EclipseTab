@@ -79,9 +79,23 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
         return `transform ${FADE_DURATION}ms ${EASE_SMOOTH}, box-shadow ${FADE_DURATION}ms ${EASE_SMOOTH}`;
     };
 
+    // 防止重复触发回调 (left 和 top 可能同时只有其中之一变化，或者同时完成)
+    const hasCalledCompleteRef = React.useRef(false);
+
+    React.useEffect(() => {
+        if (isAnimatingReturn) {
+            hasCalledCompleteRef.current = false;
+        }
+    }, [isAnimatingReturn]);
+
     const handleTransitionEnd = (e: React.TransitionEvent) => {
         // 只在归位动画的 left/top 过渡完成时触发回调
-        if (isAnimatingReturn && (e.propertyName === 'left' || e.propertyName === 'top')) {
+        // 且确保只触发一次
+        if (isAnimatingReturn &&
+            !hasCalledCompleteRef.current &&
+            (e.propertyName === 'left' || e.propertyName === 'top')) {
+
+            hasCalledCompleteRef.current = true;
             onAnimationComplete?.();
         }
     };

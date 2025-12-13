@@ -675,7 +675,7 @@ export const useDragAndDrop = ({
             : (externalDragItem ? -1 : dragState.originalIndex);
         const isDragging = dragState.isDragging || dragState.isAnimatingReturn;
 
-        return items.map((_, index) => {
+        const transforms = items.map((_, index) => {
             const transform = strategy.calculateTransform(
                 index,
                 targetSlot,
@@ -684,6 +684,17 @@ export const useDragAndDrop = ({
             );
             return transform.x;
         });
+
+        // Add transform for the divider/extra elements at the end
+        const dividerTransform = strategy.calculateTransform(
+            items.length,
+            targetSlot,
+            originalIndex,
+            isDragging
+        );
+        transforms.push(dividerTransform.x);
+
+        return transforms;
     }, [
         placeholderIndex,
         dragState.isDragging,

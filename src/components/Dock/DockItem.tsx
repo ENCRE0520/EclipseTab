@@ -112,9 +112,20 @@ const DockItemComponent: React.FC<DockItemProps> = ({
     }
   };
 
+  // Generate a stable random delay based on item ID to desynchronize shake animation
+  const animationDelay = React.useMemo(() => {
+    let hash = 0;
+    for (let i = 0; i < item.id.length; i++) {
+      hash = ((hash << 5) - hash) + item.id.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${-(Math.abs(hash) % 1000)}ms`;
+  }, [item.id]);
+
   return (
     <div
       className={`${styles.dockItem} ${isEditMode ? styles.editMode : ''} ${isDragging ? styles.dragging : ''} ${isDropTarget ? styles.dropTarget : ''} ${isMergeTarget ? styles.pulse : ''}`}
+      style={{ animationDelay }}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
