@@ -184,7 +184,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         return () => {
             window.removeEventListener('mousemove', handleExternalMouseMove);
         };
-    }, [externalDragItem, items.length, containerRef, setPlaceholderIndex, captureLayoutSnapshot, layoutSnapshotRef]);
+    }, [externalDragItem, items.length, setPlaceholderIndex, captureLayoutSnapshot, strategy, cachedContainerRectRef]);
 
 
     /**

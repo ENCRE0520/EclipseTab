@@ -3,6 +3,7 @@
  */
 
 import { Position, LayoutItem, calculateFolderDropIndex } from './dragUtils';
+import { isMouseOverRect } from './dragDetection';
 import { DockItem } from '../types';
 
 
@@ -208,20 +209,6 @@ export const createGridStrategy = (columns: number = 4): DragStrategy => {
             return !isMouseOverRect(mouseX, mouseY, containerRect, buffer);
         },
     };
-};
-
-/**
- * Helper to check if mouse is over rect (duplicated from detection to keep strategy independent if needed, 
- * but we can also import. For now, inline simple check or import.)
- * Actually we can just import from dragDetection if we want, or implementing simple logic here.
- */
-const isMouseOverRect = (x: number, y: number, rect: DOMRect, buffer: number = 0) => {
-    return (
-        x >= rect.left - buffer &&
-        x <= rect.right + buffer &&
-        y >= rect.top - buffer &&
-        y <= rect.bottom + buffer
-    );
 };
 
 

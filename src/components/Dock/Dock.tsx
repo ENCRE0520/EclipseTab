@@ -1,16 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { DockItem as DockItemType } from '../../types';
 import { DockItem } from './DockItem';
 import { AddIcon } from './AddIcon';
+import { DragPreview } from '../DragPreview';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { generateFolderIcon } from '../../utils/iconFetcher';
 import {
     EASE_SWIFT,
-    EASE_SPRING,
-    EASE_SMOOTH,
     SQUEEZE_ANIMATION_DURATION,
-    RETURN_ANIMATION_DURATION,
     FADE_DURATION,
 } from '../../constants/layout';
 import styles from './Dock.module.css';
@@ -160,6 +157,7 @@ export const Dock: React.FC<DockProps> = ({
                                 // When cursor is far from dock, collapse width so dock shrinks
                                 // When cursor is over dock (placeholderIndex set), keep width for transform-based gap
                                 placeholderIndex === null ? {
+                                    '--stagger-index': index,
                                     width: 0,
                                     minWidth: 0,
                                     overflow: 'hidden',
@@ -169,7 +167,8 @@ export const Dock: React.FC<DockProps> = ({
                                     transition: isInteracting
                                         ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
                                         : 'none',
-                                } : {
+                                } as React.CSSProperties : {
+                                    '--stagger-index': index,
                                     width: 64,
                                     minWidth: 64,
                                     opacity: 0,
@@ -179,13 +178,14 @@ export const Dock: React.FC<DockProps> = ({
                                     transition: isInteracting
                                         ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
                                         : 'none',
-                                }
+                                } as React.CSSProperties
                             ) : {
+                                '--stagger-index': index,
                                 transform: `translateX(${translateX}px)`,
                                 transition: isInteracting
                                     ? `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
                                     : 'none',
-                            }}
+                            } as React.CSSProperties}
                         >
                             <DockItem
                                 item={item}
@@ -242,48 +242,16 @@ export const Dock: React.FC<DockProps> = ({
                     />
                 )}
             </div>
-            {(dragState.isDragging || dragState.isAnimatingReturn) && dragState.item && createPortal(
-                <div
-                    ref={el => {
-                        // Keep internal strict ref for DOM updates
-                        if (dragElementRef) {
-                            dragElementRef.current = el;
-                        }
-                    }}
-                    className={dragState.isAnimatingReturn ? styles.dragPreviewReturn : ''}
-                    style={{
-                        position: 'fixed',
-                        left: dragState.currentPosition.x, // Initial position
-                        top: dragState.currentPosition.y,  // Initial position
-                        width: 64,
-                        height: 64,
-                        pointerEvents: 'none',
-                        zIndex: 9999,
-                        transform: isPreMerge ? 'scale(0.6)' : 'scale(1.0)',
-                        filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.3))',
-                        transition: dragState.isAnimatingReturn
-                            // 归位动画：使用 iOS 风格阻尼曲线
-                            ? `left ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, top ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, transform ${SQUEEZE_ANIMATION_DURATION}ms ease-out`
-                            : `transform ${FADE_DURATION}ms ${EASE_SMOOTH}`,
-                    }}
-                    onTransitionEnd={(e) => {
-                        // 只在归位动画的 left/top 过渡完成时触发回调
-                        if (dragState.isAnimatingReturn && (e.propertyName === 'left' || e.propertyName === 'top')) {
-                            handleAnimationComplete();
-                        }
-                    }}
-                >
-                    <DockItem
-                        item={dragState.item}
-                        isEditMode={isEditMode}
-                        onClick={() => { }}
-                        onEdit={() => { }}
-                        onDelete={() => { }}
-                        isDragging={true}
-                    />
-                </div>,
-                document.body
-            )}
+            <DragPreview
+                isActive={dragState.isDragging || dragState.isAnimatingReturn}
+                item={dragState.item}
+                position={dragState.currentPosition}
+                isAnimatingReturn={dragState.isAnimatingReturn}
+                isEditMode={isEditMode}
+                dragElementRef={dragElementRef}
+                isPreMerge={isPreMerge}
+                onAnimationComplete={handleAnimationComplete}
+            />
         </header>
     );
 };

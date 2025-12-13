@@ -8,6 +8,8 @@ import { createHorizontalStrategy } from '../utils/dragStrategies';
 import { onReturnAnimationComplete } from '../utils/animationUtils';
 import {
     DOCK_DRAG_BUFFER,
+    DOCK_CELL_SIZE,
+    DOCK_PADDING,
     DRAG_THRESHOLD,
     MERGE_DISTANCE_THRESHOLD,
     HOVER_OPEN_DELAY,
@@ -310,7 +312,7 @@ export const useDragAndDrop = ({
                 setPlaceholderIndex(0);
             }
         }
-    }, [strategy, startDragging, captureLayoutSnapshot, onHoverOpenFolder]);
+    }, [externalDragItem, startDragging, captureLayoutSnapshot, onHoverOpenFolder, setPlaceholderIndex, cacheDockRect]);
 
     // 使用 ref 跟踪外部拖拽状态，避免 React 批量更新导致的时序问题
     const wasExternalDragActiveRef = useRef(false);
@@ -455,7 +457,7 @@ export const useDragAndDrop = ({
             // 获取当前第一个非拖拽项目的实时位置作为基准
             // 因为在内部拖拽时，源位置是空的（隐藏状态），其他项目会挤压填充
             // 所以第一个可见项目的位置就是当前布局的基准点
-            const CELL_SIZE = 72; // DOCK_CELL_SIZE = 64 + 8
+            const CELL_SIZE = DOCK_CELL_SIZE;
 
             let targetX = 0;
             let targetY = 0;
@@ -499,8 +501,8 @@ export const useDragAndDrop = ({
                 const dockContainer = dockRef.current || document.querySelector('[data-dock-container="true"]');
                 const dockRect = dockContainer?.getBoundingClientRect();
                 if (dockRect) {
-                    targetX = dockRect.left + 8 + insertIndex * CELL_SIZE;
-                    targetY = dockRect.top + 8;
+                    targetX = dockRect.left + DOCK_PADDING + insertIndex * CELL_SIZE;
+                    targetY = dockRect.top + DOCK_PADDING;
                 }
             }
 

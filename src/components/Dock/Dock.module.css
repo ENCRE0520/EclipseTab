@@ -35,39 +35,10 @@
     flex-shrink: 0;
 }
 
-/* 编辑模式下第 4 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(4) .dockItem {
-    animation-delay: 120ms;
-}
-
-/* 编辑模式下第 5 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(5) .dockItem {
-    animation-delay: 160ms;
-}
-
-/* 编辑模式下第 6 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(6) .dockItem {
-    animation-delay: 190ms;
-}
-
-/* 编辑模式下第 7 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(7) .dockItem {
-    animation-delay: 220ms;
-}
-
-/* 编辑模式下第 8 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(8) .dockItem {
-    animation-delay: 240ms;
-}
-
-/* 编辑模式下第 9 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(9) .dockItem {
-    animation-delay: 270ms;
-}
-
-/* 编辑模式下第 10 个图标的动画延迟 */
-.dockContent.editMode>div:nth-child(10) .dockItem {
-    animation-delay: 320ms;
+/* 编辑模式下的动画延迟 - 使用 CSS 变量实现动态交错 */
+/* --stagger-index 由 JS 设置，每个索引增加 40ms 延迟 */
+.dockContent.editMode>div .dockItem {
+    animation-delay: calc(var(--stagger-index, 0) * 40ms);
 }
 
 /* 分隔线 - 用于分隔固定图标和其他图标 */

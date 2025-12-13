@@ -23,7 +23,7 @@ const DockItemComponent: React.FC<DockItemProps> = ({
   onEdit,
   onDelete,
   isDragging = false,
-  staggerIndex,
+  staggerIndex: _staggerIndex,
   isDropTarget = false,
   onLongPress,
   onMouseDown,
@@ -122,7 +122,6 @@ const DockItemComponent: React.FC<DockItemProps> = ({
           setPressTimer(null);
         }
       }}
-      style={isEditMode && staggerIndex !== undefined ? { animationDelay: `${staggerIndex * 0.04}s` } : undefined}
     >
       <div className={`${styles.iconContainer} ${item.type !== 'folder' ? styles.nonFolderBg : ''} ${isHovered && !isEditMode ? styles.hovered : ''}`}>
         {item.type === 'folder' ? (

@@ -3,6 +3,7 @@
  */
 
 import { DockItem } from '../types';
+import { MOVE_THRESHOLD } from '../constants/layout';
 
 /**
  * 位置接口
@@ -222,7 +223,7 @@ export const createMouseDownHandler = <T extends BaseDragState>(
 
     const moveThresholdCheck = (moveEvent: MouseEvent) => {
         const dist = calculateDistance(moveEvent.clientX, moveEvent.clientY, startX, startY);
-        if (dist > 3) {
+        if (dist > MOVE_THRESHOLD) {
             hasMovedRef.current = true;
 
             if (!dragDataSet) {

@@ -21,6 +21,9 @@ export const DOCK_CELL_SIZE = DOCK_ITEM_WIDTH + DOCK_ITEM_GAP; // 72
 /** Dock 拖拽检测缓冲区 (px) */
 export const DOCK_DRAG_BUFFER = 50;
 
+/** Dock 内边距 (px) */
+export const DOCK_PADDING = 8;
+
 // ============================================================================
 // Folder 布局
 // ============================================================================
@@ -43,12 +46,18 @@ export const FOLDER_CELL_SIZE = FOLDER_ITEM_WIDTH + FOLDER_GAP; // 72
 /** Folder 拖拽检测缓冲区 (px) */
 export const FOLDER_DRAG_BUFFER = 50;
 
+/** Folder 内边距 (px) */
+export const FOLDER_PADDING = 8;
+
 // ============================================================================
 // 拖拽阈值
 // ============================================================================
 
 /** 拖拽触发阈值 - 鼠标移动超过此距离才开始拖拽 (px) */
 export const DRAG_THRESHOLD = 8;
+
+/** 移动检测阈值 - 用于判断是否开始移动 (px) */
+export const MOVE_THRESHOLD = 3;
 
 /** 合并/放入文件夹的距离阈值 (px) */
 export const MERGE_DISTANCE_THRESHOLD = 30;

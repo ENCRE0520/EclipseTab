@@ -3,6 +3,7 @@ import { useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { DockItem } from '../../types';
 import { DockItem as DockItemComponent } from '../Dock/DockItem';
+import { DragPreview } from '../DragPreview';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import { useFolderDragAndDrop } from '../../hooks/useFolderDragAndDrop';
 import {
@@ -12,10 +13,7 @@ import {
   FOLDER_GAP,
   FOLDER_CELL_SIZE,
   EASE_SPRING,
-  EASE_SMOOTH,
   SQUEEZE_ANIMATION_DURATION,
-  RETURN_ANIMATION_DURATION,
-  FADE_DURATION,
 } from '../../constants/layout';
 import styles from './FolderView.module.css';
 
@@ -292,40 +290,15 @@ export const FolderView: React.FC<FolderViewProps> = ({
         </div>
       </div>
       {/* Drag preview overlay */}
-      {(dragState.isDragging || dragState.isAnimatingReturn) && dragState.item && createPortal(
-        <div
-          ref={el => {
-            if (dragElementRef) {
-              dragElementRef.current = el;
-            }
-          }}
-          style={{
-            position: 'fixed',
-            left: dragState.currentPosition.x,
-            top: dragState.currentPosition.y,
-            width: 64,
-            height: 64,
-            pointerEvents: 'none',
-            zIndex: 9999,
-            transform: isDraggingOut ? 'scale(1.0)' : 'scale(1.0)',
-            filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))',
-            transition: dragState.isAnimatingReturn
-              // 归位动画：使用 iOS 风格阻尼曲线
-              ? `left ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, top ${RETURN_ANIMATION_DURATION}ms ${EASE_SPRING}, transform ${SQUEEZE_ANIMATION_DURATION}ms ease-out`
-              : `transform ${FADE_DURATION}ms ${EASE_SMOOTH}`,
-          }}
-        >
-          <DockItemComponent
-            item={dragState.item}
-            isEditMode={isEditMode}
-            onClick={() => { }}
-            onEdit={() => { }}
-            onDelete={() => { }}
-            isDragging={true}
-          />
-        </div>,
-        document.body
-      )}
+      <DragPreview
+        isActive={dragState.isDragging || dragState.isAnimatingReturn}
+        item={dragState.item}
+        position={dragState.currentPosition}
+        isAnimatingReturn={dragState.isAnimatingReturn}
+        isEditMode={isEditMode}
+        dragElementRef={dragElementRef}
+        isDraggingOut={isDraggingOut}
+      />
     </>
     , document.body);
 };
