@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { DockItem } from '../types';
 import { useDragBase, createDockDragState, resetDockDragState, DockDragState, DockActionData } from './useDragBase';
-import { createMouseDownHandler } from '../utils/dragUtils';
+import { createMouseDownHandler, LayoutItem } from '../utils/dragUtils';
 import { isMouseOverFolderView, getFolderViewRect } from '../utils/dragDetection';
 
 import { createHorizontalStrategy } from '../utils/dragStrategies';
@@ -30,6 +30,15 @@ interface UseDragAndDropOptions {
     /** 检查文件夹是否有活动占位符 - 从 Context 读取 */
     hasFolderPlaceholderActive?: () => boolean;
 }
+
+// ============================================================================
+// 优化 2: 区域检测类型和辅助函数
+// ============================================================================
+
+type DragRegion =
+    | { type: 'folder' }
+    | { type: 'dock'; rect: DOMRect }
+    | { type: 'outside' };
 
 export const useDragAndDrop = ({
     items,
@@ -82,7 +91,7 @@ export const useDragAndDrop = ({
 
     // Refs
     const dockRef = useRef<HTMLElement | null>(null);
-    const cachedDockRectRef = useRef<DOMRect | null>(null); // 缓存 Dock Rect
+    const cachedDockRectRef = useRef<DOMRect | null>(null);
     const hoveredFolderRef = useRef<string | null>(null);
     const hoveredAppRef = useRef<string | null>(null);
     const mergeTargetRef = useRef<string | null>(null);
@@ -90,6 +99,8 @@ export const useDragAndDrop = ({
     const hoverStartTime = useRef<number>(0);
     const potentialMergeTarget = useRef<string | null>(null);
     const lastMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    // 优化 1: 使用 ref 跟踪外部拖拽状态
+    const wasExternalDragActiveRef = useRef(false);
 
     // 拖拽开始时缓存 Dock Rect
     const cacheDockRect = useCallback(() => {
@@ -104,70 +115,32 @@ export const useDragAndDrop = ({
     useEffect(() => { mergeTargetRef.current = mergeTargetId; }, [mergeTargetId]);
     useEffect(() => { isPreMergeRef.current = isPreMerge; }, [isPreMerge]);
 
-    // Cache dock rect when external drag dragging starts
-    useEffect(() => {
-        if (externalDragItem) {
-            cacheDockRect();
-        }
-    }, [externalDragItem, cacheDockRect]);
+    // ========================================================================
+    // 优化 2: 抽取辅助函数
+    // ========================================================================
 
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-        const state = dragRef.current;
-        const activeItem = state.isDragging ? state.item : externalDragItem;
+    /** 重置所有 Dock 相关的拖拽状态 */
+    const resetDockDragStates = useCallback(() => {
+        setPlaceholderIndex(null);
+        setHoveredFolderId(null);
+        setHoveredAppId(null);
+        setMergeTargetId(null);
+        setIsPreMerge(false);
+        potentialMergeTarget.current = null;
+    }, [setPlaceholderIndex]);
 
-        // Check if we should start dragging (only for internal items)
-        if (!state.isDragging && !externalDragItem && state.item) {
-            const dist = Math.hypot(e.clientX - state.startPosition.x, e.clientY - state.startPosition.y);
-            if (dist > DRAG_THRESHOLD) {
-                cacheDockRect(); // 缓存 Dock Rect
-                startDragging(state.item);
-            } else {
-                return; // Not dragging yet
-            }
-        }
-
-        if (!activeItem) return;
-
-        // Ensure layout snapshot exists for external drag or if missing
-        if ((!layoutSnapshotRef.current || layoutSnapshotRef.current.length === 0) && itemsRef.current.length > 0) {
-            captureLayoutSnapshot();
-        }
-
-        // Only update position for internal drags
-        if (state.isDragging) {
-            const x = e.clientX - state.offset.x;
-            const y = e.clientY - state.offset.y;
-            // setDragState(prev => ({ ...prev, currentPosition: { x, y } }));
-
-            // Direct DOM manipulation
-            if (dragElementRef.current) {
-                dragElementRef.current.style.left = `${x}px`;
-                dragElementRef.current.style.top = `${y}px`;
-            }
-        }
-
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-        // 存储最后的鼠标位置，供 mouseUp 使用
-        lastMousePositionRef.current = { x: mouseX, y: mouseY };
-
-        // 使用共享工具函数检测是否在文件夹视图内 - 确保与落点判断一致
+    /** 检测鼠标当前所在的区域 */
+    const detectDragRegion = useCallback((
+        mouseX: number,
+        mouseY: number,
+        activeItem: DockItem | null
+    ): DragRegion => {
+        // 1. 检查是否在文件夹视图内
         if (activeItem?.type !== 'folder' && isMouseOverFolderView(mouseX, mouseY)) {
-            // Over folder view - reset dock-related states
-            // Over folder view - reset dock-related states
-            setPlaceholderIndex(null);
-            setHoveredFolderId(null);
-            setHoveredAppId(null);
-            setMergeTargetId(null);
-            setIsPreMerge(false);
-            potentialMergeTarget.current = null;
-            return;
+            return { type: 'folder' };
         }
 
-
-        let isInsideDock = false;
-
-        // 使用缓存的 Dock Rect，减少每帧 DOM 查询
+        // 2. 检查是否在 Dock 区域内
         const dockRect = cachedDockRectRef.current || dockRef.current?.getBoundingClientRect();
         if (dockRect) {
             const buffer = DOCK_DRAG_BUFFER;
@@ -177,180 +150,203 @@ export const useDragAndDrop = ({
                 mouseY >= dockRect.top - buffer &&
                 mouseY <= dockRect.bottom + buffer
             ) {
-                isInsideDock = true;
+                return { type: 'dock', rect: dockRect };
             }
         }
 
-        if (!isInsideDock) {
-            setPlaceholderIndex(null);
+        return { type: 'outside' };
+    }, []);
+
+    /** 检测合并目标 */
+    const detectMergeTarget = useCallback((
+        e: MouseEvent,
+        state: DockDragState,
+        snapshot: LayoutItem[],
+        activeItem: DockItem
+    ): { id: string; type: 'folder' | 'app' } | null => {
+        for (const layoutItem of snapshot) {
+            const draggedCenterX = state.isDragging ? (e.clientX - state.offset.x) + 32 : e.clientX;
+            const draggedCenterY = state.isDragging ? (e.clientY - state.offset.y) + 32 : e.clientY;
+            const dist = Math.hypot(draggedCenterX - layoutItem.centerX, draggedCenterY - layoutItem.centerY);
+
+            if (dist < MERGE_DISTANCE_THRESHOLD) {
+                const targetItem = itemsRef.current.find(i => i.id === layoutItem.id);
+                if (targetItem && targetItem.id !== activeItem.id) {
+                    return { id: targetItem.id, type: targetItem.type };
+                }
+            }
+        }
+        return null;
+    }, []);
+
+    /** 计算重排序的目标索引 */
+    const calculateReorderIndex = useCallback((
+        mouseX: number,
+        snapshot: LayoutItem[]
+    ): number => {
+        if (itemsRef.current.length === 0) return 0;
+
+        for (let i = 0; i < snapshot.length; i++) {
+            if (mouseX < snapshot[i].centerX) {
+                return i;
+            }
+        }
+        return itemsRef.current.length;
+    }, []);
+
+    /** 处理合并目标悬停逻辑 */
+    const handleMergeTargetHover = useCallback((
+        foundTarget: { id: string; type: 'folder' | 'app' },
+        activeItem: DockItem
+    ) => {
+        if (potentialMergeTarget.current !== foundTarget.id) {
+            // 新的合并目标
+            potentialMergeTarget.current = foundTarget.id;
+            hoverStartTime.current = Date.now();
+            setIsPreMerge(false);
+            setMergeTargetId(null);
             setHoveredFolderId(null);
             setHoveredAppId(null);
-            setMergeTargetId(null);
-            setIsPreMerge(false);
-            potentialMergeTarget.current = null;
+        } else {
+            const dwellTime = Date.now() - hoverStartTime.current;
+
+            // Case B: Hover to Open (悬停打开文件夹)
+            if (foundTarget.type === 'folder' && dwellTime > HOVER_OPEN_DELAY && !isPreMergeRef.current) {
+                if (onHoverOpenFolder) {
+                    const targetFolder = itemsRef.current.find(i => i.id === foundTarget.id);
+                    if (targetFolder) {
+                        onHoverOpenFolder(activeItem, targetFolder);
+                        potentialMergeTarget.current = null;
+                        return true; // 表示已处理，应该返回
+                    }
+                }
+            }
+
+            // Case A: Direct Drop (预合并状态)
+            if (dwellTime > PRE_MERGE_DELAY && !isPreMergeRef.current) {
+                setIsPreMerge(true);
+                setMergeTargetId(foundTarget.id);
+                if (foundTarget.type === 'folder') {
+                    setHoveredFolderId(foundTarget.id);
+                    setHoveredAppId(null);
+                } else {
+                    setHoveredFolderId(null);
+                    setHoveredAppId(foundTarget.id);
+                }
+            }
+        }
+        return false;
+    }, [onHoverOpenFolder]);
+
+    // ========================================================================
+    // 优化 2: 重构后的 handleMouseMove
+    // ========================================================================
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        const state = dragRef.current;
+        const activeItem = state.isDragging ? state.item : externalDragItem;
+
+        // 阶段 1: 检查是否需要开始拖拽 (仅内部项目)
+        if (!state.isDragging && !externalDragItem && state.item) {
+            const dist = Math.hypot(e.clientX - state.startPosition.x, e.clientY - state.startPosition.y);
+            if (dist > DRAG_THRESHOLD) {
+                cacheDockRect();
+                startDragging(state.item);
+            } else {
+                return;
+            }
+        }
+
+        if (!activeItem) return;
+
+        // 阶段 2: 确保布局快照存在
+        if ((!layoutSnapshotRef.current || layoutSnapshotRef.current.length === 0) && itemsRef.current.length > 0) {
+            captureLayoutSnapshot();
+        }
+
+        // 阶段 3: 更新拖拽元素位置 (仅内部拖拽，使用直接 DOM 操作)
+        if (state.isDragging && dragElementRef.current) {
+            const x = e.clientX - state.offset.x;
+            const y = e.clientY - state.offset.y;
+            dragElementRef.current.style.left = `${x}px`;
+            dragElementRef.current.style.top = `${y}px`;
+        }
+
+        // 阶段 4: 存储鼠标位置
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        lastMousePositionRef.current = { x: mouseX, y: mouseY };
+
+        // 阶段 5: 区域检测与状态更新
+        const region = detectDragRegion(mouseX, mouseY, activeItem);
+
+        if (region.type === 'folder' || region.type === 'outside') {
+            resetDockDragStates();
             return;
         }
 
-        // --- Use Layout Snapshot for Calculations ---
+        // 在 Dock 区域内，处理合并或重排序
         const snapshot = layoutSnapshotRef.current;
-        let foundMergeTargetId: string | null = null;
-        let foundMergeType: 'folder' | 'app' | null = null;
+        const mergeTarget = detectMergeTarget(e, state, snapshot, activeItem);
 
-        // 1. Detect collisions with static items (using snapshot)
-        for (const layoutItem of snapshot) {
-            // Calculate center relative to mouse
-            const draggedCenterX = state.isDragging ? (e.clientX - state.offset.x) + 32 : mouseX;
-            const draggedCenterY = state.isDragging ? (e.clientY - state.offset.y) + 32 : mouseY;
-
-            const dist = Math.hypot(draggedCenterX - layoutItem.centerX, draggedCenterY - layoutItem.centerY);
-
-            // Distance threshold for merging
-            if (dist < MERGE_DISTANCE_THRESHOLD) {
-                const targetItem = itemsRef.current.find(i => i.id === layoutItem.id);
-                if (targetItem && targetItem.id !== activeItem?.id) {
-                    foundMergeTargetId = targetItem.id;
-                    foundMergeType = targetItem.type;
-                    break; // Prioritize the first close match
-                }
-            }
-        }
-
-        if (foundMergeTargetId) {
-            if (potentialMergeTarget.current !== foundMergeTargetId) {
-                potentialMergeTarget.current = foundMergeTargetId;
-                hoverStartTime.current = Date.now();
-                setIsPreMerge(false);
-                setMergeTargetId(null);
-                setHoveredFolderId(null);
-                setHoveredAppId(null);
-            } else {
-                const dwellTime = Date.now() - hoverStartTime.current;
-
-                // Case B: Hover to Open (Precise Operation)
-                if (foundMergeType === 'folder' && dwellTime > HOVER_OPEN_DELAY && !isPreMergeRef.current) {
-                    if (onHoverOpenFolder && activeItem) {
-                        const targetFolder = itemsRef.current.find(i => i.id === foundMergeTargetId);
-                        if (targetFolder) {
-                            onHoverOpenFolder(activeItem, targetFolder);
-                            potentialMergeTarget.current = null;
-                            return;
-                        }
-                    }
-                }
-
-                // Case A: Direct Drop (Blind Operation)
-                if (dwellTime > PRE_MERGE_DELAY && !isPreMergeRef.current) {
-                    setIsPreMerge(true);
-                    setMergeTargetId(foundMergeTargetId);
-                    if (foundMergeType === 'folder') {
-                        setHoveredFolderId(foundMergeTargetId);
-                        setHoveredAppId(null);
-                    } else {
-                        setHoveredFolderId(null);
-                        setHoveredAppId(foundMergeTargetId);
-                    }
-                }
-            }
+        if (mergeTarget) {
+            // 处理合并目标悬停
+            const shouldReturn = handleMergeTargetHover(mergeTarget, activeItem);
+            if (shouldReturn) return;
         } else {
+            // 无合并目标，处理重排序
             potentialMergeTarget.current = null;
             setIsPreMerge(false);
 
-            // Reordering logic using Static Snapshot
             if (snapshot.length > 0) {
-                // Find the closest insertion point based on X-axis and global distance
-                // Hysteresis: We want to find the gap between items.
-                // Simplified approach: find closest item center, then decide left/right.
-
-                // If items are empty, index is 0
-                if (itemsRef.current.length === 0) {
-                    setPlaceholderIndex(0);
-                    return;
-                }
-
-                // Calculate insertion index
-                // We iterate through visual slots.
-                let targetIndex = -1;
-
-                // Naive approach: Find where the mouse X is in relation to item centers
-                // Snapshot is ordered by index? It should be, based on how we captured it from itemRefs which are mapped from items.
-
-                for (let i = 0; i < snapshot.length; i++) {
-                    const item = snapshot[i];
-                    if (mouseX < item.centerX) {
-                        targetIndex = i;
-                        break;
-                    }
-                }
-
-                if (targetIndex === -1) {
-                    targetIndex = itemsRef.current.length;
-                }
-
-                // Hysteresis check:
-                // Only change if we are significantly into the new zone?
-                // For now, the static snapshot ALREADY provides immense stability because
-                // the "zones" (item centers) do not move when the placeholder appears.
-                // The placeholder is purely visual. The `targetIndex` calculation is based on 
-                // the *original* layout.
-
-                // One edge case: if we are dragging an item from right to left, the indices shift.
-                // But `snapshot` preserves original indices.
-                // If I am dragging item at index 5.
-                // I move layout to index 2.
-                // In the snapshot, I am over item 2.
-                // So target should be 2.
-                // Visual placeholder shows at 2. 
-                // This is stable.
-
-                if (activeItem && state.isDragging && state.originalIndex !== -1) {
-                    // Adjust for the fact that the item itself is "gone" from the flow visually if we were to just remove it
-                    // But here we are inserting *around* static items.
-                }
-
+                const targetIndex = calculateReorderIndex(mouseX, snapshot);
                 setPlaceholderIndex(targetIndex);
             } else {
                 setPlaceholderIndex(0);
             }
         }
-    }, [externalDragItem, startDragging, captureLayoutSnapshot, onHoverOpenFolder, setPlaceholderIndex, cacheDockRect]);
+    }, [
+        externalDragItem,
+        startDragging,
+        captureLayoutSnapshot,
+        cacheDockRect,
+        detectDragRegion,
+        detectMergeTarget,
+        calculateReorderIndex,
+        handleMergeTargetHover,
+        resetDockDragStates,
+        setPlaceholderIndex,
+    ]);
 
-    // 使用 ref 跟踪外部拖拽状态，避免 React 批量更新导致的时序问题
-    const wasExternalDragActiveRef = useRef(false);
+    // ========================================================================
+    // 优化 1: 合并外部拖拽相关的 useEffect
+    // ========================================================================
 
-    // 更新外部拖拽状态追踪
     useEffect(() => {
-        wasExternalDragActiveRef.current = !!externalDragItem;
-    }, [externalDragItem]);
+        const wasActive = wasExternalDragActiveRef.current;
 
-    // Handle external drag tracking
-    useEffect(() => {
         if (externalDragItem) {
+            // 外部拖拽开始
+            wasExternalDragActiveRef.current = true;
+            cacheDockRect();
             window.addEventListener('mousemove', handleMouseMove);
+
             return () => {
                 window.removeEventListener('mousemove', handleMouseMove);
             };
-        } else {
-            // 外部拖拽结束时立即清理所有状态
-            setPlaceholderIndex(null);
-            setHoveredFolderId(null);
-            setHoveredAppId(null);
-            setMergeTargetId(null);
-            setIsPreMerge(false);
-            potentialMergeTarget.current = null;
-            // 清理布局快照，防止陈旧数据影响后续操作
+        } else if (wasActive) {
+            // 外部拖拽刚刚结束，立即清理所有状态
+            resetDockDragStates();
             layoutSnapshotRef.current = [];
+            wasExternalDragActiveRef.current = false;
         }
-    }, [externalDragItem, handleMouseMove, setPlaceholderIndex]);
+    }, [externalDragItem, handleMouseMove, cacheDockRect, resetDockDragStates]);
 
-    // 关键修复：当 items 变化时，如果之前有外部拖拽活动，立即清理占位符
-    // 使用 ref 而非 state 来判断，避免 React 批量更新导致的时序问题
+    // 当 items 变化时清理占位符 (drop 完成的信号)
     useEffect(() => {
-        // 检查 ref（代表上一次渲染时的状态）而非当前 state
         if (wasExternalDragActiveRef.current) {
-            // items 变化说明 drop 已经完成，立即清理占位符
             setPlaceholderIndex(null);
             layoutSnapshotRef.current = [];
-            // 重置追踪标志
             wasExternalDragActiveRef.current = false;
         }
     }, [items, setPlaceholderIndex]);
@@ -633,25 +629,49 @@ export const useDragAndDrop = ({
         if (onDragEnd) onDragEnd();
     }, [onReorder, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd, setDragState, setPlaceholderIndex, dragRef]);
 
+
+    // ========================================================================
+    // 优化 3: 使用 useMemo 缓存 transform 计算
+    // ========================================================================
+
+    /** 预计算所有项目的 transform 值，避免每个项目渲染时重复计算 */
+    const itemTransforms = useMemo(() => {
+        const targetSlot = placeholderIndex;
+
+        // 无占位符时，所有项目不偏移
+        if (targetSlot === null) {
+            return items.map(() => 0);
+        }
+
+        const isInternalDragActive = (dragState.isDragging || dragState.isAnimatingReturn) && dragState.originalIndex !== -1;
+        const originalIndex = isInternalDragActive
+            ? dragState.originalIndex
+            : (externalDragItem ? -1 : dragState.originalIndex);
+        const isDragging = dragState.isDragging || dragState.isAnimatingReturn;
+
+        return items.map((_, index) => {
+            const transform = strategy.calculateTransform(
+                index,
+                targetSlot,
+                originalIndex,
+                isDragging
+            );
+            return transform.x;
+        });
+    }, [
+        placeholderIndex,
+        dragState.isDragging,
+        dragState.isAnimatingReturn,
+        dragState.originalIndex,
+        externalDragItem,
+        items.length,
+        strategy
+    ]);
+
+    /** 获取指定索引的 transform 值 (简化的 getter) */
     const getItemTransform = useCallback((index: number): number => {
-        const targetSlot = placeholderRef.current;
-        if (targetSlot === null) return 0;
-
-        const state = dragRef.current;
-
-        // 关键修复：isAnimatingReturn 期间也要保持挤压效果，直到数据更新
-        const isInternalDragActive = (state.isDragging || state.isAnimatingReturn) && state.originalIndex !== -1;
-
-        // 使用策略模式计算偏移
-        const transform = strategy.calculateTransform(
-            index,
-            targetSlot,
-            isInternalDragActive ? state.originalIndex : (externalDragItem ? -1 : state.originalIndex),
-            state.isDragging || state.isAnimatingReturn
-        );
-
-        return transform.x;
-    }, [strategy, externalDragItem, placeholderRef, dragRef]);
+        return itemTransforms[index] ?? 0;
+    }, [itemTransforms]);
 
     // Cleanup when component unmounts
     useEffect(() => {
