@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { DockItem as DockItemType } from '../../types';
 import { Tooltip } from '../Tooltip/Tooltip';
+import { FALLBACK_ICON_DATA_URI } from '../../constants/layout';
 import styles from './DockItem.module.css';
 
 interface DockItemProps {
@@ -153,7 +154,7 @@ const DockItemComponent: React.FC<DockItemProps> = ({
           </div>
         ) : (
           <img
-            src={item.icon || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvc3ZnPg=='}
+            src={item.icon || FALLBACK_ICON_DATA_URI}
             alt={item.name}
             className={styles.icon}
           />

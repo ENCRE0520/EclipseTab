@@ -100,6 +100,11 @@
   --search-icon-size: 18px;
   --editor-icon-size: 25px;
 
+  /* Dock 特定布局变量 */
+  --dock-border-radius: 25px;
+  --delete-button-size: 20px;
+  --navigator-width: 128px;
+
   /* ===== 动画时长变量 ===== */
   /* 标准化的动画持续时间 */
   --duration-instant: 100ms;

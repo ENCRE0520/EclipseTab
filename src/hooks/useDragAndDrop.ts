@@ -15,6 +15,7 @@ import {
     DRAG_THRESHOLD,
     MERGE_DISTANCE_THRESHOLD,
     HAPTIC_PATTERNS,
+    ICON_CENTER_OFFSET,
 } from '../constants/layout';
 
 interface UseDragAndDropOptions {
@@ -335,8 +336,8 @@ export const useDragAndDrop = ({
             const folderRect = getFolderViewRect();
             if (folderRect) {
                 targetPos = {
-                    x: folderRect.left + folderRect.width / 2 - 32,
-                    y: folderRect.top + folderRect.height / 2 - 32,
+                    x: folderRect.left + folderRect.width / 2 - ICON_CENTER_OFFSET,
+                    y: folderRect.top + folderRect.height / 2 - ICON_CENTER_OFFSET,
                 };
                 action = 'dragToOpenFolder';
                 actionData = { type: 'dragToOpenFolder', item: state.item };

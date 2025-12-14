@@ -52,6 +52,15 @@ export interface FolderDragState extends BaseDragState {
 }
 
 /**
+ * 带有 targetAction/targetActionData 属性的状态约束
+ * 用于泛型约束，确保 T 可以访问这些属性
+ */
+interface HasTargetAction {
+    targetAction: unknown;
+    targetActionData: unknown;
+}
+
+/**
  * 创建 Dock 拖拽初始状态
  */
 export const createDockDragState = (): DockDragState => {
@@ -108,8 +117,9 @@ export interface UseDragBaseOptions<T extends BaseDragState> {
 
 /**
  * 共享拖拽 Hook 返回值
+ * T 必须同时扩展 BaseDragState 和 HasTargetAction
  */
-export interface UseDragBaseReturn<T extends BaseDragState> {
+export interface UseDragBaseReturn<T extends BaseDragState & HasTargetAction> {
     dragState: T;
     setDragState: React.Dispatch<React.SetStateAction<T>>;
     placeholderIndex: number | null;
@@ -141,8 +151,8 @@ export interface UseDragBaseReturn<T extends BaseDragState> {
     ) => void;
     startReturnAnimation: (
         targetPos: Position,
-        action: any,
-        actionData: any,
+        action: T['targetAction'],
+        actionData: T['targetActionData'],
         onAnimationCompleteCallback: () => void
     ) => void;
     performHapticFeedback: (pattern: number | number[]) => void;
@@ -151,7 +161,7 @@ export interface UseDragBaseReturn<T extends BaseDragState> {
 /**
  * 共享拖拽 Hook - 提供基础拖拽功能
  */
-export const useDragBase = <T extends BaseDragState>(
+export const useDragBase = <T extends BaseDragState & HasTargetAction>(
     options: UseDragBaseOptions<T>
 ): UseDragBaseReturn<T> => {
 

@@ -125,3 +125,17 @@ export const HAPTIC_PATTERNS = {
     DROP: 10,          // 放下
     CANCEL: 20,        // 取消
 };
+
+// ============================================================================
+// 派生常量
+// ============================================================================
+
+/** 图标中心偏移量 = 图标宽度 / 2 (用于居中计算) */
+export const ICON_CENTER_OFFSET = DOCK_ITEM_WIDTH / 2; // 32
+
+// ============================================================================
+// 占位资源
+// ============================================================================
+
+/** 默认占位图标 (透明 64x64 圆角矩形 SVG) */
+export const FALLBACK_ICON_DATA_URI = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIvPjwvc3ZnPg==';

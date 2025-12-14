@@ -15,6 +15,8 @@ import {
     FADE_DURATION,
     DRAG_SCALE,
     DRAG_Z_INDEX,
+    DOCK_ITEM_WIDTH,
+    DOCK_ITEM_HEIGHT,
 } from '../../constants/layout';
 
 interface DragPreviewProps {
@@ -111,8 +113,8 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
                 position: 'fixed',
                 left: position.x,
                 top: position.y,
-                width: 64,
-                height: 64,
+                width: DOCK_ITEM_WIDTH,
+                height: DOCK_ITEM_HEIGHT,
                 pointerEvents: 'none',
                 zIndex: DRAG_Z_INDEX,
                 transform: getScale(),
