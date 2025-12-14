@@ -93,6 +93,38 @@
 
 ---
 
+### 🎯 Focus Spaces（焦点空间）
+
+#### 多空间管理
+- **创建空间**：右键点击 Navigator 按钮，选择"Add space"
+- **切换空间**：点击 Navigator 按钮循环切换空间
+- **重命名空间**：右键菜单选择"Rename"，输入新名称
+- **删除空间**：右键菜单选择"Delete space"（至少保留一个空间）
+
+#### 空间独立性
+- **独立应用列表**：每个空间拥有独立的 Dock 应用列表
+- **快速切换**：不同空间间无缝切换，应用数据自动保存
+- **场景化组织**：工作、学习、娱乐等不同场景分别管理
+
+#### 平滑动画
+- **退场动画**：当前空间图标向上滑出并淡出（200ms）
+- **入场动画**：新空间图标从下方依次滑入，带交错延迟效果（stagger）
+- **宽度过渡**：Dock 宽度平滑适应不同空间的图标数量（500ms）
+- **Navigator 淡化**：切换时 Navigator 按钮淡出，减少视觉干扰
+
+#### Navigator 设计
+- **位置**：固定在 Dock 右侧
+- **显示内容**：
+  - 空间名称（左上角，首字母大写）
+  - 分页指示点（右下角）
+    - 未选中：圆形点
+    - 选中：胶囊形高亮
+- **交互**：
+  - 左键点击：切换到下一个空间
+  - 右键点击：打开空间管理菜单
+
+---
+
 ## 📦 快速开始
 
 ### 开发环境
@@ -499,7 +531,8 @@ if (visualIndex < targetSlot) {
 
 | 数据类型 | 存储方式 | 说明 |
 |----------|----------|------|
-| **Dock 应用列表** | localStorage | 实时保存每次增删改 |
+| **Focus Spaces 数据** | localStorage | 空间列表、当前空间 ID、每个空间的应用列表 |
+| **Dock 应用列表** | localStorage | 实时保存每次增删改（已迁移到 Spaces 结构） |
 | **搜索引擎选择** | localStorage | 自动保存，下次打开恢复 |
 | **主题设置** | localStorage | 包括主题模式、跟随系统、纹理选项 |
 | **背景选择** | localStorage | 渐变 ID、壁纸 ID |
@@ -548,6 +581,7 @@ src/
 │   ├── Dock/              # Dock 应用栏
 │   │   ├── Dock.tsx                 # 主容器，集成拖拽、编辑、文件夹逻辑
 │   │   ├── DockItem.tsx             # 单个应用/文件夹图标
+│   │   ├── DockNavigator.tsx        # 空间导航器（Focus Spaces）
 │   │   ├── AddIcon.tsx              # 编辑模式下的 + 按钮
 │   │   └── *.module.css             # 抖动动画、间隙动画、样式
 │   │
@@ -570,6 +604,7 @@ src/
 │   │   ├── SearchEngineModal.tsx    # 搜索引擎选择器
 │   │   ├── SettingsModal.tsx        # 设置面板
 │   │   ├── ThemeModal.tsx           # 主题选择子组件
+│   │   ├── SpaceManageMenu.tsx      # 空间管理菜单（Focus Spaces）
 │   │   └── *.module.css             # 各模态框样式和动画
 │   │
 │   ├── Searcher/          # 搜索组件
@@ -599,12 +634,18 @@ src/
 │   └── searchEngines.ts   # 搜索引擎配置
 │
 ├── context/               # React Context 状态管理
+│   ├── SpacesContext.tsx  # Focus Spaces 状态管理
+│   │                      # 管理: 空间列表、当前空间、空间切换
+│   │                      # 操作: addSpace、deleteSpace、renameSpace
+│   │                      # 动画: isSwitching 状态控制
+│   │
 │   ├── DockContext.tsx    # Dock 状态管理 (三层 Context 架构)
 │   │                      # DockDataContext: 低频数据 (dockItems, searchEngine)
 │   │                      # DockUIContext: 中频 UI (isEditMode, openFolderId)
 │   │                      # DockDragContext: 高频拖拽 (draggingItem, folderPlaceholderActive)
 │   │                      # useDock(): 兼容层，组合三个 Context
 │   │                      # useDockData(), useDockUI(), useDockDrag(): 专用 Hooks
+│   │                      # 注意: DockContext 从 SpacesContext 获取当前空间的 apps
 │   │
 │   └── ThemeContext.tsx   # 主题全局状态
 │
@@ -632,6 +673,7 @@ src/
 │                                # IndexedDB 存储、历史记录、缩略图生成
 │
 ├── types/                 # TypeScript 类型定义
+│   ├── space.ts           # Space、SpacesState 等（Focus Spaces）
 │   ├── dock.ts            # DockItem、SearchEngine 等
 │   ├── drag.ts            # Position、DragState 等
 │   ├── index.ts           # 统一导出入口
