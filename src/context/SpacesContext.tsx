@@ -167,8 +167,9 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     // 导入空间
     // ============================================================================
 
-    const importSpace = useCallback((data: SpaceExportData) => {
-        const newSpace = createSpaceFromImport(data, spaces);
+    const importSpace = useCallback(async (data: SpaceExportData) => {
+        // createSpaceFromImport 现在是 async，会压缩图标
+        const newSpace = await createSpaceFromImport(data, spaces);
 
         setSpacesState(prev => ({
             ...prev,

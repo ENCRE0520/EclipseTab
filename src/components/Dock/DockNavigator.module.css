@@ -47,7 +47,11 @@
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
     text-transform: capitalize;
-    letter-spacing: 0.5px;
+
+    /* 文字溢出处理 */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 

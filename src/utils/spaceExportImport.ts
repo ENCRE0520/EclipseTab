@@ -4,6 +4,7 @@
  */
 
 import { Space, DockItem } from '../types';
+import { compressIconsInItems } from './imageCompression';
 
 // ============================================================================
 // 类型定义
@@ -211,20 +212,25 @@ function generateUniqueName(baseName: string, existingNames: string[]): string {
 
 /**
  * 从导入数据创建新的 Space 对象
+ * 导入时会压缩所有图标到 500x500 以减少存储占用
  */
-export function createSpaceFromImport(
+export async function createSpaceFromImport(
     data: SpaceExportData,
     existingSpaces: Space[]
-): Space {
+): Promise<Space> {
     const existingNames = existingSpaces.map(s => s.name);
     const uniqueName = generateUniqueName(data.data.name, existingNames);
+
+    // 转换并压缩图标
+    const convertedApps = data.data.apps.map(convertFromExportItem);
+    const compressedApps = await compressIconsInItems(convertedApps);
 
     return {
         id: crypto.randomUUID(),
         name: uniqueName,
         iconType: data.data.iconType || 'text',
         iconValue: data.data.iconValue,
-        apps: data.data.apps.map(convertFromExportItem),
+        apps: compressedApps,
         createdAt: Date.now(),
     };
 }

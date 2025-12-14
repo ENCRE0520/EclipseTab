@@ -48,11 +48,6 @@ export function DockNavigator({
         onContextMenu(e);
     };
 
-    // 获取显示名称 (最多显示 6 个字符)
-    const displayName = currentSpace.name.length > 6
-        ? currentSpace.name.slice(0, 6) + '…'
-        : currentSpace.name;
-
     return (
         <div
             className={`${styles.navigator} ${disabled ? styles.disabled : ''}`}
@@ -61,7 +56,7 @@ export function DockNavigator({
             title={`当前空间: ${currentSpace.name}\n左键: 切换空间\n右键: 管理空间`}
         >
             {/* 空间名称 */}
-            <span className={styles.spaceName}>{displayName}</span>
+            <span className={styles.spaceName}>{currentSpace.name}</span>
 
             {/* 分页指示点 */}
             {totalSpaces > 1 && (

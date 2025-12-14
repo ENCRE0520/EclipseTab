@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DockItem } from '../../types';
 import { fetchIcon } from '../../utils/iconFetcher';
+import { compressIcon } from '../../utils/imageCompression';
 import { Modal } from './Modal';
 import styles from './AddEditModal.module.css';
 
@@ -77,7 +78,9 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setIsFetchingIcon(true);
       try {
         const fetchedIcon = await fetchIcon(normalized);
-        setIcon(fetchedIcon);
+        // 压缩获取的图标
+        const compressed = await compressIcon(fetchedIcon);
+        setIcon(compressed);
       } catch (error) {
         // silent fail
       } finally {
@@ -86,12 +89,15 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setIcon(event.target?.result as string);
+      reader.onload = async (event) => {
+        const dataUrl = event.target?.result as string;
+        // 压缩图标到 500x500 减少存储占用
+        const compressed = await compressIcon(dataUrl);
+        setIcon(compressed);
       };
       reader.readAsDataURL(file);
     }
@@ -113,7 +119,9 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     try {
       const normalized = normalizeUrl(url);
       const fetchedIcon = await fetchIcon(normalized);
-      setIcon(fetchedIcon);
+      // 压缩获取的图标
+      const compressed = await compressIcon(fetchedIcon);
+      setIcon(compressed);
     } catch (error) {
       console.error('Failed to fetch icon:', error);
     } finally {
