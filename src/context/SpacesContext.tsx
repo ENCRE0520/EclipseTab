@@ -4,10 +4,10 @@ import { storage } from '../utils/storage';
 import { SpaceExportData, createSpaceFromImport } from '../utils/spaceExportImport';
 
 // ============================================================================
-// Context 类型定义
+// 数据层 Context 类型定义 (低频变化)
 // ============================================================================
 
-interface SpacesContextType {
+interface SpacesDataContextType {
     // 状态
     spaces: Space[];
     activeSpaceId: string;
@@ -16,8 +16,15 @@ interface SpacesContextType {
     // 派生
     currentSpace: Space;
     currentIndex: number;
+}
 
-    // 操作
+const SpacesDataContext = createContext<SpacesDataContextType | undefined>(undefined);
+
+// ============================================================================
+// 操作层 Context 类型定义 (几乎不变)
+// ============================================================================
+
+interface SpacesActionsContextType {
     switchToNextSpace: () => void;
     switchToSpace: (spaceId: string) => void;
     addSpace: (name?: string) => void;
@@ -26,12 +33,16 @@ interface SpacesContextType {
     updateCurrentSpaceApps: (apps: DockItem[]) => void;
     importSpace: (data: SpaceExportData) => void;
     pinSpace: (spaceId: string) => void;
-
-    // 动画控制
     setIsSwitching: (value: boolean) => void;
 }
 
-const SpacesContext = createContext<SpacesContextType | undefined>(undefined);
+const SpacesActionsContext = createContext<SpacesActionsContextType | undefined>(undefined);
+
+// ============================================================================
+// 组合类型 (兼容层)
+// ============================================================================
+
+interface SpacesContextType extends SpacesDataContextType, SpacesActionsContextType { }
 
 // ============================================================================
 // Provider 实现
@@ -205,20 +216,18 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     }, []);
 
     // ============================================================================
-    // Context Value
+    // Context Values (分离数据和操作，减少重渲染)
     // ============================================================================
 
-    const contextValue = useMemo<SpacesContextType>(() => ({
-        // 状态
+    const dataValue = useMemo<SpacesDataContextType>(() => ({
         spaces,
         activeSpaceId,
         isSwitching,
-
-        // 派生
         currentSpace,
         currentIndex,
+    }), [spaces, activeSpaceId, isSwitching, currentSpace, currentIndex]);
 
-        // 操作
+    const actionsValue = useMemo<SpacesActionsContextType>(() => ({
         switchToNextSpace,
         switchToSpace,
         addSpace,
@@ -227,15 +236,8 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         updateCurrentSpaceApps,
         importSpace,
         pinSpace,
-
-        // 动画控制
         setIsSwitching,
     }), [
-        spaces,
-        activeSpaceId,
-        isSwitching,
-        currentSpace,
-        currentIndex,
         switchToNextSpace,
         switchToSpace,
         addSpace,
@@ -247,9 +249,11 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     ]);
 
     return (
-        <SpacesContext.Provider value={contextValue}>
-            {children}
-        </SpacesContext.Provider>
+        <SpacesDataContext.Provider value={dataValue}>
+            <SpacesActionsContext.Provider value={actionsValue}>
+                {children}
+            </SpacesActionsContext.Provider>
+        </SpacesDataContext.Provider>
     );
 }
 
@@ -258,21 +262,51 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
 // ============================================================================
 
 /**
- * 获取完整的 Spaces Context
+ * 获取 Spaces 数据状态 (低频变化)
+ * 用于需要访问 spaces、currentSpace 等数据的组件
  */
-export function useSpaces(): SpacesContextType {
-    const context = useContext(SpacesContext);
+export function useSpacesData(): SpacesDataContextType {
+    const context = useContext(SpacesDataContext);
     if (!context) {
-        throw new Error('useSpaces must be used within a SpacesProvider');
+        throw new Error('useSpacesData must be used within a SpacesProvider');
     }
     return context;
+}
+
+/**
+ * 获取 Spaces 操作方法 (几乎不变)
+ * 用于只需要调用操作方法的组件
+ */
+export function useSpacesActions(): SpacesActionsContextType {
+    const context = useContext(SpacesActionsContext);
+    if (!context) {
+        throw new Error('useSpacesActions must be used within a SpacesProvider');
+    }
+    return context;
+}
+
+/**
+ * 获取完整的 Spaces Context (兼容层)
+ * 组合 SpacesDataContext 和 SpacesActionsContext
+ * 
+ * 性能建议：如果组件只需要部分状态，建议使用 useSpacesData 或 useSpacesActions
+ */
+export function useSpaces(): SpacesContextType {
+    const dataContext = useContext(SpacesDataContext);
+    const actionsContext = useContext(SpacesActionsContext);
+
+    if (!dataContext || !actionsContext) {
+        throw new Error('useSpaces must be used within a SpacesProvider');
+    }
+
+    return { ...dataContext, ...actionsContext };
 }
 
 /**
  * 仅获取当前空间数据（性能优化用）
  */
 export function useCurrentSpace(): Space {
-    const { currentSpace } = useSpaces();
+    const { currentSpace } = useSpacesData();
     return currentSpace;
 }
 
@@ -283,6 +317,7 @@ export function useSpaceSwitching(): {
     isSwitching: boolean;
     setIsSwitching: (value: boolean) => void;
 } {
-    const { isSwitching, setIsSwitching } = useSpaces();
+    const { isSwitching } = useSpacesData();
+    const { setIsSwitching } = useSpacesActions();
     return { isSwitching, setIsSwitching };
 }

@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { DockItem } from '../types';
 import { useDragBase, createDockDragState, resetDockDragState, DockDragState, DockActionData } from './useDragBase';
+import { useDragMerge } from './useDragMerge';
+import { detectDragRegion as detectDragRegionUtil, detectMergeTarget as detectMergeTargetUtil, calculateDraggedCenter, calculateHorizontalReorderIndex } from './useDragDetection';
 import { createMouseDownHandler, LayoutItem } from '../utils/dragUtils';
-import { isMouseOverFolderView, getFolderViewRect } from '../utils/dragDetection';
+import { getFolderViewRect } from '../utils/dragDetection';
 
 import { createHorizontalStrategy } from '../utils/dragStrategies';
 import { onReturnAnimationComplete } from '../utils/animationUtils';
@@ -12,8 +14,6 @@ import {
     DOCK_PADDING,
     DRAG_THRESHOLD,
     MERGE_DISTANCE_THRESHOLD,
-    HOVER_OPEN_DELAY,
-    PRE_MERGE_DELAY,
     HAPTIC_PATTERNS,
 } from '../constants/layout';
 
@@ -82,11 +82,22 @@ export const useDragAndDrop = ({
         resetState: resetDockDragState,
     });
 
-    // Dock 特有的状态
-    const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null);
-    const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
-    const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
-    const [isPreMerge, setIsPreMerge] = useState(false);
+    // 使用合并状态管理 Hook
+    const {
+        hoveredFolderId,
+        hoveredAppId,
+        mergeTargetId,
+        isPreMerge,
+        hoveredFolderRef,
+        hoveredAppRef,
+        isPreMergeRef,
+        handleMergeTargetHover,
+        resetMergeStates,
+    } = useDragMerge({
+        onHoverOpenFolder,
+        getItems: () => itemsRef.current,
+        performHapticFeedback,
+    });
 
     // Create Drag Strategy
     const strategy = useMemo(() => createHorizontalStrategy(), []);
@@ -94,14 +105,8 @@ export const useDragAndDrop = ({
     // Refs
     const dockRef = useRef<HTMLElement | null>(null);
     const cachedDockRectRef = useRef<DOMRect | null>(null);
-    const hoveredFolderRef = useRef<string | null>(null);
-    const hoveredAppRef = useRef<string | null>(null);
-    const mergeTargetRef = useRef<string | null>(null);
-    const isPreMergeRef = useRef(false);
-    const hoverStartTime = useRef<number>(0);
-    const potentialMergeTarget = useRef<string | null>(null);
     const lastMousePositionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-    // 优化 1: 使用 ref 跟踪外部拖拽状态
+    // 使用 ref 跟踪外部拖拽状态
     const wasExternalDragActiveRef = useRef(false);
 
     // 拖拽开始时缓存 Dock Rect
@@ -111,13 +116,6 @@ export const useDragAndDrop = ({
         }
     }, []);
 
-    // 同步 Refs
-    useEffect(() => { hoveredFolderRef.current = hoveredFolderId; }, [hoveredFolderId]);
-    useEffect(() => { hoveredAppRef.current = hoveredAppId; }, [hoveredAppId]);
-    useEffect(() => { mergeTargetRef.current = mergeTargetId; }, [mergeTargetId]);
-    useEffect(() => { mergeTargetRef.current = mergeTargetId; }, [mergeTargetId]);
-    useEffect(() => { isPreMergeRef.current = isPreMerge; }, [isPreMerge]);
-
     // Haptic Feedback for Reordering
     useEffect(() => {
         if (placeholderIndex !== null && dragState.isDragging) {
@@ -126,131 +124,63 @@ export const useDragAndDrop = ({
     }, [placeholderIndex, performHapticFeedback, dragState.isDragging]);
 
     // ========================================================================
-    // 优化 2: 抽取辅助函数
+    // 使用提取的辅助函数
     // ========================================================================
 
     /** 重置所有 Dock 相关的拖拽状态 */
     const resetDockDragStates = useCallback(() => {
         setPlaceholderIndex(null);
-        setHoveredFolderId(null);
-        setHoveredAppId(null);
-        setMergeTargetId(null);
-        setIsPreMerge(false);
-        potentialMergeTarget.current = null;
-    }, [setPlaceholderIndex]);
+        resetMergeStates();
+    }, [setPlaceholderIndex, resetMergeStates]);
 
-    /** 检测鼠标当前所在的区域 */
+    /** 检测鼠标当前所在的区域 (使用提取的纯函数) */
     const detectDragRegion = useCallback((
         mouseX: number,
         mouseY: number,
         activeItem: DockItem | null
     ): DragRegion => {
-        // 1. 检查是否在文件夹视图内
-        if (activeItem?.type !== 'folder' && isMouseOverFolderView(mouseX, mouseY)) {
-            return { type: 'folder' };
-        }
-
-        // 2. 检查是否在 Dock 区域内
         const dockRect = cachedDockRectRef.current || dockRef.current?.getBoundingClientRect();
-        if (dockRect) {
-            const buffer = DOCK_DRAG_BUFFER;
-            if (
-                mouseX >= dockRect.left - buffer &&
-                mouseX <= dockRect.right + buffer &&
-                mouseY >= dockRect.top - buffer &&
-                mouseY <= dockRect.bottom + buffer
-            ) {
-                return { type: 'dock', rect: dockRect };
-            }
-        }
-
-        return { type: 'outside' };
+        return detectDragRegionUtil(
+            mouseX,
+            mouseY,
+            dockRect || null,
+            activeItem?.type === 'folder',
+            DOCK_DRAG_BUFFER
+        );
     }, []);
 
-    /** 检测合并目标 */
+    /** 检测合并目标 (使用提取的纯函数) */
     const detectMergeTarget = useCallback((
         e: MouseEvent,
         state: DockDragState,
         snapshot: LayoutItem[],
         activeItem: DockItem
     ): { id: string; type: 'folder' | 'app' } | null => {
-        for (const layoutItem of snapshot) {
-            const draggedCenterX = state.isDragging ? (e.clientX - state.offset.x) + 32 : e.clientX;
-            const draggedCenterY = state.isDragging ? (e.clientY - state.offset.y) + 32 : e.clientY;
-            const dist = Math.hypot(draggedCenterX - layoutItem.centerX, draggedCenterY - layoutItem.centerY);
-
-            if (dist < MERGE_DISTANCE_THRESHOLD) {
-                const targetItem = itemsRef.current.find(i => i.id === layoutItem.id);
-                if (targetItem && targetItem.id !== activeItem.id) {
-                    return { id: targetItem.id, type: targetItem.type };
-                }
-            }
-        }
-        return null;
+        const draggedCenter = calculateDraggedCenter(
+            e.clientX,
+            e.clientY,
+            state.offset,
+            state.isDragging
+        );
+        return detectMergeTargetUtil(
+            draggedCenter,
+            snapshot,
+            activeItem.id,
+            itemsRef.current,
+            MERGE_DISTANCE_THRESHOLD
+        );
     }, []);
 
-    /** 计算重排序的目标索引 */
+    /** 计算重排序的目标索引 (使用提取的纯函数) */
     const calculateReorderIndex = useCallback((
         mouseX: number,
         snapshot: LayoutItem[]
     ): number => {
-        if (itemsRef.current.length === 0) return 0;
-
-        for (let i = 0; i < snapshot.length; i++) {
-            if (mouseX < snapshot[i].centerX) {
-                return i;
-            }
-        }
-        return itemsRef.current.length;
+        return calculateHorizontalReorderIndex(mouseX, snapshot, itemsRef.current.length);
     }, []);
 
-    /** 处理合并目标悬停逻辑 */
-    const handleMergeTargetHover = useCallback((
-        foundTarget: { id: string; type: 'folder' | 'app' },
-        activeItem: DockItem
-    ) => {
-        if (potentialMergeTarget.current !== foundTarget.id) {
-            // 新的合并目标
-            potentialMergeTarget.current = foundTarget.id;
-            hoverStartTime.current = Date.now();
-            setIsPreMerge(false);
-            setMergeTargetId(null);
-            setHoveredFolderId(null);
-            setHoveredAppId(null);
-        } else {
-            const dwellTime = Date.now() - hoverStartTime.current;
-
-            // Case B: Hover to Open (悬停打开文件夹)
-            if (foundTarget.type === 'folder' && dwellTime > HOVER_OPEN_DELAY && !isPreMergeRef.current) {
-                if (onHoverOpenFolder) {
-                    const targetFolder = itemsRef.current.find(i => i.id === foundTarget.id);
-                    if (targetFolder) {
-                        onHoverOpenFolder(activeItem, targetFolder);
-                        potentialMergeTarget.current = null;
-                        return true; // 表示已处理，应该返回
-                    }
-                }
-            }
-
-            // Case A: Direct Drop (预合并状态)
-            if (dwellTime > PRE_MERGE_DELAY && !isPreMergeRef.current) {
-                setIsPreMerge(true);
-                setMergeTargetId(foundTarget.id);
-                if (foundTarget.type === 'folder') {
-                    setHoveredFolderId(foundTarget.id);
-                    setHoveredAppId(null);
-                } else {
-                    setHoveredFolderId(null);
-                    setHoveredAppId(foundTarget.id);
-                }
-                performHapticFeedback(HAPTIC_PATTERNS.MERGE);
-            }
-        }
-        return false;
-    }, [onHoverOpenFolder]);
-
     // ========================================================================
-    // 优化 2: 重构后的 handleMouseMove
+    // handleMouseMove - 使用提取的模块
     // ========================================================================
 
     const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -307,9 +237,6 @@ export const useDragAndDrop = ({
             if (shouldReturn) return;
         } else {
             // 无合并目标，处理重排序
-            potentialMergeTarget.current = null;
-            setIsPreMerge(false);
-
             if (snapshot.length > 0) {
                 const targetIndex = calculateReorderIndex(mouseX, snapshot);
                 setPlaceholderIndex(targetIndex);
@@ -548,11 +475,7 @@ export const useDragAndDrop = ({
             }));
 
             // Cleanup hover states immediately
-            setHoveredFolderId(null);
-            setHoveredAppId(null);
-            setMergeTargetId(null);
-            setIsPreMerge(false);
-            potentialMergeTarget.current = null;
+            resetMergeStates();
             hasMovedRef.current = false;
 
             // 使用共享的动画完成工具
@@ -567,11 +490,7 @@ export const useDragAndDrop = ({
             // Cancel / Reset
             setDragState(resetDockDragState());
             setPlaceholderIndex(null);
-            setHoveredFolderId(null);
-            setHoveredAppId(null);
-            setMergeTargetId(null);
-            setIsPreMerge(false);
-            potentialMergeTarget.current = null;
+            resetMergeStates();
             hasMovedRef.current = false;
 
             if (onDragEnd) onDragEnd();
