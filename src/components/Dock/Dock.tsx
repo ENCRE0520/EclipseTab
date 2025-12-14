@@ -95,6 +95,12 @@ export const Dock: React.FC<DockProps> = ({
         setIsSwitching(true);
         setAnimationPhase('exiting');
 
+        // 动画时长配置（加快版）
+        const EXIT_DURATION = 120;    // 原 200ms
+        const ENTER_DURATION = 200;   // 原 350ms
+        const STAGGER_DELAY = 15;     // 原 30ms
+        const WIDTH_TRANSITION = 250; // 原 500ms
+
         // 退场动画结束后：先设为 hidden，再切换数据，最后触发入场动画
         setTimeout(() => {
             // 1. 设置为 hidden 阶段
@@ -131,7 +137,7 @@ export const Dock: React.FC<DockProps> = ({
                                     if (dockContentRef.current) {
                                         dockContentRef.current.style.width = '';
                                     }
-                                }, 500); // 与 CSS transition 时长一致
+                                }, WIDTH_TRANSITION);
                             }
                         });
                     }
@@ -139,13 +145,13 @@ export const Dock: React.FC<DockProps> = ({
                 }
 
                 // 入场动画结束后恢复状态
-                const enterDuration = 350 + items.length * 30;
+                const enterDuration = ENTER_DURATION + items.length * STAGGER_DELAY;
                 setTimeout(() => {
                     setAnimationPhase('idle');
                     setIsSwitching(false);
                 }, enterDuration);
-            }, 20);
-        }, 200);
+            }, 10);
+        }, EXIT_DURATION);
     }, [isSwitching, spaces.length, items.length, switchToNextSpace, setIsSwitching]);
 
     // 空间管理菜单状态

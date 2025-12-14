@@ -173,7 +173,7 @@
 
 /* 应用退场动画 */
 .itemExiting {
-    animation: slideOutUp 0.2s ease-in forwards;
+    animation: slideOutUp 0.12s ease-in forwards;
 }
 
 /* 隐藏状态 - 等待入场动画，使用 visibility 确保完全不可见 */
@@ -187,8 +187,8 @@
 /* 使用 both 填充模式：backwards 让延迟期间显示起始帧，forwards 让结束后保持终止帧 */
 .itemEntering {
     visibility: visible !important;
-    animation: slideInUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    animation-delay: calc(var(--stagger-index, 0) * 30ms);
+    animation: slideInUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 15ms);
 }
 
 /* Navigator 容器样式 - 使用绝对定位始终靠右 */
