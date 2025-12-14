@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Space, SpacesState, DockItem, createDefaultSpace } from '../types';
 import { storage } from '../utils/storage';
 import { SpaceExportData, createSpaceFromImport } from '../utils/spaceExportImport';
@@ -42,9 +42,15 @@ interface SpacesProviderProps {
 }
 
 export function SpacesProvider({ children }: SpacesProviderProps) {
-    // 初始化状态（从 localStorage 读取）
-    const [spacesState, setSpacesState] = useState<SpacesState>(() => storage.getSpaces());
+    // 初始化状态（从 localStorage 读取，只调用一次）
+    const [spacesState, setSpacesState] = useState<SpacesState>(() => {
+        const loaded = storage.getSpaces();
+        return loaded;
+    });
     const [isSwitching, setIsSwitching] = useState(false);
+
+    // 跟踪是否已完成首次渲染
+    const isFirstRenderRef = useRef(true);
 
     // 解构状态
     const { spaces, activeSpaceId } = spacesState;
@@ -60,7 +66,12 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     }, [spaces, activeSpaceId]);
 
     // 持久化到 localStorage
+    // 跳过首次渲染，因为 storage.getSpaces() 已经处理了保存
     useEffect(() => {
+        if (isFirstRenderRef.current) {
+            isFirstRenderRef.current = false;
+            return;
+        }
         storage.saveSpaces(spacesState);
     }, [spacesState]);
 

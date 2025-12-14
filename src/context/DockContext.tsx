@@ -71,8 +71,8 @@ interface DockContextType extends DockDataContextType, DockUIContextType, DockDr
 // ============================================================================
 
 export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // 从 SpacesContext 获取当前空间的 apps
-    const { currentSpace, updateCurrentSpaceApps } = useSpaces();
+    // 从 SpacesContext 获取当前空间的 apps 和空间列表
+    const { currentSpace, updateCurrentSpaceApps, spaces } = useSpaces();
 
     // 数据状态: dockItems 来自当前 Space
     const [dockItems, setDockItemsInternal] = useState<DockItem[]>(currentSpace.apps);
@@ -103,10 +103,21 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
         [updateCurrentSpaceApps]
     );
 
-    // 初始化: 如果当前空间为空，加载默认数据
+    // 初始化: 只在首次安装时加载默认常用网站
+    // 注意：这个 ref 确保默认数据只加载一次，新建空间不会自动填充
+    const hasLoadedDefaultsRef = React.useRef(false);
+
     useEffect(() => {
-        // 只在首次且空间为空时初始化默认数据
-        if (currentSpace.apps.length === 0 && dockItems.length === 0) {
+        // 只在首次运行且是应用的首个空间为空时初始化默认数据
+        // 使用 hasLoadedDefaultsRef 确保只加载一次
+        if (
+            !hasLoadedDefaultsRef.current &&
+            currentSpace.apps.length === 0 &&
+            dockItems.length === 0 &&
+            spaces.length === 1 // 只在只有一个空间时（首次安装）才加载默认数据
+        ) {
+            hasLoadedDefaultsRef.current = true;
+
             // 默认常用网站
             const defaults: DockItem[] = [
                 { id: 'bilibili', name: 'Bilibili', url: 'https://www.bilibili.com/', type: 'app' },

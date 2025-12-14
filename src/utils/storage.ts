@@ -186,13 +186,17 @@ export const storage = {
 
   /**
    * 获取空间状态
-   * 如果不存在则尝试从旧版 dockItems 迁移
+   * 如果不存在则尝试从旧版 dockItems 迁移，或创建默认状态并保存
    */
   getSpaces(): SpacesState {
     try {
       const spacesJson = localStorage.getItem(STORAGE_KEYS.SPACES);
       if (spacesJson) {
-        return JSON.parse(spacesJson);
+        const parsed = JSON.parse(spacesJson);
+        // 确保数据有效
+        if (parsed && parsed.spaces && parsed.spaces.length > 0) {
+          return parsed;
+        }
       }
 
       // 尝试从旧版数据迁移
@@ -204,11 +208,16 @@ export const storage = {
         return migratedState;
       }
 
-      // 返回默认空状态
-      return createDefaultSpacesState();
+      // 创建默认状态并立即保存
+      console.log('[Storage] Creating default spaces state...');
+      const defaultState = createDefaultSpacesState();
+      this.saveSpaces(defaultState);
+      return defaultState;
     } catch (error) {
       console.error('Failed to get spaces:', error);
-      return createDefaultSpacesState();
+      const fallbackState = createDefaultSpacesState();
+      this.saveSpaces(fallbackState);
+      return fallbackState;
     }
   },
 
