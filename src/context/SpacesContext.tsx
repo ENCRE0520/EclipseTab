@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Space, SpacesState, DockItem, createDefaultSpace } from '../types';
 import { storage } from '../utils/storage';
+import { SpaceExportData, createSpaceFromImport } from '../utils/spaceExportImport';
 
 // ============================================================================
 // Context 类型定义
@@ -23,6 +24,8 @@ interface SpacesContextType {
     deleteSpace: (spaceId: string) => void;
     renameSpace: (spaceId: string, newName: string) => void;
     updateCurrentSpaceApps: (apps: DockItem[]) => void;
+    importSpace: (data: SpaceExportData) => void;
+    pinSpace: (spaceId: string) => void;
 
     // 动画控制
     setIsSwitching: (value: boolean) => void;
@@ -139,6 +142,45 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     }, []);
 
     // ============================================================================
+    // 导入空间
+    // ============================================================================
+
+    const importSpace = useCallback((data: SpaceExportData) => {
+        const newSpace = createSpaceFromImport(data, spaces);
+
+        setSpacesState(prev => ({
+            ...prev,
+            spaces: [...prev.spaces, newSpace],
+            activeSpaceId: newSpace.id, // 自动跳转到新导入的空间
+        }));
+
+        return newSpace;
+    }, [spaces]);
+
+    // ============================================================================
+    // 置顶空间
+    // ============================================================================
+
+    const pinSpace = useCallback((spaceId: string) => {
+        setSpacesState(prev => {
+            const targetIndex = prev.spaces.findIndex(s => s.id === spaceId);
+            if (targetIndex <= 0) return prev; // 已经在第一位或找不到
+
+            const targetSpace = prev.spaces[targetIndex];
+            const newSpaces = [
+                targetSpace,
+                ...prev.spaces.slice(0, targetIndex),
+                ...prev.spaces.slice(targetIndex + 1),
+            ];
+
+            return {
+                ...prev,
+                spaces: newSpaces,
+            };
+        });
+    }, []);
+
+    // ============================================================================
     // Apps 更新（供 DockContext 调用）
     // ============================================================================
 
@@ -172,6 +214,8 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         deleteSpace,
         renameSpace,
         updateCurrentSpaceApps,
+        importSpace,
+        pinSpace,
 
         // 动画控制
         setIsSwitching,
@@ -187,6 +231,8 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         deleteSpace,
         renameSpace,
         updateCurrentSpaceApps,
+        importSpace,
+        pinSpace,
     ]);
 
     return (

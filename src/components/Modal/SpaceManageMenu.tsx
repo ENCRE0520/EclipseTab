@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Space } from '../../types';
 import { Modal } from './Modal';
 import { scaleFadeIn } from '../../utils/animations';
+import { exportSpaceToFile, parseAndValidateSpaceFile, SpaceExportData } from '../../utils/spaceExportImport';
 import plusIcon from '../../assets/icons/plus.svg';
 import writeIcon from '../../assets/icons/write.svg';
 import trashIcon from '../../assets/icons/trash.svg';
@@ -31,6 +32,15 @@ interface SpaceManageMenuProps {
 
     /** 删除 */
     onDelete: () => void;
+
+    /** 导入空间 */
+    onImport: (data: SpaceExportData) => void;
+
+    /** 置顶空间 */
+    onPin: () => void;
+
+    /** 是否已经在顶部 (禁用置顶) */
+    isFirstSpace: boolean;
 }
 
 /**
@@ -46,11 +56,15 @@ export function SpaceManageMenu({
     onAdd,
     onRename,
     onDelete,
+    onImport,
+    onPin,
+    isFirstSpace,
 }: SpaceManageMenuProps) {
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameValue, setRenameValue] = useState('');
     const menuRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 打开时应用动画
     useEffect(() => {
@@ -109,6 +123,34 @@ export function SpaceManageMenu({
         }
     };
 
+    const handleExportClick = () => {
+        exportSpaceToFile(currentSpace);
+        onClose();
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const data = await parseAndValidateSpaceFile(file);
+            onImport(data);
+            onClose();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            window.alert(`Import failed: ${message}`);
+        } finally {
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={undefined} hideHeader anchorRect={anchorRect}>
             <div ref={menuRef} className={styles.menu}>
@@ -157,6 +199,35 @@ export function SpaceManageMenu({
                                 <span className={styles.icon} style={{ WebkitMaskImage: `url(${trashIcon})`, maskImage: `url(${trashIcon})` }} />
                                 <span>Delete space</span>
                             </button>
+                            {/* 置顶 */}
+                            <button
+                                className={`${styles.menuItem} ${isFirstSpace ? styles.disabled : ''}`}
+                                onClick={() => { onPin(); onClose(); }}
+                                disabled={isFirstSpace}
+                                title={isFirstSpace ? 'Already at the top' : 'Pin to top'}
+                            >
+                                <span className={styles.iconEmoji}>📌</span>
+                                <span>Pin to Top</span>
+                            </button>
+                            {/* 分隔线 */}
+                            <div className={styles.divider} />
+                            {/* 导入/导出 */}
+                            <button className={styles.menuItem} onClick={handleImportClick}>
+                                <span className={styles.iconEmoji}>📥</span>
+                                <span>Import Space</span>
+                            </button>
+                            <button className={styles.menuItem} onClick={handleExportClick}>
+                                <span className={styles.iconEmoji}>📤</span>
+                                <span>Export current space</span>
+                            </button>
+                            {/* Hidden file input */}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".json"
+                                style={{ display: 'none' }}
+                                onChange={handleFileChange}
+                            />
                         </div>
                     </>
                 )}

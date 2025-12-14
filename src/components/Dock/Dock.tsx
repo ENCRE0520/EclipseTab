@@ -66,6 +66,8 @@ export const Dock: React.FC<DockProps> = ({
         addSpace,
         renameSpace,
         deleteSpace,
+        importSpace,
+        pinSpace,
     } = useSpaces();
 
     // 动画阶段状态机: idle → exiting → hidden → entering → idle
@@ -394,6 +396,15 @@ export const Dock: React.FC<DockProps> = ({
                     deleteSpace(currentSpace.id);
                     setShowSpaceMenu(false);
                 }}
+                onImport={(data) => {
+                    importSpace(data);
+                    setShowSpaceMenu(false);
+                }}
+                onPin={() => {
+                    pinSpace(currentSpace.id);
+                    setShowSpaceMenu(false);
+                }}
+                isFirstSpace={currentIndex === 0}
             />
         </header>
     );

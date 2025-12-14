@@ -115,6 +115,18 @@
     background-color: #ff6b6b;
 }
 
+/* Emoji 图标样式 */
+.iconEmoji {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 14px;
+    line-height: 1;
+}
+
 /* 重命名容器 */
 .renameContainer {
     display: flex;
