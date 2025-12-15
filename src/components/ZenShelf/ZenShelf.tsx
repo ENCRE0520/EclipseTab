@@ -738,18 +738,10 @@ const StickerItem: React.FC<StickerItemProps> = ({
 // ============================================================================
 
 export const ZenShelf: React.FC = () => {
-    const { isEditMode, setIsEditMode } = useDock();
-    const {
-        stickers,
-        selectedStickerId,
-        addSticker,
-        updateSticker,
-        deleteSticker,
-        selectSticker,
-    } = useZenShelf();
-
     const canvasRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { stickers, selectedStickerId, addSticker, updateSticker, deleteSticker, selectSticker, layoutStickers } = useZenShelf();
+    const { isEditMode, setIsEditMode } = useDock();
     const [textInputPos, setTextInputPos] = useState<{ x: number; y: number } | null>(null);
     const [contextMenu, setContextMenu] = useState<{
         x: number;
@@ -757,6 +749,40 @@ export const ZenShelf: React.FC = () => {
         type: 'background' | 'sticker';
         stickerId?: string;
     } | null>(null);
+
+    // Refs for tracking window size for responsive layout
+    const prevWidthRef = useRef(window.innerWidth);
+    const prevHeightRef = useRef(window.innerHeight);
+
+    // Handle window resize for responsive sticker layout
+    useEffect(() => {
+        const handleResize = () => {
+            const currentWidth = window.innerWidth;
+            const currentHeight = window.innerHeight;
+
+            const prevWidth = prevWidthRef.current;
+            const prevHeight = prevHeightRef.current;
+
+            // Calculate scale factors
+            // Avoid division by zero
+            if (prevWidth > 0 && prevHeight > 0) {
+                const scaleX = currentWidth / prevWidth;
+                const scaleY = currentHeight / prevHeight;
+
+                // Only layout if size actually changed
+                if (scaleX !== 1 || scaleY !== 1) {
+                    layoutStickers(scaleX, scaleY);
+                }
+            }
+
+            // Update refs
+            prevWidthRef.current = currentWidth;
+            prevHeightRef.current = currentHeight;
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [layoutStickers]);
     const [editingSticker, setEditingSticker] = useState<Sticker | null>(null);
 
     // UI 元素选择器 - 右键这些区域不会触发上下文菜单
