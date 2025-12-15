@@ -32,17 +32,19 @@ const TEXT_COLORS = [
 interface TextInputProps {
     x: number;
     y: number;
+    initialText?: string;
+    initialStyle?: { color: string; textAlign: 'left' | 'center' | 'right' };
     onSubmit: (content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right' }) => void;
     onCancel: () => void;
     onImagePaste?: (base64: string) => void;
 }
 
-const TextInput: React.FC<TextInputProps> = ({ x, y, onSubmit, onCancel, onImagePaste }) => {
+const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', initialStyle, onSubmit, onCancel, onImagePaste }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const popupRef = useRef<HTMLDivElement>(null);
-    const [value, setValue] = useState('');
-    const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
-    const [textColor, setTextColor] = useState(TEXT_COLORS[0]);
+    const [value, setValue] = useState(initialText);
+    const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(initialStyle?.textAlign || 'left');
+    const [textColor, setTextColor] = useState(initialStyle?.color || TEXT_COLORS[0]);
 
     // Focus and animation on mount
     useEffect(() => {
@@ -211,7 +213,9 @@ interface ContextMenuProps {
     onEditSticker?: () => void;
     onDeleteSticker?: () => void;
     onCopyImage?: () => void;
+    onCopyText?: () => void;
     onExportImage?: () => void;
+    onExportImageSticker?: () => void;
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -226,7 +230,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     onEditSticker,
     onDeleteSticker,
     onCopyImage,
+    onCopyText,
     onExportImage,
+    onExportImageSticker,
 }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const isClosingRef = useRef(false);
@@ -298,20 +304,29 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     </>
                 ) : (
                     <>
-                        {isImageSticker && (
-                            <button className={styles.menuItem} onClick={() => { onCopyImage?.(); onClose(); }}>
-                                <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
-                                <span>Copy Image</span>
-                            </button>
-                        )}
-                        {!isImageSticker && (
+                        {isImageSticker ? (
                             <>
+                                <button className={styles.menuItem} onClick={() => { onCopyImage?.(); onClose(); }}>
+                                    <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
+                                    <span>Copy Image</span>
+                                </button>
+                                <button className={styles.menuItem} onClick={() => { onExportImageSticker?.(); onClose(); }}>
+                                    <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${uploadIcon})`, maskImage: `url(${uploadIcon})` }} />
+                                    <span>Export Image</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button className={styles.menuItem} onClick={() => { onCopyText?.(); onClose(); }}>
+                                    <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
+                                    <span>Copy Text</span>
+                                </button>
                                 <button className={styles.menuItem} onClick={() => { onEditSticker?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${writeIcon})`, maskImage: `url(${writeIcon})` }} />
                                     <span>Edit Sticker</span>
                                 </button>
                                 <button className={styles.menuItem} onClick={() => { onExportImage?.(); onClose(); }}>
-                                    <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
+                                    <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${uploadIcon})`, maskImage: `url(${uploadIcon})` }} />
                                     <span>Export as Image</span>
                                 </button>
                             </>
@@ -651,8 +666,7 @@ export const ZenShelf: React.FC = () => {
         type: 'background' | 'sticker';
         stickerId?: string;
     } | null>(null);
-    const [_editingSticker, setEditingSticker] = useState<Sticker | null>(null);
-    void _editingSticker; // Reserved for future edit sticker feature
+    const [editingSticker, setEditingSticker] = useState<Sticker | null>(null);
 
     // UI 元素选择器 - 右键这些区域不会触发上下文菜单
     const UI_SELECTORS = [
@@ -743,7 +757,18 @@ export const ZenShelf: React.FC = () => {
 
     // Handle text input submit
     const handleTextSubmit = useCallback((content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right' }) => {
-        if (textInputPos) {
+        if (editingSticker) {
+            // Editing existing sticker - update content and style
+            updateSticker(editingSticker.id, {
+                content,
+                style: style ? {
+                    color: style.color,
+                    textAlign: style.textAlign,
+                    fontSize: editingSticker.style?.fontSize || 48,
+                } : editingSticker.style,
+            });
+        } else if (textInputPos) {
+            // Adding new sticker
             addSticker({
                 type: 'text',
                 content,
@@ -757,10 +782,12 @@ export const ZenShelf: React.FC = () => {
             });
         }
         setTextInputPos(null);
-    }, [textInputPos, addSticker]);
+        setEditingSticker(null);
+    }, [textInputPos, editingSticker, addSticker, updateSticker]);
 
     const handleTextCancel = useCallback(() => {
         setTextInputPos(null);
+        setEditingSticker(null);
     }, []);
 
     // Handle paste - add image sticker (works globally, except when Searcher is active)
@@ -852,6 +879,8 @@ export const ZenShelf: React.FC = () => {
                 <TextInput
                     x={textInputPos.x}
                     y={textInputPos.y}
+                    initialText={editingSticker?.content || ''}
+                    initialStyle={editingSticker?.style}
                     onSubmit={handleTextSubmit}
                     onCancel={handleTextCancel}
                     onImagePaste={(base64) => {
@@ -939,33 +968,44 @@ export const ZenShelf: React.FC = () => {
                         if (sticker && sticker.type === 'text') {
                             try {
                                 const MIN_HEIGHT = 600;
-                                const PADDING = 40;
+                                const BASE_FONT_SIZE = 48;
+                                const PADDING_RATIO = 0.5; // More padding for stroke
+                                const STROKE_RATIO = 0.25;
 
-                                // Create temporary element to measure text
-                                const measureDiv = document.createElement('div');
-                                measureDiv.style.cssText = `
-                                    position: absolute;
-                                    visibility: hidden;
-                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                                    font-size: 32px;
-                                    font-weight: 500;
-                                    white-space: pre-wrap;
-                                    padding: ${PADDING}px;
-                                `;
-                                measureDiv.textContent = sticker.content;
-                                document.body.appendChild(measureDiv);
+                                // Create temp canvas for measurement
+                                const measureCanvas = document.createElement('canvas');
+                                const measureCtx = measureCanvas.getContext('2d');
+                                if (!measureCtx) return;
 
-                                const measuredWidth = measureDiv.offsetWidth;
-                                const measuredHeight = measureDiv.offsetHeight;
-                                document.body.removeChild(measureDiv);
+                                measureCtx.font = `500 ${BASE_FONT_SIZE}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
 
-                                // Calculate scale to ensure minimum height
-                                const scale = measuredHeight < MIN_HEIGHT ? MIN_HEIGHT / measuredHeight : 1;
-                                const canvasWidth = Math.ceil(measuredWidth * scale);
-                                const canvasHeight = Math.ceil(measuredHeight * scale);
-                                const fontSize = Math.round(32 * scale);
-                                const padding = Math.round(PADDING * scale);
-                                const strokeWidth = Math.round(12 * scale);
+                                // Measure text content
+                                const lines = sticker.content.split('\n');
+                                const lineHeight = BASE_FONT_SIZE * 1.3;
+
+                                // Find max line width
+                                let maxWidth = 0;
+                                for (const line of lines) {
+                                    const metrics = measureCtx.measureText(line);
+                                    maxWidth = Math.max(maxWidth, metrics.width);
+                                }
+
+                                // Calculate content dimensions with extra buffer for stroke
+                                const strokeWidth = BASE_FONT_SIZE * STROKE_RATIO;
+                                const padding = BASE_FONT_SIZE * PADDING_RATIO + strokeWidth;
+                                const contentWidth = maxWidth;
+                                const contentHeight = lineHeight * lines.length;
+                                const baseWidth = contentWidth + padding * 2;
+                                const baseHeight = contentHeight + padding * 2;
+
+                                // Scale to ensure min height while preserving aspect ratio
+                                const scale = baseHeight < MIN_HEIGHT ? MIN_HEIGHT / baseHeight : 1;
+                                const canvasWidth = Math.ceil(baseWidth * scale);
+                                const canvasHeight = Math.ceil(baseHeight * scale);
+                                const fontSize = Math.round(BASE_FONT_SIZE * scale);
+                                const finalPadding = Math.round(padding * scale);
+                                const finalStrokeWidth = Math.round(strokeWidth * scale);
+                                const finalLineHeight = fontSize * 1.3;
 
                                 // Create canvas
                                 const canvas = document.createElement('canvas');
@@ -974,43 +1014,44 @@ export const ZenShelf: React.FC = () => {
                                 const ctx = canvas.getContext('2d');
 
                                 if (ctx) {
-                                    // Transparent background (don't fill)
-
                                     // Set text style
                                     ctx.font = `500 ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
-                                    ctx.textAlign = (sticker.style?.textAlign as CanvasTextAlign) || 'left';
-                                    ctx.textBaseline = 'top';
+                                    ctx.textBaseline = 'middle';
 
                                     // Calculate text position based on alignment
-                                    let textX = padding;
+                                    let textX: number;
                                     if (sticker.style?.textAlign === 'center') {
+                                        ctx.textAlign = 'center';
                                         textX = canvasWidth / 2;
                                     } else if (sticker.style?.textAlign === 'right') {
-                                        textX = canvasWidth - padding;
+                                        ctx.textAlign = 'right';
+                                        textX = canvasWidth - finalPadding;
+                                    } else {
+                                        ctx.textAlign = 'left';
+                                        textX = finalPadding;
                                     }
 
                                     // Draw white stroke
                                     ctx.strokeStyle = 'white';
-                                    ctx.lineWidth = strokeWidth;
+                                    ctx.lineWidth = finalStrokeWidth;
                                     ctx.lineJoin = 'round';
                                     ctx.miterLimit = 2;
 
-                                    // Draw each line
-                                    const lines = sticker.content.split('\n');
-                                    const lineHeight = fontSize * 1.2;
-                                    let y = padding;
+                                    // Calculate vertical center
+                                    const totalTextHeight = finalLineHeight * lines.length;
+                                    let y = (canvasHeight - totalTextHeight) / 2 + finalLineHeight / 2;
 
                                     for (const line of lines) {
                                         ctx.strokeText(line, textX, y);
-                                        y += lineHeight;
+                                        y += finalLineHeight;
                                     }
 
                                     // Draw fill color
                                     ctx.fillStyle = sticker.style?.color || '#1C1C1E';
-                                    y = padding;
+                                    y = (canvasHeight - totalTextHeight) / 2 + finalLineHeight / 2;
                                     for (const line of lines) {
                                         ctx.fillText(line, textX, y);
-                                        y += lineHeight;
+                                        y += finalLineHeight;
                                     }
 
                                     // Download as PNG
@@ -1029,6 +1070,95 @@ export const ZenShelf: React.FC = () => {
                                 }
                             } catch (error) {
                                 console.error('Failed to export sticker:', error);
+                            }
+                        }
+                    }}
+                    onCopyText={() => {
+                        const sticker = stickers.find(s => s.id === contextMenu.stickerId);
+                        if (sticker && sticker.type === 'text') {
+                            navigator.clipboard.writeText(sticker.content);
+                        }
+                    }}
+                    onExportImageSticker={() => {
+                        const sticker = stickers.find(s => s.id === contextMenu.stickerId);
+                        if (sticker && sticker.type === 'image') {
+                            try {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const BORDER_RADIUS = 16;
+                                    const STROKE_WIDTH = 6;
+                                    const SHADOW_BLUR = 12;
+                                    const SHADOW_OFFSET = 6;
+                                    const PADDING = STROKE_WIDTH + SHADOW_BLUR;
+
+                                    // Canvas size includes image + padding for stroke and shadow
+                                    const canvasWidth = img.width + PADDING * 2;
+                                    const canvasHeight = img.height + PADDING * 2 + SHADOW_OFFSET;
+
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = canvasWidth;
+                                    canvas.height = canvasHeight;
+                                    const ctx = canvas.getContext('2d');
+
+                                    if (ctx) {
+                                        const imgX = PADDING;
+                                        const imgY = PADDING;
+
+                                        // Create rounded rectangle path
+                                        const createRoundedPath = (x: number, y: number, w: number, h: number, r: number) => {
+                                            ctx.beginPath();
+                                            ctx.moveTo(x + r, y);
+                                            ctx.lineTo(x + w - r, y);
+                                            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                                            ctx.lineTo(x + w, y + h - r);
+                                            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                                            ctx.lineTo(x + r, y + h);
+                                            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                                            ctx.lineTo(x, y + r);
+                                            ctx.quadraticCurveTo(x, y, x + r, y);
+                                            ctx.closePath();
+                                        };
+
+                                        // Draw drop shadow
+                                        ctx.save();
+                                        ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+                                        ctx.shadowBlur = SHADOW_BLUR;
+                                        ctx.shadowOffsetY = SHADOW_OFFSET;
+                                        createRoundedPath(imgX, imgY, img.width, img.height, BORDER_RADIUS);
+                                        ctx.fillStyle = 'white';
+                                        ctx.fill();
+                                        ctx.restore();
+
+                                        // Draw white stroke/outline
+                                        createRoundedPath(imgX, imgY, img.width, img.height, BORDER_RADIUS);
+                                        ctx.strokeStyle = 'white';
+                                        ctx.lineWidth = STROKE_WIDTH * 2; // Double because half is clipped
+                                        ctx.stroke();
+
+                                        // Clip to rounded rectangle and draw image
+                                        ctx.save();
+                                        createRoundedPath(imgX, imgY, img.width, img.height, BORDER_RADIUS);
+                                        ctx.clip();
+                                        ctx.drawImage(img, imgX, imgY);
+                                        ctx.restore();
+
+                                        canvas.toBlob((blob) => {
+                                            if (blob) {
+                                                const url = URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                link.href = url;
+                                                link.download = `sticker-${Date.now()}.png`;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                URL.revokeObjectURL(url);
+                                            }
+                                        }, 'image/png');
+                                    }
+                                };
+                                img.src = sticker.content;
+                            } catch (error) {
+                                console.error('Failed to export image sticker:', error);
                             }
                         }
                     }}
