@@ -12,6 +12,8 @@ const STORAGE_KEYS = {
   WALLPAPER_ID: 'EclipseTab_wallpaperId',
   // Focus Spaces 新增
   SPACES: 'EclipseTab_spaces',
+  // Zen Shelf 贴纸
+  STICKERS: 'EclipseTab_stickers',
 } as const;
 
 export const storage = {
@@ -240,6 +242,37 @@ export const storage = {
       localStorage.removeItem(STORAGE_KEYS.SPACES);
     } catch (error) {
       console.error('Failed to clear spaces:', error);
+    }
+  },
+
+  // ============================================================================
+  // Zen Shelf 贴纸存储
+  // ============================================================================
+
+  /**
+   * 获取所有贴纸
+   */
+  getStickers(): import('../types').Sticker[] {
+    try {
+      const stickersJson = localStorage.getItem(STORAGE_KEYS.STICKERS);
+      if (stickersJson) {
+        return JSON.parse(stickersJson);
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to get stickers:', error);
+      return [];
+    }
+  },
+
+  /**
+   * 保存贴纸列表
+   */
+  saveStickers(stickers: import('../types').Sticker[]): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.STICKERS, JSON.stringify(stickers));
+    } catch (error) {
+      console.error('Failed to save stickers:', error);
     }
   },
 };

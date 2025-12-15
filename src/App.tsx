@@ -11,6 +11,7 @@ import { AddEditModal } from './components/Modal/AddEditModal';
 import { SearchEngineModal } from './components/Modal/SearchEngineModal';
 import { SettingsModal } from './components/Modal/SettingsModal.tsx';
 import { Background } from './components/Background/Background';
+import { ZenShelf } from './components/ZenShelf';
 import styles from './App.module.css';
 
 function App() {
@@ -89,6 +90,7 @@ function App() {
   return (
     <div className={styles.app}>
       <Background />
+      <ZenShelf />
       <div className={styles.container}>
         <Searcher
           searchEngine={selectedSearchEngine}

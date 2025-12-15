@@ -1,0 +1,57 @@
+/* ===== 创作模式切换按钮样式 ===== */
+/* 参考 DockNavigator 的样式规范 */
+
+.toggle {
+    /* 尺寸 */
+    height: 64px;
+    min-width: 64px;
+    padding: var(--spacing-padding-small);
+
+    /* 背景色 - 与 DockNavigator 一致 */
+    background: var(--color-bg-primary);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+
+    /* 交互 */
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+
+    /* 布局 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+}
+
+.toggle:hover {
+    background: var(--color-bg-secondary);
+    transform: scale(1.02);
+    color: var(--color-text-primary);
+}
+
+.toggle:active {
+    transform: scale(0.98);
+}
+
+/* 激活状态 - 高亮效果 */
+.toggle.active {
+    background: var(--blue-500);
+    border-color: var(--blue-500);
+    color: white;
+}
+
+.toggle.active:hover {
+    background: var(--blue-400);
+    border-color: var(--blue-400);
+    color: white;
+    transform: scale(1.02);
+}
+
+/* 图标大小 */
+.toggle svg {
+    width: 28px;
+    height: 28px;
+}

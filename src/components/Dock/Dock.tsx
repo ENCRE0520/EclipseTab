@@ -5,6 +5,7 @@ import { AddIcon } from './AddIcon';
 import { DockNavigator } from './DockNavigator';
 import { SpaceManageMenu } from '../Modal/SpaceManageMenu';
 import { DragPreview } from '../DragPreview';
+import { CreativeModeToggle } from '../ZenShelf';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { useDockDrag } from '../../context/DockContext';
 import { useSpaces } from '../../context/SpacesContext';
@@ -251,6 +252,13 @@ export const Dock: React.FC<DockProps> = ({
     return (
         <header ref={innerRef} className={`${styles.dock} ${isEditMode ? styles.editMode : ''}`}>
             <div ref={dockContentRef} className={styles.dockContent} data-dock-container="true">
+                {/* 创作模式切换按钮 - 始终可见 */}
+                <CreativeModeToggle />
+                <div className={styles.divider}>
+                    <svg width="1" height="48" viewBox="0 0 1 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="0.5" y1="0" x2="0.5" y2="48" strokeWidth="1" />
+                    </svg>
+                </div>
                 <div className={`${styles.editTools} ${isEditMode ? styles.visible : ''}`}>
                     <AddIcon onClick={rect => onItemAdd(rect)} />
                     <div className={styles.divider}>

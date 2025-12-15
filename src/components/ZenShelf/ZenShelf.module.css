@@ -1,0 +1,526 @@
+/* ===== Zen Shelf 画布样式 ===== */
+
+/* 画布容器 - 位于壁纸与 UI 之间 */
+.canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    /* 默认透传指针事件 */
+    overflow: hidden;
+}
+
+/* 创作模式下的画布 - 不阻挡 UI 层 */
+.canvas.creativeMode {
+    /* 注意：不设置 pointer-events: auto，让贴纸自己接收事件 */
+    /* 画布只在点击空白处时接收事件，通过 JS 控制 */
+    cursor: crosshair;
+}
+
+/* ===== 贴纸基础样式 ===== */
+
+/* 贴纸通用样式 - 核心贴纸效果 */
+/* 使用 SVG filter 实现纯白无模糊描边 + 模糊阴影 */
+.sticker {
+    position: absolute;
+    pointer-events: auto;
+    cursor: grab;
+    user-select: none;
+    /* 贴纸效果：使用伪元素实现白色描边 */
+    /* 阴影使用 box-shadow */
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
+    transition: filter var(--transition-fast);
+}
+
+/* 文字贴纸的白色轮廓 - 通过 text-stroke 实现 */
+.textSticker {
+    -webkit-text-stroke: 12px white;
+    paint-order: stroke fill;
+}
+
+/* 图片贴纸的白色轮廓 - 通过 outline 实现 */
+.imageSticker {
+    outline: 6px solid white;
+    outline-offset: 0;
+}
+
+/* 拖拽中的样式 */
+.sticker.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
+}
+
+/* 创作模式下悬停效果 */
+.sticker.creativeHover:hover {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+}
+
+/* 选中态 */
+.sticker.selected {
+    outline: 2px dashed var(--blue-500);
+    outline-offset: 8px;
+}
+
+/* ===== 文字贴纸 ===== */
+
+.textSticker {
+    padding: 12px 16px;
+    background: transparent;
+    font-family: var(--font-family);
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 0.9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 600px;
+    min-width: 60px;
+}
+
+/* ===== 图片贴纸 ===== */
+
+.imageSticker {
+    display: block;
+    max-width: none;
+    height: auto;
+    border-radius: var(--radius-medium);
+}
+
+/* 图片容器 - 用于定位缩放手柄 */
+.imageContainer {
+    position: relative;
+    display: inline-block;
+}
+
+/* ===== 缩放手柄 ===== */
+
+.resizeHandle {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 2px solid var(--gray-400);
+    border-radius: 4px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.sticker:hover .resizeHandle {
+    opacity: 1;
+}
+
+.resizeHandle:hover {
+    border-color: var(--blue-500);
+    background: var(--blue-100, #E3F2FD);
+}
+
+
+/* ===== 删除按钮 ===== */
+
+.deleteButton {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--red-500);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.sticker:hover .deleteButton,
+.deleteButton:focus {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.deleteButton:hover {
+    background: var(--red-400);
+}
+
+/* ===== 文字输入弹窗 ===== */
+
+.textInputPopup {
+    position: fixed;
+    z-index: 3000;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: auto;
+}
+
+/* 内层容器 */
+.textInputInner {
+    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-small);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 320px;
+}
+
+/* 标签文本 */
+.textInputLabel {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-none);
+    color: var(--color-text-primary);
+    opacity: 0.6;
+}
+
+/* 输入区域 */
+.textInput {
+    width: 100%;
+    min-height: 80px;
+    max-height: 200px;
+    padding: var(--spacing-padding-small);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-medium);
+    outline: none;
+    resize: vertical;
+    transition: border-color var(--transition-medium), background var(--transition-medium);
+    box-sizing: border-box;
+}
+
+.textInput:focus {
+    background: var(--color-bg-tertiary);
+    border-color: var(--blue-focus);
+}
+
+.textInput::placeholder {
+    color: var(--color-text-secondary);
+}
+
+/* 样式选项区域 */
+.styleOptionsSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* 对齐按钮组 */
+.alignmentGroup {
+    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-small);
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+}
+
+.alignmentButton {
+    flex: 1;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: background var(--transition-fast);
+}
+
+.alignmentButton:hover {
+    background: var(--color-bg-primary);
+}
+
+.alignmentButton.active {
+    background: var(--blue-500);
+    color: white;
+}
+
+/* 颜色选项网格 */
+.colorOptionsGrid {
+    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-small);
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+}
+
+.colorOptionBtn {
+    flex: 1;
+    height: 32px;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.colorOptionBtn:hover {
+    transform: scale(1.05);
+}
+
+.colorOptionBtn.active {
+    border-color: var(--blue-500);
+    box-shadow: 0 0 0 1px var(--blue-500);
+}
+
+/* 底部操作按钮 */
+.textInputActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.textInputCancel {
+    flex: 1;
+    padding: var(--spacing-padding-small);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    color: var(--color-text-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background var(--transition-medium);
+}
+
+.textInputCancel:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.textInputConfirm {
+    flex: 1;
+    padding: var(--spacing-padding-small);
+    background: var(--blue-500);
+    border: none;
+    border-radius: var(--radius-small);
+    color: white;
+    font-family: var(--font-family);
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: background var(--transition-medium), opacity var(--transition-medium);
+}
+
+.textInputConfirm:hover {
+    background: var(--blue-400);
+}
+
+.textInputConfirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ===== 浮动工具栏 ===== */
+
+.floatingToolbar {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--color-bg-secondary);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    box-shadow: var(--shadow-combined);
+    z-index: 200;
+    pointer-events: auto;
+}
+
+/* 工具栏分隔线 */
+.toolbarDivider {
+    width: 1px;
+    height: 16px;
+    background: var(--color-border);
+}
+
+/* 对齐按钮 */
+.alignButton {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    transition: background var(--transition-fast);
+}
+
+.alignButton:hover {
+    background: var(--color-bg-tertiary);
+}
+
+.alignButton.active {
+    background: var(--blue-500);
+    color: white;
+}
+
+/* 颜色选择器 */
+.colorButton {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.colorButton:hover {
+    transform: scale(1.15);
+}
+
+.colorButton.active {
+    border-color: var(--blue-500);
+}
+
+/* ===== 右键菜单 ===== */
+/* 样式参考 SpaceManageMenu */
+
+.contextMenu {
+    position: fixed;
+    z-index: 3000;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: var(--spacing-padding-small);
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    gap: 0;
+    pointer-events: auto;
+    box-shadow: var(--shadow-combined);
+}
+
+/* 菜单标签 */
+.menuLabel {
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-medium);
+    font-size: 12px;
+    padding: var(--spacing-padding-extrasmall);
+    line-height: var(--line-height-none);
+    color: var(--color-text-primary);
+    opacity: 0.6;
+    white-space: nowrap;
+    margin: 0;
+}
+
+/* 菜单分隔线 */
+.menuDivider {
+    width: 100%;
+    height: 0;
+    padding: var(--spacing-padding-extrasmall);
+    position: relative;
+    margin: 0;
+}
+
+.menuDivider::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--color-border);
+}
+
+/* 菜单选项容器 */
+.menuOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+/* 菜单项 */
+.menuItem {
+    background: none;
+    border: none;
+    padding: var(--spacing-padding-small);
+    font-family: var(--font-family);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-medium);
+    line-height: var(--line-height-none);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-gap-small);
+    text-align: left;
+    white-space: nowrap;
+    transition: opacity var(--transition-medium), background var(--transition-medium);
+    opacity: 1;
+    margin: 0;
+    border-radius: 8px;
+}
+
+.menuItem:hover {
+    opacity: 0.8;
+    background: var(--color-bg-secondary);
+}
+
+.menuItem:active {
+    background: var(--color-bg-tertiary);
+}
+
+/* 危险操作 (删除) */
+.menuItem.danger {
+    color: #ff6b6b;
+}
+
+.menuItem.danger:hover {
+    background: rgba(255, 107, 107, 0.1);
+}
+
+/* 菜单图标 */
+.menuIcon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    background-color: var(--color-text-primary);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.menuItem.danger .menuIcon {
+    background-color: #ff6b6b;
+}

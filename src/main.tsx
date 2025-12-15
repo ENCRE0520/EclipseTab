@@ -4,6 +4,7 @@ import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 import { SpacesProvider } from './context/SpacesContext';
 import { DockProvider } from './context/DockContext';
+import { ZenShelfProvider } from './context/ZenShelfContext';
 import './styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <SpacesProvider>
         <DockProvider>
-          <App />
+          <ZenShelfProvider>
+            <App />
+          </ZenShelfProvider>
         </DockProvider>
       </SpacesProvider>
     </ThemeProvider>
