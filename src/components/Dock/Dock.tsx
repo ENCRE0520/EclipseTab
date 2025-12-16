@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { DockItem as DockItemType } from '../../types';
 import { DockItem } from './DockItem';
 import { AddIcon } from './AddIcon';
@@ -222,6 +222,58 @@ export const Dock: React.FC<DockProps> = ({
 
     const isInteracting = dragState.isDragging || dragState.isAnimatingReturn || !!externalDragItem;
 
+    // ============================================================================
+    // 性能优化: 缓存 transition 字符串，避免每次渲染创建新对象
+    // ============================================================================
+    const cachedTransitions = useMemo(() => ({
+        draggingCollapsed: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`,
+        draggingWithPlaceholder: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`,
+        normal: `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`,
+    }), []);
+
+    // 生成 item wrapper 样式的辅助函数
+    const getItemWrapperStyle = useCallback((
+        index: number,
+        isDraggingItem: boolean,
+        translateX: number,
+        placeholderIdx: number | null,
+        interacting: boolean
+    ): React.CSSProperties => {
+        if (isDraggingItem) {
+            if (placeholderIdx === null) {
+                // Collapsed state - cursor far from dock
+                return {
+                    '--stagger-index': index,
+                    width: 0,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    opacity: 0,
+                    visibility: 'hidden',
+                    pointerEvents: 'none',
+                    transition: interacting ? cachedTransitions.draggingCollapsed : 'none',
+                } as React.CSSProperties;
+            } else {
+                // With placeholder - cursor over dock
+                return {
+                    '--stagger-index': index,
+                    width: 64,
+                    minWidth: 64,
+                    opacity: 0,
+                    visibility: 'hidden',
+                    pointerEvents: 'none',
+                    transform: `translateX(${translateX}px)`,
+                    transition: interacting ? cachedTransitions.draggingWithPlaceholder : 'none',
+                } as React.CSSProperties;
+            }
+        }
+        // Normal state
+        return {
+            '--stagger-index': index,
+            transform: `translateX(${translateX}px)`,
+            transition: interacting ? cachedTransitions.normal : 'none',
+        } as React.CSSProperties;
+    }, [cachedTransitions]);
+
     // Sync innerRef with dockRef from hook
     useEffect(() => {
         if (innerRef.current) {
@@ -286,39 +338,7 @@ export const Dock: React.FC<DockProps> = ({
                             ref={el => { itemRefs.current[index] = el; }}
                             className={`${styles.dockItemWrapper} ${isDragging ? styles.isBeingDragged : ''} ${animationClass}`}
                             data-dock-item-wrapper="true"
-                            style={isDragging ? (
-                                // When cursor is far from dock, collapse width so dock shrinks
-                                // When cursor is over dock (placeholderIndex set), keep width for transform-based gap
-                                placeholderIndex === null ? {
-                                    '--stagger-index': index,
-                                    width: 0,
-                                    minWidth: 0,
-                                    overflow: 'hidden',
-                                    opacity: 0,
-                                    visibility: 'hidden', // Force hide
-                                    pointerEvents: 'none',
-                                    transition: isInteracting
-                                        ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
-                                        : 'none',
-                                } as React.CSSProperties : {
-                                    '--stagger-index': index,
-                                    width: 64,
-                                    minWidth: 64,
-                                    opacity: 0,
-                                    visibility: 'hidden', // Force hide
-                                    pointerEvents: 'none',
-                                    transform: `translateX(${translateX}px)`,
-                                    transition: isInteracting
-                                        ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`
-                                        : 'none',
-                                } as React.CSSProperties
-                            ) : {
-                                '--stagger-index': index,
-                                transform: `translateX(${translateX}px)`,
-                                transition: isInteracting
-                                    ? `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
-                                    : 'none',
-                            } as React.CSSProperties}
+                            style={getItemWrapperStyle(index, isDragging, translateX, placeholderIndex, isInteracting)}
                         >
                             <DockItem
                                 item={item}

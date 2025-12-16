@@ -1,15 +1,22 @@
 import { getCachedIcon, setCachedIcon } from './iconCache';
 
+// ============================================================================
+// 请求去重: 跟踪进行中的请求，避免重复网络请求
+// ============================================================================
+type IconResult = { url: string; isFallback: boolean };
+const pendingRequests = new Map<string, Promise<IconResult>>();
+
 /**
  * 获取网站图标
  * 优先级：
  * 1. 缓存命中
- * 2. 自定义图标（已上传）
- * 3. 网站根目录的 favicon.ico
- * 4. Google Favicon 服务
- * 5. 生成备用 SVG
+ * 2. 进行中的请求 (去重)
+ * 3. 自定义图标（已上传）
+ * 4. 网站根目录的 favicon.ico
+ * 5. Google Favicon 服务
+ * 6. 生成备用 SVG
  */
-export const fetchIcon = async (url: string, minSize: number = 100): Promise<{ url: string; isFallback: boolean }> => {
+export const fetchIcon = async (url: string, minSize: number = 100): Promise<IconResult> => {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
@@ -19,6 +26,36 @@ export const fetchIcon = async (url: string, minSize: number = 100): Promise<{ u
     if (cached) {
       return cached;
     }
+
+    // 检查是否有进行中的请求 (请求去重)
+    const cacheKey = `${domain}:${minSize}`;
+    const pending = pendingRequests.get(cacheKey);
+    if (pending) {
+      return pending;
+    }
+
+    // 创建新请求并缓存 Promise
+    const fetchPromise = fetchIconInternal(url, domain, minSize);
+    pendingRequests.set(cacheKey, fetchPromise);
+
+    try {
+      return await fetchPromise;
+    } finally {
+      pendingRequests.delete(cacheKey);
+    }
+  } catch {
+    // If failed, generate text icon
+    const result = { url: generateTextIcon(url), isFallback: true };
+    return result;
+  }
+};
+
+/**
+ * 内部图标获取逻辑
+ */
+const fetchIconInternal = async (url: string, domain: string, minSize: number): Promise<IconResult> => {
+  try {
+    const urlObj = new URL(url);
 
     const protocol = urlObj.protocol;
     const origin = `${protocol}//${domain}`;

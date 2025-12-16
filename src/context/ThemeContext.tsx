@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { storage } from '../utils/storage';
 import { useSystemTheme } from '../hooks/useSystemTheme';
 import { useWallpaperStorage } from '../hooks/useWallpaperStorage';
@@ -14,26 +14,42 @@ export const DEFAULT_THEME_COLORS = {
     dark: '#2C2C2E',
 };
 
-interface ThemeContextType {
+// ============================================================================
+// 数据层 Context (变化时需要重渲染)
+// ============================================================================
+interface ThemeDataContextType {
     theme: Theme;
-    setTheme: (theme: Theme) => void;
     followSystem: boolean;
-    setFollowSystem: (follow: boolean) => void;
     wallpaper: string | null;
-    setWallpaper: (wallpaper: string | null) => void;
-    uploadWallpaper: (file: File) => Promise<void>;
     lastWallpaper: string | null;
     gradientId: string | null;
-    setGradientId: (gradientId: string | null) => void;
     texture: Texture;
-    setTexture: (texture: Texture) => void;
     wallpaperId: string | null;
-    setWallpaperId: (id: string) => Promise<void>;
     backgroundValue: string;
     backgroundBlendMode: string;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeDataContext = createContext<ThemeDataContextType | undefined>(undefined);
+
+// ============================================================================
+// 操作层 Context (几乎不变)
+// ============================================================================
+interface ThemeActionsContextType {
+    setTheme: (theme: Theme) => void;
+    setFollowSystem: (follow: boolean) => void;
+    setWallpaper: (wallpaper: string | null) => void;
+    uploadWallpaper: (file: File) => Promise<void>;
+    setGradientId: (gradientId: string | null) => void;
+    setTexture: (texture: Texture) => void;
+    setWallpaperId: (id: string) => Promise<void>;
+}
+
+const ThemeActionsContext = createContext<ThemeActionsContextType | undefined>(undefined);
+
+// ============================================================================
+// 兼容层 (组合类型)
+// ============================================================================
+type ThemeContextType = ThemeDataContextType & ThemeActionsContextType;
 
 const MAX_WALLPAPER_SIZE = 20 * 1024 * 1024; // 20MB limit
 
@@ -304,34 +320,76 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
     }, [backgroundValue, backgroundBlendMode, isDefaultTheme]);
 
+    // ========================================================================
+    // 性能优化: 分离 data 和 actions context values
+    // ========================================================================
+    const dataValue: ThemeDataContextType = useMemo(() => ({
+        theme,
+        followSystem,
+        wallpaper,
+        lastWallpaper,
+        gradientId,
+        texture,
+        wallpaperId,
+        backgroundValue,
+        backgroundBlendMode,
+    }), [theme, followSystem, wallpaper, lastWallpaper, gradientId, texture, wallpaperId, backgroundValue, backgroundBlendMode]);
+
+    const actionsValue: ThemeActionsContextType = useMemo(() => ({
+        setTheme,
+        setFollowSystem,
+        setWallpaper,
+        uploadWallpaper,
+        setGradientId,
+        setTexture,
+        setWallpaperId,
+    }), [setTheme, setFollowSystem, setWallpaper, uploadWallpaper, setGradientId, setTexture, setWallpaperId]);
+
     return (
-        <ThemeContext.Provider value={{
-            theme,
-            setTheme,
-            followSystem,
-            setFollowSystem,
-            wallpaper,
-            setWallpaper,
-            uploadWallpaper,
-            lastWallpaper,
-            gradientId,
-            setGradientId,
-            texture,
-            setTexture,
-            wallpaperId,
-            setWallpaperId,
-            backgroundValue,
-            backgroundBlendMode,
-        }}>
-            {children}
-        </ThemeContext.Provider>
+        <ThemeDataContext.Provider value={dataValue}>
+            <ThemeActionsContext.Provider value={actionsValue}>
+                {children}
+            </ThemeActionsContext.Provider>
+        </ThemeDataContext.Provider>
     );
 };
 
-export const useTheme = () => {
-    const context = useContext(ThemeContext);
+// ============================================================================
+// Hooks
+// ============================================================================
+
+/**
+ * 获取主题数据状态 (变化时触发重渲染)
+ * 用于需要读取 theme、wallpaper 等数据的组件
+ */
+export const useThemeData = (): ThemeDataContextType => {
+    const context = useContext(ThemeDataContext);
     if (context === undefined) {
-        throw new Error('useTheme must be used within a ThemeProvider');
+        throw new Error('useThemeData must be used within a ThemeProvider');
     }
     return context;
+};
+
+/**
+ * 获取主题操作方法 (几乎不变)
+ * 用于只需要调用 setTheme、setWallpaper 等操作的组件
+ */
+export const useThemeActions = (): ThemeActionsContextType => {
+    const context = useContext(ThemeActionsContext);
+    if (context === undefined) {
+        throw new Error('useThemeActions must be used within a ThemeProvider');
+    }
+    return context;
+};
+
+/**
+ * 获取完整的 Theme Context (兼容层)
+ * 组合 ThemeDataContext 和 ThemeActionsContext
+ * 
+ * 性能建议：如果组件只需要部分状态，建议使用 useThemeData 或 useThemeActions
+ */
+export const useTheme = (): ThemeContextType => {
+    const data = useThemeData();
+    const actions = useThemeActions();
+    return { ...data, ...actions };
 };

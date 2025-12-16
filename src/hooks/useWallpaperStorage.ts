@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { db, WallpaperItem } from '../utils/db';
 
 export interface UseWallpaperStorageReturn {
@@ -120,8 +120,8 @@ export const useWallpaperStorage = (): UseWallpaperStorageReturn => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<Error | null>(null);
 
-    // Track active object URLs for cleanup
-    const [activeUrls, setActiveUrls] = useState<Set<string>>(new Set());
+    // 性能优化: 使用 useRef 跟踪 URL，避免每次添加 URL 触发重渲染
+    const activeUrlsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         if (typeof window === 'undefined' || !window.indexedDB) {
@@ -132,18 +132,15 @@ export const useWallpaperStorage = (): UseWallpaperStorageReturn => {
 
     // Cleanup all created URLs on unmount
     useEffect(() => {
+        const urlsRef = activeUrlsRef;
         return () => {
-            activeUrls.forEach(url => URL.revokeObjectURL(url));
+            urlsRef.current.forEach(url => URL.revokeObjectURL(url));
         };
-    }, [activeUrls]);
+    }, []);
 
     const createWallpaperUrl = useCallback((blob: Blob): string => {
         const url = URL.createObjectURL(blob);
-        setActiveUrls(prev => {
-            const next = new Set(prev);
-            next.add(url);
-            return next;
-        });
+        activeUrlsRef.current.add(url);
         return url;
     }, []);
 
