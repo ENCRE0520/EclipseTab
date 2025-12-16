@@ -1,6 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
+import alignLeftIcon from '../../assets/icons/align-left.svg';
+import alignCenterIcon from '../../assets/icons/align-center.svg';
+import alignRightIcon from '../../assets/icons/align-right.svg';
 import { TEXT_COLORS } from './FloatingToolbar';
 import styles from './ZenShelf.module.css';
 
@@ -156,21 +159,21 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
                         onClick={() => setTextAlign('left')}
                         title="左对齐"
                     >
-                        ←
+                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignLeftIcon})`, maskImage: `url(${alignLeftIcon})` }} />
                     </button>
                     <button
                         className={styles.toolbarAlignBtn}
                         onClick={() => setTextAlign('center')}
                         title="居中"
                     >
-                        ↔
+                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignCenterIcon})`, maskImage: `url(${alignCenterIcon})` }} />
                     </button>
                     <button
                         className={styles.toolbarAlignBtn}
                         onClick={() => setTextAlign('right')}
                         title="右对齐"
                     >
-                        →
+                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignRightIcon})`, maskImage: `url(${alignRightIcon})` }} />
                     </button>
                 </div>
 

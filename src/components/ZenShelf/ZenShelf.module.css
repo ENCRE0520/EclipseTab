@@ -632,6 +632,18 @@
     box-shadow: var(--shadow-small);
 }
 
+.toolbarIcon {
+    width: 16px;
+    height: 16px;
+    background-color: currentColor;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
 .toolbarAlignBtn {
     width: 32px;
     height: 28px;
@@ -677,7 +689,7 @@
 
 /* 操作按钮 */
 .toolbarCancelBtn {
-    padding: var(--spacing-padding-extrasmall) var(--spacing-padding-small);
+    padding: var(--spacing-padding-small) var(--spacing-padding-medium);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-small);
@@ -694,7 +706,7 @@
 }
 
 .toolbarConfirmBtn {
-    padding: var(--spacing-padding-extrasmall) var(--spacing-padding-small);
+    padding: var(--spacing-padding-small) var(--spacing-padding-medium);
     background: var(--blue-500);
     border: none;
     border-radius: var(--radius-small);
