@@ -189,7 +189,7 @@ export const ZenShelf: React.FC = () => {
                 style: style ? {
                     color: style.color,
                     textAlign: style.textAlign,
-                    fontSize: 48,
+                    fontSize: 40,
                 } : undefined,
             });
         }

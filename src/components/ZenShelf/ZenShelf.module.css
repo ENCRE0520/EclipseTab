@@ -76,7 +76,7 @@
     padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     background: transparent;
     font-family: var(--font-family);
-    font-size: 48px;
+    font-size: 40px;
     font-weight: 900;
     line-height: 0.9;
     white-space: pre-wrap;
@@ -560,20 +560,20 @@
 
 /* 可编辑的贴纸预览 */
 .stickerPreviewInput {
+    min-width: 200px;
+    max-width: 600px;
     padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     background: transparent;
     font-family: var(--font-family);
-    font-size: 48px;
+    font-size: 40px;
     font-weight: 900;
     line-height: 0.9;
     white-space: pre-wrap;
     word-break: break-word;
-    max-width: 720px;
-    min-width: 120px;
-    min-height: 60px;
     outline: none;
     border: none;
     cursor: text;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     /* 文字贴纸白色轮廓 */
     -webkit-text-stroke: 12px white;
     paint-order: stroke fill;

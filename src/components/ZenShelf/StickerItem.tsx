@@ -289,7 +289,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
         : undefined;
 
     // Calculate scaled font size for text stickers
-    const scaledFontSize = (sticker.style?.fontSize || 48) * viewportScale;
+    const scaledFontSize = (sticker.style?.fontSize || 40) * viewportScale;
 
     return (
         <>

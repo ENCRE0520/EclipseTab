@@ -37,7 +37,7 @@ export type StickerInput = Omit<Sticker, 'id'>;
 export const DEFAULT_TEXT_STYLE: TextStickerStyle = {
     color: '#1C1C1E',        // 深色文字
     textAlign: 'left',
-    fontSize: 48,
+    fontSize: 40,
 };
 
 /**
