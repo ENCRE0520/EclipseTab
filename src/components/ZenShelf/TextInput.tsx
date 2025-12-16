@@ -11,28 +11,41 @@ import styles from './ZenShelf.module.css';
 // TextInput Component - Enhanced popup with style options
 // ============================================================================
 
+// Font size options: small, medium, large
+const FONT_SIZES = [
+    { label: '小', value: 24 },
+    { label: '中', value: 32 },
+    { label: '大', value: 40 },
+] as const;
+
+type FontSizeValue = typeof FONT_SIZES[number]['value'];
+
 interface TextInputProps {
     x: number;
     y: number;
     initialText?: string;
-    initialStyle?: { color: string; textAlign: 'left' | 'center' | 'right' };
-    onSubmit: (content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right' }) => void;
+    initialStyle?: { color: string; textAlign: 'left' | 'center' | 'right'; fontSize?: number };
+    onSubmit: (content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right'; fontSize: number }) => void;
     onCancel: () => void;
+    viewportScale: number;
 }
 
-export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', initialStyle, onSubmit, onCancel }) => {
+export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', initialStyle, onSubmit, onCancel, viewportScale }) => {
     const inputRef = useRef<HTMLDivElement>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [value, setValue] = useState(initialText);
     const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(initialStyle?.textAlign || 'left');
     const [textColor, setTextColor] = useState(initialStyle?.color || TEXT_COLORS[0]);
+    const [fontSize, setFontSize] = useState<FontSizeValue>(
+        (initialStyle?.fontSize as FontSizeValue) || 40
+    );
     const [isExiting, setIsExiting] = useState(false);
 
-    // Focus on mount and play enter animation
+    // Focus on mount and play enter animation for toolbar only
     useEffect(() => {
-        if (containerRef.current) {
-            scaleFadeIn(containerRef.current, 200);
+        if (toolbarRef.current) {
+            scaleFadeIn(toolbarRef.current, 200);
         }
         if (inputRef.current) {
             inputRef.current.focus();
@@ -50,12 +63,12 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
         }
     }, [initialText]);
 
-    // Trigger exit animation
+    // Trigger exit animation for toolbar only
     const triggerExit = useCallback((callback: () => void) => {
         if (isExiting) return;
         setIsExiting(true);
-        if (containerRef.current) {
-            scaleFadeOut(containerRef.current, 150, callback);
+        if (toolbarRef.current) {
+            scaleFadeOut(toolbarRef.current, 150, callback);
         } else {
             callback();
         }
@@ -73,7 +86,7 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             // Submit if has content, otherwise cancel
             const text = inputRef.current?.innerText?.trim() || '';
             if (text) {
-                triggerExit(() => onSubmit(text, { color: textColor, textAlign }));
+                triggerExit(() => onSubmit(text, { color: textColor, textAlign, fontSize }));
             } else {
                 triggerExit(onCancel);
             }
@@ -85,7 +98,7 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             clearTimeout(timer);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [textColor, textAlign, onSubmit, onCancel, isExiting, triggerExit]);
+    }, [textColor, textAlign, fontSize, onSubmit, onCancel, isExiting, triggerExit]);
 
 
 
@@ -108,7 +121,7 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     const handleSubmit = () => {
         const trimmed = inputRef.current?.innerText?.trim() || '';
         if (trimmed) {
-            triggerExit(() => onSubmit(trimmed, { color: textColor, textAlign }));
+            triggerExit(() => onSubmit(trimmed, { color: textColor, textAlign, fontSize }));
         } else {
             handleCancel();
         }
@@ -117,6 +130,9 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     const handleCancel = () => {
         triggerExit(onCancel);
     };
+
+    // Get font size index for highlight position
+    const fontSizeIndex = FONT_SIZES.findIndex(fs => fs.value === fontSize);
 
     return createPortal(
         <div
@@ -133,6 +149,7 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
                 style={{
                     color: textColor,
                     textAlign: textAlign,
+                    fontSize: `${fontSize * viewportScale}px`,
                 }}
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
@@ -179,6 +196,28 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
 
                 <div className={styles.toolbarDivider} />
 
+                {/* 字体大小选项 */}
+                <div className={styles.toolbarAlignGroup}>
+                    <div
+                        className={styles.toolbarHighlight}
+                        style={{
+                            transform: `translateX(${fontSizeIndex * 100}%)`,
+                        }}
+                    />
+                    {FONT_SIZES.map((fs) => (
+                        <button
+                            key={fs.value}
+                            className={styles.toolbarAlignBtn}
+                            onClick={() => setFontSize(fs.value)}
+                            title={`字体大小: ${fs.value}px`}
+                        >
+                            {fs.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className={styles.toolbarDivider} />
+
                 {/* 颜色选项 */}
                 <div className={styles.toolbarColorGroup}>
                     {TEXT_COLORS.map((color) => (
@@ -210,3 +249,4 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
         document.body
     );
 };
+

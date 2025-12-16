@@ -169,14 +169,14 @@ export const ZenShelf: React.FC = () => {
     }, [addSticker]);
 
     // Handle text input submit
-    const handleTextSubmit = useCallback((content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right' }) => {
+    const handleTextSubmit = useCallback((content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right'; fontSize: number }) => {
         if (editingSticker) {
             updateSticker(editingSticker.id, {
                 content,
                 style: style ? {
                     color: style.color,
                     textAlign: style.textAlign,
-                    fontSize: editingSticker.style?.fontSize || 48,
+                    fontSize: style.fontSize,
                 } : editingSticker.style,
             });
         } else if (textInputPos) {
@@ -189,7 +189,7 @@ export const ZenShelf: React.FC = () => {
                 style: style ? {
                     color: style.color,
                     textAlign: style.textAlign,
-                    fontSize: 40,
+                    fontSize: style.fontSize,
                 } : undefined,
             });
         }
@@ -290,6 +290,7 @@ export const ZenShelf: React.FC = () => {
                     initialStyle={editingSticker?.style}
                     onSubmit={handleTextSubmit}
                     onCancel={handleTextCancel}
+                    viewportScale={viewportScale}
                 />
             )}
 
@@ -319,7 +320,8 @@ export const ZenShelf: React.FC = () => {
                         const sticker = stickers.find(s => s.id === contextMenu.stickerId);
                         if (sticker) {
                             setEditingSticker(sticker);
-                            setTextInputPos({ x: sticker.x, y: sticker.y });
+                            // Convert reference coordinates to screen coordinates
+                            setTextInputPos({ x: sticker.x * viewportScale, y: sticker.y * viewportScale });
                         }
                     }}
                     onDeleteSticker={() => {
