@@ -8,14 +8,14 @@ import { DockItem } from '../types';
 /** 目标压缩尺寸 - 图标 (192px 足够显示 56px 图标) */
 const ICON_TARGET_SIZE = 192;
 
-/** 目标压缩尺寸 - 贴纸图片 */
-const STICKER_TARGET_WIDTH = 400;
+/** 目标压缩尺寸 - 贴纸图片 (800px 保证高清晰度) */
+const STICKER_TARGET_WIDTH = 800;
 
 /** WebP 压缩质量 - 图标 (更高压缩) */
 const ICON_COMPRESSION_QUALITY = 0.6;
 
-/** WebP 压缩质量 - 贴纸 */
-const STICKER_COMPRESSION_QUALITY = 0.8;
+/** WebP 压缩质量 - 贴纸 (0.85 平衡质量与大小) */
+const STICKER_COMPRESSION_QUALITY = 0.85;
 
 /**
  * 压缩 Base64 图标到指定尺寸 (192x192)
