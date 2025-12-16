@@ -1,15 +1,25 @@
+import { getCachedIcon, setCachedIcon } from './iconCache';
+
 /**
  * 获取网站图标
  * 优先级：
- * 1. 自定义图标（已上传）
- * 2. 网站根目录的 favicon.ico
- * 3. Google Favicon 服务
- * 4. 生成备用 SVG
+ * 1. 缓存命中
+ * 2. 自定义图标（已上传）
+ * 3. 网站根目录的 favicon.ico
+ * 4. Google Favicon 服务
+ * 5. 生成备用 SVG
  */
 export const fetchIcon = async (url: string, minSize: number = 100): Promise<{ url: string; isFallback: boolean }> => {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
+
+    // 检查缓存
+    const cached = getCachedIcon(domain);
+    if (cached) {
+      return cached;
+    }
+
     const protocol = urlObj.protocol;
     const origin = `${protocol}//${domain}`;
 
@@ -63,15 +73,17 @@ export const fetchIcon = async (url: string, minSize: number = 100): Promise<{ u
       .sort((a, b) => b.width - a.width); // Sort by size descending
 
     if (validIcons.length > 0) {
-      return { url: validIcons[0].url, isFallback: false };
+      const result = { url: validIcons[0].url, isFallback: false };
+      // 缓存结果
+      setCachedIcon(domain, result);
+      return result;
     }
 
     throw new Error('No high-res icons found');
   } catch {
     // If failed, generate text icon
-    // Use domain as initial text? Or allow caller to update it later?
-    // We will generate based on domain for now, caller can update with name.
-    return { url: generateTextIcon(url), isFallback: true };
+    const result = { url: generateTextIcon(url), isFallback: true };
+    return result;
   }
 };
 
@@ -118,7 +130,7 @@ export const generateTextIcon = (text: string): string => {
           displayText = mainName.charAt(0).toUpperCase() + mainName.slice(1);
         }
       }
-    } catch (e) {
+    } catch {
       // ignore, use text as is
     }
 
@@ -217,5 +229,3 @@ export const generateFolderIcon = (items: Array<{ icon?: string }>): string => {
 
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
-
-

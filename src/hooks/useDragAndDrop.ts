@@ -109,6 +109,12 @@ export const useDragAndDrop = ({
     // 使用 ref 跟踪外部拖拽状态
     const wasExternalDragActiveRef = useRef(false);
 
+    // ============================================================================
+    // RAF 节流 - 限制 mousemove 处理频率为每帧一次
+    // ============================================================================
+    const rafIdRef = useRef<number | null>(null);
+    const pendingMouseEventRef = useRef<MouseEvent | null>(null);
+
     // 拖拽开始时缓存 Dock Rect
     const cacheDockRect = useCallback(() => {
         if (dockRef.current) {
@@ -180,10 +186,11 @@ export const useDragAndDrop = ({
     }, []);
 
     // ========================================================================
-    // handleMouseMove - 使用提取的模块
+    // handleMouseMove - 使用提取的模块 + RAF 节流
     // ========================================================================
 
-    const handleMouseMove = useCallback((e: MouseEvent) => {
+    /** 实际处理 mousemove 逻辑的内部函数 */
+    const processMouseMove = useCallback((e: MouseEvent) => {
         const state = dragRef.current;
         const activeItem = state.isDragging ? state.item : externalDragItem;
 
@@ -255,7 +262,25 @@ export const useDragAndDrop = ({
         handleMergeTargetHover,
         resetDockDragStates,
         setPlaceholderIndex,
+        performHapticFeedback,
     ]);
+
+    /** RAF 节流包装的 handleMouseMove */
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        // 保存最新的 mousemove 事件
+        pendingMouseEventRef.current = e;
+
+        // 如果已经有 RAF 排队，跳过（下一帧会处理最新事件）
+        if (rafIdRef.current !== null) return;
+
+        rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            const event = pendingMouseEventRef.current;
+            if (event) {
+                processMouseMove(event);
+            }
+        });
+    }, [processMouseMove]);
 
     // ========================================================================
     // 优化 1: 合并外部拖拽相关的 useEffect
@@ -632,6 +657,10 @@ export const useDragAndDrop = ({
     // Cleanup when component unmounts
     useEffect(() => {
         return () => {
+            // 清理 RAF
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+            }
             if (thresholdListenerRef.current) {
                 window.removeEventListener('mousemove', thresholdListenerRef.current);
             }

@@ -35,6 +35,8 @@
     /* 阴影使用 box-shadow */
     filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
     transition: filter var(--transition-fast);
+    /* GPU 加速提示 */
+    will-change: transform;
 }
 
 /* 文字贴纸的白色轮廓 - 通过 text-stroke 实现 */
@@ -53,6 +55,8 @@
 .sticker.dragging {
     cursor: grabbing;
     filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
+    /* 拖拽时额外提示 position 变化 */
+    will-change: transform, left, top;
 }
 
 /* 创作模式下悬停效果 */
@@ -550,7 +554,7 @@
     z-index: 2000;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-gap-small);
     pointer-events: auto;
 }
 
@@ -592,8 +596,8 @@
 .stickerToolbar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
+    gap: 8px;
+    padding: var(--spacing-padding-small);
     background: var(--color-bg-primary);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -610,7 +614,7 @@
     grid-template-columns: repeat(3, 1fr);
     background: var(--color-bg-secondary);
     border-radius: var(--radius-small);
-    padding: 4px;
+    padding: var(--spacing-padding-extrasmall);
     position: relative;
     isolation: isolate;
 }
@@ -657,14 +661,14 @@
 .toolbarColorBtn {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
+    border-radius: var(--radius-large);
     border: 2px solid transparent;
     cursor: pointer;
     transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .toolbarColorBtn:hover {
-    transform: scale(1.15);
+    transform: scale(1.05);
 }
 
 .toolbarColorBtn.active {
@@ -673,7 +677,7 @@
 
 /* 操作按钮 */
 .toolbarCancelBtn {
-    padding: 6px 14px;
+    padding: var(--spacing-padding-extrasmall) var(--spacing-padding-small);
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-small);
@@ -690,7 +694,7 @@
 }
 
 .toolbarConfirmBtn {
-    padding: 6px 14px;
+    padding: var(--spacing-padding-extrasmall) var(--spacing-padding-small);
     background: var(--blue-500);
     border: none;
     border-radius: var(--radius-small);

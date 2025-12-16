@@ -5,8 +5,8 @@
 
 import { DockItem } from '../types';
 
-/** 目标压缩尺寸 - 图标 */
-const ICON_TARGET_SIZE = 300;
+/** 目标压缩尺寸 - 图标 (192px 足够显示 56px 图标) */
+const ICON_TARGET_SIZE = 192;
 
 /** 目标压缩尺寸 - 贴纸图片 */
 const STICKER_TARGET_WIDTH = 400;
@@ -18,7 +18,7 @@ const ICON_COMPRESSION_QUALITY = 0.6;
 const STICKER_COMPRESSION_QUALITY = 0.8;
 
 /**
- * 压缩 Base64 图标到指定尺寸 (300x300)
+ * 压缩 Base64 图标到指定尺寸 (192x192)
  * @param dataUrl Base64 编码的图片
  * @returns 压缩后的 Base64 图片
  */

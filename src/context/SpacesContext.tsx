@@ -76,14 +76,28 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         return spaces.findIndex(s => s.id === activeSpaceId);
     }, [spaces, activeSpaceId]);
 
-    // 持久化到 localStorage
+    // 持久化到 localStorage (防抖保存)
     // 跳过首次渲染，因为 storage.getSpaces() 已经处理了保存
+    const saveTimeoutRef = useRef<number>();
+
     useEffect(() => {
         if (isFirstRenderRef.current) {
             isFirstRenderRef.current = false;
             return;
         }
-        storage.saveSpaces(spacesState);
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = window.setTimeout(() => {
+            storage.saveSpaces(spacesState);
+        }, 500);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
     }, [spacesState]);
 
     // ============================================================================

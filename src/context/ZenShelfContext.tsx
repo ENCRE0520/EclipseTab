@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Sticker, StickerInput, DEFAULT_TEXT_STYLE } from '../types';
 import { storage } from '../utils/storage';
+
+// 防抖保存延迟 (ms)
+const SAVE_DEBOUNCE_MS = 500;
 
 // ============================================================================
 // Context Type Definition
@@ -41,9 +44,23 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [stickers, setStickers] = useState<Sticker[]>(() => storage.getStickers());
     const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
 
-    // 持久化：stickers 变化时保存到 localStorage
+    // 防抖保存 ref
+    const saveTimeoutRef = useRef<number>();
+
+    // 持久化：stickers 变化时防抖保存到 localStorage
     useEffect(() => {
-        storage.saveStickers(stickers);
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = window.setTimeout(() => {
+            storage.saveStickers(stickers);
+        }, SAVE_DEBOUNCE_MS);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
     }, [stickers]);
 
 

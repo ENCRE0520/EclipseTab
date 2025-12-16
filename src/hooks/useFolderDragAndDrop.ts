@@ -100,10 +100,16 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
     // Track last position for drop events (since we don't update state during drag)
     const lastPositionRef = useRef<{ x: number; y: number } | null>(null);
 
+    // ============================================================================
+    // RAF 节流 - 限制 mousemove 处理频率为每帧一次
+    // ============================================================================
+    const rafIdRef = useRef<number | null>(null);
+    const pendingMouseEventRef = useRef<MouseEvent | null>(null);
+
     /**
-     * 处理鼠标移动 (Internal)
+     * 处理鼠标移动逻辑 (Internal) - 实际处理函数
      */
-    const handleMouseMove = useCallback((e: MouseEvent) => {
+    const processInternalMouseMove = useCallback((e: MouseEvent) => {
         const currentDrag = dragRef.current;
         // 如果是内部拖拽
         if (currentDrag.isDragging && currentDrag.item) {
@@ -164,34 +170,59 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         }
     }, [dragRef, itemsRef, layoutSnapshotRef, containerRef, setDragState, setPlaceholderIndex, onDragOut, strategy, dragElementRef, cachedContainerRectRef]);
 
+    /** RAF 节流包装的 handleMouseMove */
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        pendingMouseEventRef.current = e;
+        if (rafIdRef.current !== null) return;
+
+        rafIdRef.current = requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            const event = pendingMouseEventRef.current;
+            if (event) {
+                processInternalMouseMove(event);
+            }
+        });
+    }, [processInternalMouseMove]);
+
     /**
-     * 处理外部拖拽 (External Drag)
+     * 处理外部拖拽 (External Drag) - 同样使用 RAF 节流
      */
     useEffect(() => {
         if (!externalDragItem) return;
 
-        // 确保 Layout Snapshot 已经捕获 (因为外部拖拽可能随时进入)
-        // 最好在外部拖拽开始进入时捕获，但这里我们无法感知"进入"，只能持续监测
-        // 为了性能，我们可以简单判断 snapshot 是否为空，或者依赖 externalDragItem 的传入时机
+        // 确保 Layout Snapshot 已经捕获
         if (layoutSnapshotRef.current.length === 0 && items.length > 0) {
             captureLayoutSnapshot();
         }
 
+        let externalRafId: number | null = null;
+        let pendingExternalEvent: MouseEvent | null = null;
+
         const handleExternalMouseMove = (e: MouseEvent) => {
-            // 计算落点
-            const newIndex = strategy.calculatePlaceholder(
-                e.clientX,
-                e.clientY,
-                layoutSnapshotRef.current,
-                items.length,
-                cachedContainerRectRef.current || undefined
-            );
-            setPlaceholderIndex(newIndex);
+            pendingExternalEvent = e;
+            if (externalRafId !== null) return;
+
+            externalRafId = requestAnimationFrame(() => {
+                externalRafId = null;
+                if (pendingExternalEvent) {
+                    const newIndex = strategy.calculatePlaceholder(
+                        pendingExternalEvent.clientX,
+                        pendingExternalEvent.clientY,
+                        layoutSnapshotRef.current,
+                        items.length,
+                        cachedContainerRectRef.current || undefined
+                    );
+                    setPlaceholderIndex(newIndex);
+                }
+            });
         };
 
         window.addEventListener('mousemove', handleExternalMouseMove);
         return () => {
             window.removeEventListener('mousemove', handleExternalMouseMove);
+            if (externalRafId !== null) {
+                cancelAnimationFrame(externalRafId);
+            }
         };
     }, [externalDragItem, items.length, setPlaceholderIndex, captureLayoutSnapshot, strategy, cachedContainerRectRef]);
 

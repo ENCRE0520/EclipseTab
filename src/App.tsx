@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { DockItem } from './types';
 import { SEARCH_ENGINES } from './constants/searchEngines';
-import { useDock } from './context/DockContext';
+import { useDockData, useDockUI, useDockDrag } from './context/DockContext';
 import { Searcher } from './components/Searcher/Searcher';
 import { Dock } from './components/Dock/Dock';
 import { Editor } from './components/Editor/Editor';
@@ -9,25 +9,23 @@ import { Settings } from './components/Settings/Settings';
 import { FolderView } from './components/FolderView/FolderView';
 import { AddEditModal } from './components/Modal/AddEditModal';
 import { SearchEngineModal } from './components/Modal/SearchEngineModal';
-import { SettingsModal } from './components/Modal/SettingsModal.tsx';
 import { Background } from './components/Background/Background';
 import { ZenShelf } from './components/ZenShelf';
 import styles from './App.module.css';
 
+// 懒加载非核心模态框
+const SettingsModal = lazy(() => import('./components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
+
 function App() {
-  // 使用 DockContext 获取状态和操作
+  // ============================================================================
+  // 性能优化: 使用细粒度 Context Hooks 减少不必要的重渲染
+  // ============================================================================
+
+  // 数据层 (低频变化) - 仅在 dockItems/searchEngine 变化时重渲染
   const {
     dockItems,
-    isEditMode,
     selectedSearchEngine,
-    folderAnchor,
-    draggingItem,
-    setIsEditMode,
     setSelectedSearchEngine,
-    setOpenFolderId,
-    setFolderAnchor,
-    setDraggingItem,
-    handleItemClick,
     handleItemDelete,
     handleItemSave,
     handleItemsReorder,
@@ -36,10 +34,42 @@ function App() {
     handleDragFromFolder,
     handleDragToFolder,
     handleDropOnFolder,
-    handleHoverOpenFolder,
-    openFolder,
-    setFolderPlaceholderActive, // Add this
-  } = useDock();
+  } = useDockData();
+
+  // UI 层 (中频变化) - 仅在 editMode/openFolder 变化时重渲染
+  const {
+    isEditMode,
+    openFolderId,
+    folderAnchor,
+    setIsEditMode,
+    setOpenFolderId,
+    setFolderAnchor,
+  } = useDockUI();
+
+  // 拖拽层 (高频变化) - 仅在拖拽状态变化时重渲染
+  const { draggingItem, setDraggingItem, setFolderPlaceholderActive } = useDockDrag();
+
+  // 计算派生状态
+  const openFolder = useMemo(
+    () => dockItems.find((item) => item.id === openFolderId),
+    [dockItems, openFolderId]
+  );
+
+  // 组合操作 - 需要同时访问数据和 UI
+  const handleItemClick = useCallback((item: DockItem, rect?: DOMRect) => {
+    if (item.type === 'folder') {
+      setOpenFolderId(item.id);
+      setFolderAnchor(rect ?? null);
+    } else if (item.url) {
+      window.open(item.url, '_blank');
+    }
+  }, [setOpenFolderId, setFolderAnchor]);
+
+  const handleHoverOpenFolder = useCallback((_item: DockItem, folder: DockItem) => {
+    if (folder.type === 'folder') {
+      setOpenFolderId(folder.id);
+    }
+  }, [setOpenFolderId]);
 
   // 本地 UI 状态 (Modal 相关)
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
@@ -187,11 +217,15 @@ function App() {
         onSelect={setSelectedSearchEngine}
         anchorRect={searchEngineAnchor}
       />
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        anchorPosition={settingsAnchor ? { x: settingsAnchor.left, y: settingsAnchor.top } : { x: 0, y: 0 }}
-      />
+      {isSettingsModalOpen && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            anchorPosition={settingsAnchor ? { x: settingsAnchor.left, y: settingsAnchor.top } : { x: 0, y: 0 }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
