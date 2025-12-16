@@ -73,8 +73,8 @@ export const ZenShelf: React.FC = () => {
             if (stickerEl) {
                 e.preventDefault();
                 const sticker = stickers.find(s =>
-                    Math.abs(s.x - parseInt(stickerEl.style.left)) < 10 &&
-                    Math.abs(s.y - parseInt(stickerEl.style.top)) < 10
+                    Math.abs(s.x * viewportScale - parseInt(stickerEl.style.left)) < 10 &&
+                    Math.abs(s.y * viewportScale - parseInt(stickerEl.style.top)) < 10
                 );
                 if (sticker) {
                     setContextMenu({
