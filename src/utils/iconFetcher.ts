@@ -124,16 +124,33 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
   }
 };
 
+// ============================================================================
+// 性能优化: 复用单个 Canvas 元素，避免重复创建 DOM 元素
+// ============================================================================
+let reusableCanvas: HTMLCanvasElement | null = null;
+let reusableCtx: CanvasRenderingContext2D | null = null;
+
+function getReusableCanvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
+  if (!reusableCanvas) {
+    reusableCanvas = document.createElement('canvas');
+    reusableCanvas.width = 576;
+    reusableCanvas.height = 576;
+    reusableCtx = reusableCanvas.getContext('2d');
+  }
+  if (!reusableCtx) return null;
+  // 清空画布以便复用
+  reusableCtx.clearRect(0, 0, 576, 576);
+  return { canvas: reusableCanvas, ctx: reusableCtx };
+}
+
 /**
  * 生成文字图标
  */
 export const generateTextIcon = (text: string): string => {
   try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 576;
-    canvas.height = 576;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '';
+    const canvasData = getReusableCanvas();
+    if (!canvasData) return '';
+    const { canvas, ctx } = canvasData;
 
     // Extract text to display. If it's a URL, extract domain/name.
     let displayText = text;

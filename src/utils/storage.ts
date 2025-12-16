@@ -16,6 +16,35 @@ const STORAGE_KEYS = {
   STICKERS: 'EclipseTab_stickers',
 } as const;
 
+// ============================================================================
+// 性能优化: 内存缓存层，避免重复 JSON.parse
+// ============================================================================
+interface CacheEntry<T> {
+  data: T;
+  raw: string; // 用于检测 localStorage 是否被外部修改
+}
+
+const memoryCache = {
+  spaces: null as CacheEntry<SpacesState> | null,
+  stickers: null as CacheEntry<import('../types').Sticker[]> | null,
+};
+
+/**
+ * 从缓存获取数据，如果 localStorage 数据未变则返回缓存
+ */
+function getCached<T>(key: string, cache: CacheEntry<T> | null): T | null {
+  if (!cache) return null;
+  try {
+    const currentRaw = localStorage.getItem(key);
+    if (currentRaw === cache.raw) {
+      return cache.data;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export const storage = {
   getDockItems(): DockItem[] {
     try {
@@ -192,11 +221,17 @@ export const storage = {
    */
   getSpaces(): SpacesState {
     try {
+      // 检查内存缓存
+      const cached = getCached(STORAGE_KEYS.SPACES, memoryCache.spaces);
+      if (cached) return cached;
+
       const spacesJson = localStorage.getItem(STORAGE_KEYS.SPACES);
       if (spacesJson) {
         const parsed = JSON.parse(spacesJson);
         // 确保数据有效
         if (parsed && parsed.spaces && parsed.spaces.length > 0) {
+          // 更新缓存
+          memoryCache.spaces = { data: parsed, raw: spacesJson };
           return parsed;
         }
       }
@@ -228,7 +263,10 @@ export const storage = {
    */
   saveSpaces(state: SpacesState): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.SPACES, JSON.stringify(state));
+      const json = JSON.stringify(state);
+      localStorage.setItem(STORAGE_KEYS.SPACES, json);
+      // 同步更新缓存
+      memoryCache.spaces = { data: state, raw: json };
     } catch (error) {
       console.error('Failed to save spaces:', error);
     }
@@ -254,9 +292,16 @@ export const storage = {
    */
   getStickers(): import('../types').Sticker[] {
     try {
+      // 检查内存缓存
+      const cached = getCached(STORAGE_KEYS.STICKERS, memoryCache.stickers);
+      if (cached) return cached;
+
       const stickersJson = localStorage.getItem(STORAGE_KEYS.STICKERS);
       if (stickersJson) {
-        return JSON.parse(stickersJson);
+        const parsed = JSON.parse(stickersJson);
+        // 更新缓存
+        memoryCache.stickers = { data: parsed, raw: stickersJson };
+        return parsed;
       }
       return [];
     } catch (error) {
@@ -270,7 +315,10 @@ export const storage = {
    */
   saveStickers(stickers: import('../types').Sticker[]): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.STICKERS, JSON.stringify(stickers));
+      const json = JSON.stringify(stickers);
+      localStorage.setItem(STORAGE_KEYS.STICKERS, json);
+      // 同步更新缓存
+      memoryCache.stickers = { data: stickers, raw: json };
     } catch (error) {
       console.error('Failed to save stickers:', error);
     }
