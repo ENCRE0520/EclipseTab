@@ -6,7 +6,7 @@
  * 3. Google Favicon 服务
  * 4. 生成备用 SVG
  */
-export const fetchIcon = async (url: string): Promise<string> => {
+export const fetchIcon = async (url: string, minSize: number = 100): Promise<{ url: string; isFallback: boolean }> => {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
@@ -17,21 +17,33 @@ export const fetchIcon = async (url: string): Promise<string> => {
     const candidates = [
       `https://www.google.com/s2/favicons?domain=${domain}&sz=256`, // Google High Res
       `${origin}/apple-touch-icon.png`,
-      `${origin}/apple-touch-icon-precomposed.png`,
+      `${origin}/apple-touch-icon-precomposed.png`, // Precomposed often better
       `${origin}/favicon.ico`,
     ];
 
     // Helper to probe an image URL
-    const probeImage = (src: string): Promise<{ url: string; size: number }> => {
+    // Modified to return image dimensions
+    const probeImage = (src: string): Promise<{ url: string; width: number; height: number }> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
         // Do not set crossOrigin to avoid CORS errors on opaque responses
         img.onload = () => {
-          // Filter out very small images (like 1x1 tracking pixels)
-          if (img.naturalWidth > 1) {
-            resolve({ url: src, size: img.naturalWidth });
+          // Check for min resolution (100x100) or at least not tiny (1x1)
+          // But requirement says "if < 100*100 -> use text icon"
+          // So we should only consider it a "valid high res icon" if >= minSize.
+          if (img.naturalWidth >= minSize && img.naturalHeight >= minSize) {
+            resolve({ url: src, width: img.naturalWidth, height: img.naturalHeight });
+          } else if (img.naturalWidth > 1) {
+            // If minSize is 0, we accept anything > 1 (Manual Fetch Mode)
+            if (minSize === 0) {
+              resolve({ url: src, width: img.naturalWidth, height: img.naturalHeight });
+              return;
+            }
+
+            // Otherwise reject
+            reject(`Image too small (< ${minSize}x${minSize})`);
           } else {
-            reject('Image too small');
+            reject('Image invalid');
           }
         };
         img.onerror = () => reject('Failed to load');
@@ -46,58 +58,133 @@ export const fetchIcon = async (url: string): Promise<string> => {
 
     // Filter successful results
     const validIcons = results
-      .filter((r): r is PromiseFulfilledResult<{ url: string; size: number }> => r.status === 'fulfilled')
+      .filter((r): r is PromiseFulfilledResult<{ url: string; width: number; height: number }> => r.status === 'fulfilled')
       .map(r => r.value)
-      .sort((a, b) => b.size - a.size); // Sort by size descending
+      .sort((a, b) => b.width - a.width); // Sort by size descending
 
     if (validIcons.length > 0) {
-      return validIcons[0].url;
+      return { url: validIcons[0].url, isFallback: false };
     }
 
-    // If all probes fail, fall back to Google's default (which might return a default globe)
-    // or just let the catch block handle it
-    throw new Error('No icons found');
+    throw new Error('No high-res icons found');
   } catch {
-    // If failed, generate fallback SVG
-    return generateFallbackIcon(url);
+    // If failed, generate text icon
+    // Use domain as initial text? Or allow caller to update it later?
+    // We will generate based on domain for now, caller can update with name.
+    return { url: generateTextIcon(url), isFallback: true };
   }
 };
 
 /**
- * 生成备用图标（网站名称首字母）
+ * 生成文字图标
  */
-const generateFallbackIcon = (url: string): string => {
+export const generateTextIcon = (text: string): string => {
   try {
-    const domain = new URL(url).hostname;
-    const firstLetter = domain.charAt(0).toUpperCase();
-    const svg = `
-      <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-        <rect width="64" height="64" rx="16" fill="rgba(255,255,255,0.2)"/>
-        <text x="32" y="42" font-family="Bricolage Grotesque" font-size="32" font-weight="500" text-anchor="middle" fill="white">${firstLetter}</text>
-      </svg>
-    `;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    const canvas = document.createElement('canvas');
+    canvas.width = 576;
+    canvas.height = 576;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    // Extract text to display. If it's a URL, extract domain/name.
+    let displayText = text;
+    try {
+      // Logic: 
+      // 1. If it looks like a URL (http/https or contains dot), parse it.
+      // 2. Extract hostname.
+      // 3. Remove 'www.'.
+      // 4. Take the first segment as the name (google.com -> google).
+      // 5. Title case it.
+
+      const isUrlLike = text.startsWith('http') || text.includes('.');
+      if (isUrlLike) {
+        let hostname = text;
+        try {
+          const urlObj = new URL(text.startsWith('http') ? text : `https://${text}`);
+          hostname = urlObj.hostname;
+        } catch {
+          // fallback if URL parsing fails but had dots
+          hostname = text;
+        }
+
+        // Remove www.
+        hostname = hostname.replace(/^www\./, '');
+
+        // Take first part
+        const mainName = hostname.split('.')[0];
+
+        if (mainName) {
+          // Capitalize
+          displayText = mainName.charAt(0).toUpperCase() + mainName.slice(1);
+        }
+      }
+    } catch (e) {
+      // ignore, use text as is
+    }
+
+    // 1. Random low brightness background
+    // H: 0-360, S: 40-80%, L: 20-35%
+    const bgHue = Math.floor(Math.random() * 360);
+    const bgSat = 40 + Math.floor(Math.random() * 40);
+    const bgLig = 20 + Math.floor(Math.random() * 15);
+    ctx.fillStyle = `hsl(${bgHue}, ${bgSat}%, ${bgLig}%)`;
+    ctx.fillRect(0, 0, 576, 576);
+
+    // 2. Random high brightness text
+    const ranTextHue = Math.floor(Math.random() * 360);
+    const textSat = 50 + Math.floor(Math.random() * 40);
+    const textLig = 80 + Math.floor(Math.random() * 15);
+    ctx.fillStyle = `hsl(${ranTextHue}, ${textSat}%, ${textLig}%)`;
+
+    // Font settings
+    ctx.font = '500 128px "Bricolage Grotesque", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+
+    const lines: string[] = [];
+
+    if (displayText.length <= 4) {
+      lines.push(displayText);
+    } else {
+      // Simple chunking
+      const chunkSize = 4; // 4 chars per line approx
+      for (let i = 0; i < displayText.length; i += chunkSize) {
+        lines.push(displayText.slice(i, i + chunkSize));
+      }
+    }
+
+    // Draw lines
+    const lineHeight = 137; // 120% of 114px = 136.8px
+    const totalHeight = lines.length * lineHeight;
+    const startY = (576 - totalHeight) / 2 + (lineHeight / 2); // vertical center
+
+    // Left alignment padding
+    const paddingLeft = 48;
+
+    lines.forEach((line, index) => {
+      ctx.fillText(line, paddingLeft, startY + (index * lineHeight));
+    });
+
+    return canvas.toDataURL('image/png');
   } catch {
-    // 完全失败时返回默认图标
-    const svg = `
-      <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-        <rect width="64" height="64" rx="16" fill="rgba(255,255,255,0.2)"/>
-      </svg>
-    `;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return '';
   }
 };
+
+
 
 /**
  * 为文件夹生成图标（前4个应用的图标组合成2x2网格）
+ * Updated to handle Data URLs from text icons
  */
 export const generateFolderIcon = (items: Array<{ icon?: string }>): string => {
   if (items.length === 0) {
-    return generateFallbackIcon('');
+    return generateTextIcon('');
   }
 
   // 创建2x2网格SVG图标
-  const icons = items.slice(0, 4).map(item => item.icon || generateFallbackIcon(''));
+  const icons = items.slice(0, 4).map(item => item.icon || generateTextIcon(''));
 
   // 创建组合SVG
   const svg = `
@@ -130,4 +217,5 @@ export const generateFolderIcon = (items: Array<{ icon?: string }>): string => {
 
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
+
 

@@ -9,6 +9,7 @@ import trashIcon from '../../assets/icons/trash.svg';
 import pinIcon from '../../assets/icons/pin.svg';
 import importIcon from '../../assets/icons/import.svg';
 import exportIcon from '../../assets/icons/export.svg';
+import editIcon from '../../assets/icons/edit.svg';
 import styles from './SpaceManageMenu.module.css';
 
 interface SpaceManageMenuProps {
@@ -44,6 +45,12 @@ interface SpaceManageMenuProps {
 
     /** 是否已经在顶部 (禁用置顶) */
     isFirstSpace: boolean;
+
+    /** 当前是否为编辑模式 */
+    isEditMode: boolean;
+
+    /** 切换编辑模式 */
+    onToggleEditMode: () => void;
 }
 
 /**
@@ -62,6 +69,8 @@ export function SpaceManageMenu({
     onImport,
     onPin,
     isFirstSpace,
+    isEditMode,
+    onToggleEditMode,
 }: SpaceManageMenuProps) {
     const [isRenaming, setIsRenaming] = useState(false);
     const [renameValue, setRenameValue] = useState('');
@@ -188,6 +197,10 @@ export function SpaceManageMenu({
                             <button className={styles.menuItem} onClick={handleAddClick}>
                                 <span className={styles.icon} style={{ WebkitMaskImage: `url(${plusIcon})`, maskImage: `url(${plusIcon})` }} />
                                 <span>Add space</span>
+                            </button>
+                            <button className={styles.menuItem} onClick={() => { onToggleEditMode(); onClose(); }}>
+                                <span className={styles.icon} style={{ WebkitMaskImage: `url(${editIcon})`, maskImage: `url(${editIcon})` }} />
+                                <span>{isEditMode ? 'Exit Edit Mode' : 'Edit Mode'}</span>
                             </button>
                             <button className={styles.menuItem} onClick={handleRenameClick}>
                                 <span className={styles.icon} style={{ WebkitMaskImage: `url(${writeIcon})`, maskImage: `url(${writeIcon})` }} />

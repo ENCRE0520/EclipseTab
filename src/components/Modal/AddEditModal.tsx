@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DockItem } from '../../types';
-import { fetchIcon } from '../../utils/iconFetcher';
+import { fetchIcon, generateTextIcon } from '../../utils/iconFetcher';
 import { compressIcon } from '../../utils/imageCompression';
 import { Modal } from './Modal';
 import styles from './AddEditModal.module.css';
@@ -25,6 +25,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [icon, setIcon] = useState('');
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [isFetchingIcon, setIsFetchingIcon] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,12 +38,25 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setName(item.name);
       setUrl(item.url || '');
       setIcon(item.icon || '');
+      setIsUsingFallback(false); // Reset fallback state on edit/open
     } else {
       setName('');
       setUrl('');
       setIcon('');
+      setIsUsingFallback(false);
     }
   }, [item, isOpen]);
+
+  // Effect: Update text icon when name changes if using fallback
+  useEffect(() => {
+    if (isUsingFallback) {
+      // Use name if available, otherwise use domain from URL
+      const textToUse = name.trim() || url;
+      if (textToUse) {
+        setIcon(generateTextIcon(textToUse));
+      }
+    }
+  }, [name, isUsingFallback, url]);
 
   // Helper to normalize URL (add protocol if missing)
   const normalizeUrl = (input: string): string => {
@@ -77,10 +91,17 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
 
       setIsFetchingIcon(true);
       try {
-        const fetchedIcon = await fetchIcon(normalized);
-        // 压缩获取的图标
-        const compressed = await compressIcon(fetchedIcon);
-        setIcon(compressed);
+        // Auto-fetch: strict requirement (min 100x100)
+        const { url: fetchedIcon, isFallback } = await fetchIcon(normalized, 100);
+        setIsUsingFallback(isFallback);
+
+        // Don't compress if it's already a small generated fallback
+        if (isFallback) {
+          setIcon(fetchedIcon);
+        } else {
+          const compressed = await compressIcon(fetchedIcon);
+          setIcon(compressed);
+        }
       } catch (error) {
         // silent fail
       } finally {
@@ -98,8 +119,18 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
         // 压缩图标到 500x500 减少存储占用
         const compressed = await compressIcon(dataUrl);
         setIcon(compressed);
+        setIsUsingFallback(false); // User manually uploaded an icon
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUseTextIcon = () => {
+    setIsUsingFallback(true);
+    // Force immediate update in case effect is delayed or strictly dependent on changes
+    const textToUse = name.trim() || url;
+    if (textToUse) {
+      setIcon(generateTextIcon(textToUse));
     }
   };
 
@@ -118,10 +149,17 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     setIsFetchingIcon(true);
     try {
       const normalized = normalizeUrl(url);
-      const fetchedIcon = await fetchIcon(normalized);
-      // 压缩获取的图标
-      const compressed = await compressIcon(fetchedIcon);
-      setIcon(compressed);
+      // Manual fetch: lax requirement (accept any size)
+      const { url: fetchedIcon, isFallback } = await fetchIcon(normalized, 0);
+      setIsUsingFallback(isFallback);
+
+      if (isFallback) {
+        setIcon(fetchedIcon);
+      } else {
+        // 压缩获取的图标
+        const compressed = await compressIcon(fetchedIcon);
+        setIcon(compressed);
+      }
     } catch (error) {
       console.error('Failed to fetch icon:', error);
     } finally {
@@ -196,6 +234,17 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
                 <path d="M0.5 6C0.5 2.9625 2.9625 0.5 6 0.5C9.0375 0.5 11.5 2.9625 11.5 6C11.5 9.0375 9.0375 11.5 6 11.5C2.9625 11.5 0.5 9.0375 0.5 6ZM6 1.5C5.40905 1.5 4.82389 1.61632 4.27792 1.84254C3.73196 2.06875 3.23588 2.40016 2.81802 2.81802C2.40016 3.23588 2.06875 3.73196 1.84254 4.27792C1.61632 4.82389 1.5 5.40905 1.5 6C1.5 6.59095 1.61632 7.17611 1.84254 7.72208C2.06875 8.26804 2.40016 8.76412 2.81802 9.18198C3.23588 9.59984 3.73196 9.93125 4.27792 10.1575C4.82389 10.3837 5.40905 10.5 6 10.5C7.19347 10.5 8.33807 10.0259 9.18198 9.18198C10.0259 8.33807 10.5 7.19347 10.5 6C10.5 4.80653 10.0259 3.66193 9.18198 2.81802C8.33807 1.97411 7.19347 1.5 6 1.5Z" fill="currentColor" />
               </svg>
               Get from website
+            </button>
+            <button
+              type="button"
+              className={styles.actionButton}
+              onClick={handleUseTextIcon}
+              title="Generate text icon"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.5 3.5C2.5 2.94772 2.94772 2.5 3.5 2.5H12.5C13.0523 2.5 13.5 2.94772 13.5 3.5V4.5C13.5 4.77614 13.2761 5 13 5H12.5C12.2239 5 12 4.77614 12 4.5V4H9V12H10C10.2761 12 10.5 12.2239 10.5 12.5V13C10.5 13.2761 10.2761 13.5 10 13.5H6C5.72386 13.5 5.5 13.2761 5.5 13V12.5C5.5 12.2239 5.72386 12 6 12H7V4H4V4.5C4 4.77614 3.77614 5 3.5 5H3C2.72386 5 2.5 4.77614 2.5 4.5V3.5Z" fill="currentColor" />
+              </svg>
+              Use Text Icon
             </button>
             <button
               type="button"

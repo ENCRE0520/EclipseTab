@@ -169,6 +169,7 @@
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
+    box-shadow: var(--shadow-combined);
     padding: var(--spacing-padding-extrasmall);
     display: flex;
     flex-direction: column;
@@ -180,7 +181,7 @@
 .textInputInner {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
-    border-radius: var(--radius-medium);
+    border-radius: var(--radius-default-in);
     padding: var(--spacing-padding-small);
     display: flex;
     flex-direction: column;
@@ -251,7 +252,9 @@
     justify-content: center;
     background: transparent;
     border: none;
-    border-radius: var(--spacing-border-default);
+    border-radius: 4px;
+    /* Local specific overrides allowed but variable preferred */
+    border-radius: var(--radius-small);
     cursor: pointer;
     color: var(--color-text-primary);
     transition: background var(--transition-fast);
@@ -279,7 +282,7 @@
 .colorOptionBtn {
     flex: 1;
     height: 32px;
-    border-radius: var(--spacing-border-default);
+    border-radius: var(--radius-small);
     border: 2px solid transparent;
     cursor: pointer;
     transition: all var(--transition-fast);

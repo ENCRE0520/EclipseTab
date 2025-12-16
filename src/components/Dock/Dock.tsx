@@ -7,7 +7,7 @@ import { SpaceManageMenu } from '../Modal/SpaceManageMenu';
 import { DragPreview } from '../DragPreview';
 
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
-import { useDockDrag } from '../../context/DockContext';
+import { useDockDrag, useDock } from '../../context/DockContext';
 import { useSpaces } from '../../context/SpacesContext';
 import { generateFolderIcon } from '../../utils/iconFetcher';
 import {
@@ -55,6 +55,7 @@ export const Dock: React.FC<DockProps> = ({
 }) => {
     const innerRef = useRef<HTMLDivElement>(null);
     const { folderPlaceholderActive } = useDockDrag();
+    const { setIsEditMode } = useDock();
 
     // Focus Spaces 集成
     const {
@@ -413,6 +414,8 @@ export const Dock: React.FC<DockProps> = ({
                     setShowSpaceMenu(false);
                 }}
                 isFirstSpace={currentIndex === 0}
+                isEditMode={isEditMode}
+                onToggleEditMode={() => setIsEditMode(!isEditMode)}
             />
         </header>
     );

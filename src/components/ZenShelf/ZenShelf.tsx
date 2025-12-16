@@ -428,6 +428,7 @@ interface StickerItemProps {
     onStyleChange: (updates: Partial<Sticker['style']>) => void;
     onBringToTop: () => void;
     onScaleChange: (scale: number) => void;
+    isEditMode?: boolean;
 }
 
 const StickerItem: React.FC<StickerItemProps> = ({
@@ -440,6 +441,7 @@ const StickerItem: React.FC<StickerItemProps> = ({
     onStyleChange,
     onBringToTop,
     onScaleChange,
+    isEditMode,
 }) => {
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -511,7 +513,11 @@ const StickerItem: React.FC<StickerItemProps> = ({
             return;
         }
 
-        if (isCreativeMode) {
+        // Logic Change: In Edit Mode, stickers should NOT be selectable (popup/outline),
+        // BUT they should still be draggable.
+        // So we only skip onSelect(), but allow execution to proceed to drag logic.
+
+        if (isCreativeMode && !isEditMode) {
             onSelect();
         }
 
@@ -708,7 +714,7 @@ const StickerItem: React.FC<StickerItemProps> = ({
                 )}
 
                 {/* Delete button - visible in creative mode on hover */}
-                {isCreativeMode && (
+                {isCreativeMode && !isEditMode && (
                     <button
                         className={styles.deleteButton}
                         onClick={(e) => {
@@ -1003,6 +1009,7 @@ export const ZenShelf: React.FC = () => {
                     onScaleChange={(scale) => {
                         updateSticker(sticker.id, { scale });
                     }}
+                    isEditMode={isEditMode}
                 />
             ))}
 

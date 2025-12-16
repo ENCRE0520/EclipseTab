@@ -173,7 +173,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         const updatedSubItems = await Promise.all(item.items.map(async (subItem) => {
                             if (subItem.url) {
                                 try {
-                                    const icon = await fetchIcon(subItem.url);
+                                    const { url: icon } = await fetchIcon(subItem.url);
                                     return { ...subItem, icon };
                                 } catch (e) {
                                     console.error(`Failed to fetch icon for ${subItem.name}`, e);
@@ -189,7 +189,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         };
                     } else if (item.url) {
                         try {
-                            const icon = await fetchIcon(item.url);
+                            const { url: icon } = await fetchIcon(item.url);
                             return { ...item, icon };
                         } catch (e) {
                             console.error(`Failed to fetch icon for ${item.name}`, e);
