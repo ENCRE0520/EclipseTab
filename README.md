@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Eclipse Tab 预览](https://github.com/user-attachments/assets/68a369b7-3c01-44ba-b033-a1dbc38fbcd3)
+![Eclipse Tab 预览](https://github.com/user-attachments/assets/f7674f4f-3830-43bc-8ac4-00fdc0ceec7d)
 
 **灵感白板 · 多重空间 · 美观高效**
 
