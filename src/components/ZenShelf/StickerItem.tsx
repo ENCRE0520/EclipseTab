@@ -4,6 +4,20 @@ import { FloatingToolbar } from './FloatingToolbar';
 import styles from './ZenShelf.module.css';
 
 // ============================================================================
+// UI Boundary Constants - Areas where stickers should not be placed
+// ============================================================================
+const UI_ZONES = {
+    // Bottom area (Dock + Searcher) - approximate height
+    BOTTOM_MARGIN: 200,
+    // Top-left settings area
+    TOP_LEFT: { width: 140, height: 140 },
+    // Top-right editor area
+    TOP_RIGHT: { width: 140, height: 140 },
+    // Minimum margin from edges
+    EDGE_MARGIN: 20,
+};
+
+// ============================================================================
 // StickerItem Component - 单个贴纸渲染
 // ============================================================================
 
@@ -37,6 +51,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     const elementRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isResizing, setIsResizing] = useState(false);
+    const [isBouncing, setIsBouncing] = useState(false);
     const [stickerRect, setStickerRect] = useState<DOMRect | null>(null);
     const dragStartRef = useRef<{ x: number; y: number; stickerX: number; stickerY: number } | null>(null);
     const resizeStartRef = useRef<{ x: number; y: number; startScale: number } | null>(null);
@@ -173,9 +188,58 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             // 确保最终位置被更新
             if (positionRafId !== null) {
                 cancelAnimationFrame(positionRafId);
-                if (pendingPosition) {
-                    onPositionChange(pendingPosition.x, pendingPosition.y);
-                }
+            }
+
+            // Boundary protection - check if sticker is in a UI zone
+            // Use screen pixel coordinates for detection
+            const screenX = (pendingPosition?.x ?? sticker.x) * viewportScale;
+            const screenY = (pendingPosition?.y ?? sticker.y) * viewportScale;
+            let finalX = pendingPosition?.x ?? sticker.x;
+            let finalY = pendingPosition?.y ?? sticker.y;
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            let needsAdjustment = false;
+
+            // Check bottom zone (Dock/Searcher area) - screen coordinates
+            const bottomZoneY = windowHeight - UI_ZONES.BOTTOM_MARGIN;
+            if (screenY > bottomZoneY) {
+                finalY = (bottomZoneY - 50) / viewportScale;
+                needsAdjustment = true;
+            }
+
+            // Check top-left zone (Settings area) - screen coordinates
+            if (screenX < UI_ZONES.TOP_LEFT.width && screenY < UI_ZONES.TOP_LEFT.height) {
+                // Move to just outside the zone
+                finalX = (UI_ZONES.TOP_LEFT.width + 20) / viewportScale;
+                finalY = Math.max(finalY, (UI_ZONES.TOP_LEFT.height + 20) / viewportScale);
+                needsAdjustment = true;
+            }
+
+            // Check top-right zone (Editor area) - screen coordinates
+            const topRightThreshold = windowWidth - UI_ZONES.TOP_RIGHT.width;
+            if (screenX > topRightThreshold && screenY < UI_ZONES.TOP_RIGHT.height) {
+                // Move to just outside the zone
+                finalX = (topRightThreshold - 20) / viewportScale;
+                finalY = Math.max(finalY, (UI_ZONES.TOP_RIGHT.height + 20) / viewportScale);
+                needsAdjustment = true;
+            }
+
+            // Ensure sticker stays within screen bounds
+            const maxX = (windowWidth - UI_ZONES.EDGE_MARGIN) / viewportScale;
+            const maxY = (bottomZoneY - 50) / viewportScale;
+            finalX = Math.max(UI_ZONES.EDGE_MARGIN / viewportScale, Math.min(maxX, finalX));
+            finalY = Math.max(UI_ZONES.EDGE_MARGIN / viewportScale, Math.min(maxY, finalY));
+
+            // Apply bounce animation if adjustment needed
+            if (needsAdjustment) {
+                setIsBouncing(true);
+                // Remove bounce class after animation completes
+                setTimeout(() => setIsBouncing(false), 350);
+            }
+
+            // Apply final position (with adjustment if needed)
+            if (needsAdjustment || pendingPosition) {
+                onPositionChange(finalX, finalY);
             }
 
             setIsDragging(false);
@@ -279,6 +343,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     const classNames = [
         styles.sticker,
         isDragging && styles.dragging,
+        isBouncing && styles.bounceBack,
         isSelected && styles.selected,
         isCreativeMode && styles.creativeHover,
     ].filter(Boolean).join(' ');
@@ -299,7 +364,8 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                 style={{
                     left: sticker.x * viewportScale,
                     top: sticker.y * viewportScale,
-                    zIndex: sticker.zIndex || 1,
+                    // Elevate z-index during drag to stay above UI elements
+                    zIndex: isDragging ? 3000 : (sticker.zIndex || 1),
                 }}
                 onMouseDown={handleMouseDown}
             >
