@@ -10,9 +10,9 @@ const UI_ZONES = {
     // Bottom area (Dock + Searcher) - approximate height
     BOTTOM_MARGIN: 200,
     // Top-left settings area
-    TOP_LEFT: { width: 140, height: 140 },
+    TOP_LEFT: { width: 48, height: 48 },
     // Top-right editor area
-    TOP_RIGHT: { width: 140, height: 140 },
+    TOP_RIGHT: { width: 48, height: 48 },
     // Minimum margin from edges
     EDGE_MARGIN: 20,
 };
