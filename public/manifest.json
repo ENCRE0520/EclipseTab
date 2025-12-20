@@ -3,6 +3,18 @@
     "name": "Eclipse Tab",
     "version": "1.0.0",
     "description": "个人化新标签页浏览器扩展",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "eclipse-tab@encre.com",
+            "strict_min_version": "140.0",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ],
+                "optional": []
+            }
+        }
+    },
     "permissions": [
         "storage",
         "tabs"

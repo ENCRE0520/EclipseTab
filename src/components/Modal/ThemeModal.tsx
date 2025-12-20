@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Theme } from '../../context/ThemeContext';
+import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import styles from './ThemeModal.module.css';
 
 interface ThemeModalProps {
@@ -23,20 +24,33 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
     onClose,
     anchorRect,
 }) => {
-    const [isClosing, setIsClosing] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
 
+    // Handle visibility and animations
     useEffect(() => {
-        if (!isOpen) {
-            setIsClosing(false);
+        if (isOpen) {
+            setIsVisible(true);
         }
     }, [isOpen]);
 
+    // Run enter animation when modal becomes visible
+    useEffect(() => {
+        if (isOpen && isVisible && modalRef.current) {
+            scaleFadeIn(modalRef.current);
+        }
+    }, [isOpen, isVisible]);
+
     const handleClose = () => {
-        setIsClosing(true);
-        setTimeout(() => {
+        if (modalRef.current) {
+            scaleFadeOut(modalRef.current, 200, () => {
+                setIsVisible(false);
+                onClose();
+            });
+        } else {
+            setIsVisible(false);
             onClose();
-            setIsClosing(false);
-        }, 200);
+        }
     };
 
     const handleSelect = (theme: Theme) => {
@@ -61,7 +75,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
         };
     }, [isOpen]);
 
-    if (!isOpen && !isClosing) return null;
+    if (!isVisible) return null;
 
     // Calculate position
     const modalStyle: React.CSSProperties = {};
@@ -97,7 +111,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
     }
 
     return (
-        <div className={`${styles.modal} ${isClosing ? styles.closing : ''}`} style={modalStyle}>
+        <div ref={modalRef} className={styles.modal} style={modalStyle}>
             <div className={styles.content}>
                 {THEME_OPTIONS.map((option) => (
                     <div

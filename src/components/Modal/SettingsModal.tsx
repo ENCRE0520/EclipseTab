@@ -41,6 +41,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
     const systemTheme = useSystemTheme();
     const [isVisible, setIsVisible] = useState(isOpen);
     const modalRef = useRef<HTMLDivElement>(null);
+    const isClosingRef = useRef(false);
 
     // Logic to determine if we are in "Default" mode or "Light/Dark" mode
     const isDefaultTheme = theme === 'default' && !followSystem;
@@ -52,9 +53,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         }
     }, [isDefaultTheme, texture, setTexture]);
 
-    // Animation effects
+    // Animation effects - open
     useEffect(() => {
         if (isOpen) {
+            isClosingRef.current = false;
             setIsVisible(true);
         }
     }, [isOpen]);
@@ -65,8 +67,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         }
     }, [isOpen, isVisible]);
 
+    // Animation effects - close (triggered by parent setting isOpen=false)
     useEffect(() => {
-        if (!isOpen && isVisible) {
+        if (!isOpen && isVisible && !isClosingRef.current) {
+            isClosingRef.current = true;
             if (modalRef.current) {
                 scaleFadeOut(modalRef.current, 300, () => setIsVisible(false));
             } else {
@@ -139,9 +143,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         opacity: activeIndex >= 0 ? 1 : 0,
     };
 
+    // Handle close with animation
+    const handleClose = () => {
+        if (isClosingRef.current) return;
+        isClosingRef.current = true;
+
+        if (modalRef.current) {
+            scaleFadeOut(modalRef.current, 300, () => {
+                setIsVisible(false);
+                onClose();
+            });
+        } else {
+            setIsVisible(false);
+            onClose();
+        }
+    };
+
     return (
         <>
-            <div className={styles.backdrop} onClick={onClose} />
+            <div className={styles.backdrop} onClick={handleClose} />
             <div ref={modalRef} className={styles.modal} style={modalStyle}>
                 <div className={styles.innerContainer}>
                     {/* Theme Section */}

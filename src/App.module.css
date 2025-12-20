@@ -21,7 +21,8 @@
   gap: 14px;
   /* 使用全局变量 var(--spacing-gap-extralarge) */
   align-items: center;
-  width: 100%;
+  /* 宽度适应内容 */
+  width: auto;
   max-width: var(--container-max-width);
   min-width: var(--container-min-width);
   z-index: 100;
@@ -29,7 +30,8 @@
   /* Position transition animation */
   transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 内容容器 - 屏幕中央定位 */
@@ -42,14 +44,16 @@
   flex-direction: column;
   gap: 14px;
   align-items: center;
-  width: 100%;
+  /* 宽度适应内容 */
+  width: auto;
   max-width: var(--container-max-width);
   min-width: var(--container-min-width);
   z-index: 100;
   /* Position transition animation */
   transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 设置按钮区域 - 左上角 */

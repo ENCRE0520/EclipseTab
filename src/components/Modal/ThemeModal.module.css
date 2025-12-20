@@ -5,6 +5,7 @@
 
 /* ===== 主题选择弹窗容器 ===== */
 /* 定义弹窗的定位、模糊背景和基本样式 */
+/* 动画由 JS scaleFadeIn/scaleFadeOut 处理 */
 .modal {
     position: fixed;
     backdrop-filter: blur(40px);
@@ -16,13 +17,6 @@
     box-shadow: var(--shadow-combined);
     z-index: 4000;
     width: 280px;
-    animation: modalEnter var(--transition-medium);
-}
-
-/* ===== 关闭动画状态 ===== */
-/* 当弹窗关闭时使用淡出动画 */
-.modal.closing {
-    animation: modalExit var(--transition-medium);
 }
 
 /* ===== 弹窗内容容器 ===== */
