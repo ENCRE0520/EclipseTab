@@ -37,6 +37,8 @@
     transition: filter var(--transition-fast);
     /* GPU 加速提示 */
     will-change: transform;
+    /* 性能优化：限制布局和样式计算范围 */
+    contain: layout style;
 }
 
 /* 文字贴纸的白色轮廓 - 通过 text-stroke 实现 */

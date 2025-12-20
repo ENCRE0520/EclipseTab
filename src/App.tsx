@@ -7,14 +7,16 @@ import { Searcher } from './components/Searcher/Searcher';
 import { Dock } from './components/Dock/Dock';
 import { Editor } from './components/Editor/Editor';
 import { Settings } from './components/Settings/Settings';
-import { FolderView } from './components/FolderView/FolderView';
-import { AddEditModal } from './components/Modal/AddEditModal';
-import { SearchEngineModal } from './components/Modal/SearchEngineModal';
 import { Background } from './components/Background/Background';
 import { ZenShelf } from './components/ZenShelf';
 import styles from './App.module.css';
 
-// 懒加载非核心模态框
+// ============================================================================
+// 性能优化: 懒加载非核心组件，减少初始包大小
+// ============================================================================
+const FolderView = lazy(() => import('./components/FolderView/FolderView').then(m => ({ default: m.FolderView })));
+const AddEditModal = lazy(() => import('./components/Modal/AddEditModal').then(m => ({ default: m.AddEditModal })));
+const SearchEngineModal = lazy(() => import('./components/Modal/SearchEngineModal').then(m => ({ default: m.SearchEngineModal })));
 const SettingsModal = lazy(() => import('./components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
 
 function App() {
@@ -111,15 +113,15 @@ function App() {
     setEditingItem(null);
   };
 
-  const handleFolderItemClick = () => (item: DockItem) => {
+  const handleFolderItemClick = useCallback((item: DockItem) => {
     if (item.url) {
       window.open(item.url, '_blank');
     }
-  };
+  }, []);
 
-  const handleFolderItemEdit = () => (item: DockItem, rect?: DOMRect) => {
+  const handleFolderItemEdit = useCallback((item: DockItem, rect?: DOMRect) => {
     handleItemEdit(item, rect);
-  };
+  }, []);
 
   return (
     <div className={styles.app}>
@@ -189,42 +191,51 @@ function App() {
         />
       </div>
       {openFolder && openFolder.type === 'folder' && (
-        <FolderView
-          folder={openFolder}
-          isEditMode={isEditMode}
-          onItemClick={handleFolderItemClick()}
-          onItemEdit={handleFolderItemEdit()}
-          onItemDelete={(item) => handleFolderItemDelete(openFolder.id, item)}
-          onClose={() => { setOpenFolderId(null); setFolderAnchor(null); }}
-          onItemsReorder={(items) => handleFolderItemsReorder(openFolder.id, items)}
-          onItemDragOut={handleDragFromFolder}
-          anchorRect={folderAnchor}
-          onDragStart={(item) => { setDraggingItem(item); setDraggingFromFolder(true); }}
-          onDragEnd={() => { setDraggingItem(null); setDraggingFromFolder(false); }}
-          // 只有当拖拽来自 Dock 时才传递 externalDragItem，避免内部拖拽导致宽度扩展
-          externalDragItem={draggingFromFolder ? null : draggingItem}
-          onFolderPlaceholderChange={setFolderPlaceholderActive} // Add this
-        />
+        <Suspense fallback={null}>
+          <FolderView
+            folder={openFolder}
+            isEditMode={isEditMode}
+            onItemClick={handleFolderItemClick}
+            onItemEdit={handleFolderItemEdit}
+            onItemDelete={(item) => handleFolderItemDelete(openFolder.id, item)}
+            onClose={() => { setOpenFolderId(null); setFolderAnchor(null); }}
+            onItemsReorder={(items) => handleFolderItemsReorder(openFolder.id, items)}
+            onItemDragOut={handleDragFromFolder}
+            anchorRect={folderAnchor}
+            onDragStart={(item) => { setDraggingItem(item); setDraggingFromFolder(true); }}
+            onDragEnd={() => { setDraggingItem(null); setDraggingFromFolder(false); }}
+            externalDragItem={draggingFromFolder ? null : draggingItem}
+            onFolderPlaceholderChange={setFolderPlaceholderActive}
+          />
+        </Suspense>
       )}
-      <AddEditModal
-        isOpen={isAddEditModalOpen}
-        item={editingItem}
-        onClose={() => {
-          setIsAddEditModalOpen(false);
-          setEditingItem(null);
-        }}
-        onSave={handleModalSave}
-        anchorRect={addIconAnchor}
-        hideHeader
-      />
-      <SearchEngineModal
-        isOpen={isSearchEngineModalOpen}
-        selectedEngine={selectedSearchEngine}
-        engines={SEARCH_ENGINES}
-        onClose={() => setIsSearchEngineModalOpen(false)}
-        onSelect={setSelectedSearchEngine}
-        anchorRect={searchEngineAnchor}
-      />
+      {isAddEditModalOpen && (
+        <Suspense fallback={null}>
+          <AddEditModal
+            isOpen={isAddEditModalOpen}
+            item={editingItem}
+            onClose={() => {
+              setIsAddEditModalOpen(false);
+              setEditingItem(null);
+            }}
+            onSave={handleModalSave}
+            anchorRect={addIconAnchor}
+            hideHeader
+          />
+        </Suspense>
+      )}
+      {isSearchEngineModalOpen && (
+        <Suspense fallback={null}>
+          <SearchEngineModal
+            isOpen={isSearchEngineModalOpen}
+            selectedEngine={selectedSearchEngine}
+            engines={SEARCH_ENGINES}
+            onClose={() => setIsSearchEngineModalOpen(false)}
+            onSelect={setSelectedSearchEngine}
+            anchorRect={searchEngineAnchor}
+          />
+        </Suspense>
+      )}
       {isSettingsModalOpen && (
         <Suspense fallback={null}>
           <SettingsModal

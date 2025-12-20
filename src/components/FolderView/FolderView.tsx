@@ -214,47 +214,46 @@ export const FolderView: React.FC<FolderViewProps> = ({
   const displayWidth = Math.min(items.length, COLUMNS) * 64 + (Math.max(Math.min(items.length, COLUMNS) - 1, 0) * 8) + 16;
   const halfWidth = displayWidth / 2;
 
-  // Wait, `gridWidth` we calculated includes gaps properly.
-  // Let's use `gridWidth` + padding (16) for wrapper centering?
-  // But `items.length` changes visually during drag? No, layout positions change.
-  // The container width should theoretically stabilize to "Max columns used".
+  // ============================================================================
+  // 性能优化: 使用 useMemo 缓存内联样式对象
+  // ============================================================================
+  const popupWrapperStyle = useMemo(() => ({
+    left: `${Math.min(
+      Math.max(Math.round((anchorRect?.left ?? 0) + (anchorRect?.width ?? 0) / 2),
+        halfWidth
+      ), window.innerWidth - halfWidth)}px`,
+    top: `${Math.round((anchorRect?.top ?? 0) - 24)}px`,
+  }), [anchorRect?.left, anchorRect?.width, anchorRect?.top, halfWidth]);
+
+  const containerStyle = useMemo(() => ({
+    width: (Math.min(widthItemCount, COLUMNS) * CELL_WIDTH - GAP) + 16,
+    height: 'auto' as const,
+    transition: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SPRING}`,
+    pointerEvents: (dragState.isAnimatingReturn ? 'none' : 'auto') as React.CSSProperties['pointerEvents'],
+  }), [widthItemCount, dragState.isAnimatingReturn]);
+
+  const gridStyle = useMemo(() => ({
+    height: gridHeight,
+    width: '100%' as const,
+  }), [gridHeight]);
 
   return createPortal(
     <>
       <div
         className={styles.popupWrapper}
-        style={{
-          left: `${Math.min(
-            Math.max(Math.round((anchorRect?.left ?? 0) + (anchorRect?.width ?? 0) / 2),
-              halfWidth
-            ), window.innerWidth - halfWidth)}px`,
-          top: `${Math.round((anchorRect?.top ?? 0) - 24)}px`,
-        }}
+        style={popupWrapperStyle}
         onClick={(e) => e.stopPropagation()}
       >
         <div
           ref={containerRef}
           className={`${styles.container} ${styles.popover}`}
           data-folder-view="true"
-          style={{
-            // 宽度: Padding(8*2) + Width
-            // 内部拖拽时使用 items.length，不扩展宽度
-            // 外部拖入时使用 items.length + 1，扩展宽度
-            width: (Math.min(widthItemCount, COLUMNS) * CELL_WIDTH - GAP) + 16,
-            height: 'auto', // Controlled by grid height + padding
-            transition: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SPRING}`,
-            // 交互安全锁：动画期间禁用交互，防止误操作
-            pointerEvents: dragState.isAnimatingReturn ? 'none' : 'auto'
-          }}
+          style={containerStyle}
         >
           <div
             ref={gridRef}
             className={styles.grid}
-            style={{
-              // Absolute Layout Container needs explicit height
-              height: gridHeight,
-              width: '100%' // matches parent
-            }}
+            style={gridStyle}
           >
             {items.map((item, index) => {
               const pos = layoutPositions[item.id] || { x: 0, y: 0, visualIndex: 0 };

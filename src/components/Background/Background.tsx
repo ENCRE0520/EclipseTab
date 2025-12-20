@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useTheme } from '../../context/ThemeContext';
+import { useThemeData } from '../../context/ThemeContext';
 import styles from './Background.module.css';
 
 // Helper function to extract URL from background value
@@ -17,7 +17,7 @@ const extractUrl = (bgValue: string): string | null => {
 };
 
 export const Background: React.FC = () => {
-    const { backgroundValue, backgroundBlendMode } = useTheme();
+    const { backgroundValue, backgroundBlendMode } = useThemeData();
     const [bg1, setBg1] = useState(backgroundValue);
     const [bg2, setBg2] = useState('');
     const [activeLayer, setActiveLayer] = useState<1 | 2>(1);

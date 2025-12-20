@@ -72,20 +72,17 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                 return;
             }
 
-            // Check if right-clicking on a sticker
-            const stickerEl = target.closest(`.${styles.sticker}`) as HTMLElement;
+            // 事件委托优化: 使用 data-sticker-id 属性检测贴纸
+            const stickerEl = target.closest('[data-sticker-id]') as HTMLElement;
             if (stickerEl) {
                 e.preventDefault();
-                const sticker = stickers.find(s =>
-                    Math.abs(s.x * viewportScale - parseInt(stickerEl.style.left)) < 10 &&
-                    Math.abs(s.y * viewportScale - parseInt(stickerEl.style.top)) < 10
-                );
-                if (sticker) {
+                const stickerId = stickerEl.dataset.stickerId;
+                if (stickerId) {
                     setContextMenu({
                         x: e.clientX,
                         y: e.clientY,
                         type: 'sticker',
-                        stickerId: sticker.id,
+                        stickerId,
                     });
                 }
                 return;
@@ -113,7 +110,8 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                 return;
             }
 
-            if (target.closest(`.${styles.sticker}`)) {
+            // 事件委托优化: 使用 data-sticker-id 属性检测贴纸
+            if (target.closest('[data-sticker-id]')) {
                 return;
             }
 

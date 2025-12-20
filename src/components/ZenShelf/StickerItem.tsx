@@ -166,8 +166,9 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             if (positionRafId === null) {
                 positionRafId = requestAnimationFrame(() => {
                     positionRafId = null;
-                    if (pendingPosition) {
-                        onPositionChange(pendingPosition.x, pendingPosition.y);
+                    if (pendingPosition && elementRef.current) {
+                        elementRef.current.style.left = `${pendingPosition.x * viewportScale}px`;
+                        elementRef.current.style.top = `${pendingPosition.y * viewportScale}px`;
                     }
                 });
             }
@@ -367,6 +368,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                     // Elevate z-index during drag to stay above UI elements
                     zIndex: isDragging ? 3000 : (sticker.zIndex || 1),
                 }}
+                data-sticker-id={sticker.id}
                 onMouseDown={handleMouseDown}
             >
                 {sticker.type === 'text' ? (

@@ -38,6 +38,8 @@
 .dockItemWrapper {
     will-change: transform;
     flex-shrink: 0;
+    /* 性能优化：限制布局计算范围 */
+    contain: layout;
 }
 
 /* 编辑模式下的动画延迟 - 使用 CSS 变量实现动态交错 */

@@ -11,8 +11,10 @@ export interface WallpaperItem {
 
 interface DBWrapper {
     save: (item: WallpaperItem) => Promise<string>;
+    saveMultiple: (items: WallpaperItem[]) => Promise<string[]>;
     get: (id: string) => Promise<WallpaperItem | null>;
     remove: (id: string) => Promise<void>;
+    removeMultiple: (ids: string[]) => Promise<void>;
     getAll: () => Promise<WallpaperItem[]>;
 }
 
@@ -73,6 +75,35 @@ class IndexedDBWrapper implements DBWrapper {
         }
     }
 
+    // ========================================================================
+    // 性能优化: 批量操作使用单个事务，减少事务开销
+    // ========================================================================
+
+    async saveMultiple(items: WallpaperItem[]): Promise<string[]> {
+        if (items.length === 0) return [];
+
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const ids: string[] = [];
+
+                // 在单个事务中执行所有写入操作
+                items.forEach(item => {
+                    store.put(item);
+                    ids.push(item.id);
+                });
+
+                transaction.oncomplete = () => resolve(ids);
+                transaction.onerror = () => reject(transaction.error);
+            });
+        } catch (error) {
+            console.error('DB SaveMultiple Error:', error);
+            throw error;
+        }
+    }
+
     async get(id: string): Promise<WallpaperItem | null> {
         try {
             const db = await this.getDB();
@@ -103,6 +134,29 @@ class IndexedDBWrapper implements DBWrapper {
             });
         } catch (error) {
             console.error('DB Remove Error:', error);
+            throw error;
+        }
+    }
+
+    async removeMultiple(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+
+                // 在单个事务中执行所有删除操作
+                ids.forEach(id => {
+                    store.delete(id);
+                });
+
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+        } catch (error) {
+            console.error('DB RemoveMultiple Error:', error);
             throw error;
         }
     }

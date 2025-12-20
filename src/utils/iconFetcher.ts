@@ -73,8 +73,21 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
     const probeImage = (src: string): Promise<{ url: string; width: number; height: number }> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
+        let settled = false;
+
+        // 清理函数 - 取消加载并释放资源
+        const cleanup = () => {
+          img.onload = null;
+          img.onerror = null;
+          // 取消正在进行的图片加载
+          if (!settled) {
+            img.src = '';
+          }
+        };
+
         // Do not set crossOrigin to avoid CORS errors on opaque responses
         img.onload = () => {
+          settled = true;
           // Check for min resolution (100x100) or at least not tiny (1x1)
           // But requirement says "if < 100*100 -> use text icon"
           // So we should only consider it a "valid high res icon" if >= minSize.
@@ -93,10 +106,18 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
             reject('Image invalid');
           }
         };
-        img.onerror = () => reject('Failed to load');
+        img.onerror = () => {
+          settled = true;
+          reject('Failed to load');
+        };
         img.src = src;
         // Timeout to prevent hanging
-        setTimeout(() => reject('Timeout'), 5000);
+        setTimeout(() => {
+          if (!settled) {
+            cleanup();
+            reject('Timeout');
+          }
+        }, 5000);
       });
     };
 
@@ -126,20 +147,22 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
 
 // ============================================================================
 // 性能优化: 复用单个 Canvas 元素，避免重复创建 DOM 元素
+// 注意：OffscreenCanvas 不支持同步的 toDataURL()，因此使用常规 Canvas
 // ============================================================================
+const CANVAS_SIZE = 576;
 let reusableCanvas: HTMLCanvasElement | null = null;
 let reusableCtx: CanvasRenderingContext2D | null = null;
 
 function getReusableCanvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } | null {
   if (!reusableCanvas) {
     reusableCanvas = document.createElement('canvas');
-    reusableCanvas.width = 576;
-    reusableCanvas.height = 576;
+    reusableCanvas.width = CANVAS_SIZE;
+    reusableCanvas.height = CANVAS_SIZE;
     reusableCtx = reusableCanvas.getContext('2d');
   }
   if (!reusableCtx) return null;
   // 清空画布以便复用
-  reusableCtx.clearRect(0, 0, 576, 576);
+  reusableCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   return { canvas: reusableCanvas, ctx: reusableCtx };
 }
 
