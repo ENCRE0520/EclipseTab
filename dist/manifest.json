@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Eclipse Tab",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "description": "个人化新标签页浏览器扩展",
     "browser_specific_settings": {
         "gecko": {
