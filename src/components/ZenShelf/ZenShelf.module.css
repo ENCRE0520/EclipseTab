@@ -47,6 +47,8 @@
 .imageSticker {
     outline: 6px solid white;
     outline-offset: 0;
+    /* 阴影平滑过渡 */
+    transition: filter var(--transition-smooth);
 }
 
 /* 拖拽/按下中的样式 - 文字贴纸 */
@@ -110,6 +112,8 @@
     text-size-adjust: none;
     /* SVG filter 描边 + 默认浅投影 */
     filter: url(#text-sticker-stroke) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    /* 阴影平滑过渡 */
+    transition: filter var(--transition-smooth);
 }
 
 /* Firefox 专用样式 - 使用 -moz-appearance 检测 Firefox */

@@ -20,7 +20,7 @@ interface ZenShelfProps {
 export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { stickers, selectedStickerId, addSticker, updateSticker, deleteSticker, selectSticker } = useZenShelf();
+    const { stickers, selectedStickerId, addSticker, updateSticker, deleteSticker, selectSticker, bringToTop } = useZenShelf();
     const { isEditMode, setIsEditMode } = useDockUI();
     const [textInputPos, setTextInputPos] = useState<{ x: number; y: number } | null>(null);
     const [contextMenu, setContextMenu] = useState<{
@@ -272,10 +272,7 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                                 updateSticker(sticker.id, { style: { ...sticker.style, ...updates } });
                             }
                         }}
-                        onBringToTop={() => {
-                            const maxZ = Math.max(...stickers.map(s => s.zIndex || 1), 0);
-                            updateSticker(sticker.id, { zIndex: maxZ + 1 });
-                        }}
+                        onBringToTop={() => bringToTop(sticker.id)}
                         onScaleChange={(scale) => {
                             updateSticker(sticker.id, { scale });
                         }}

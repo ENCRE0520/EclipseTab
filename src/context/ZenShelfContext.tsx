@@ -19,6 +19,7 @@ interface ZenShelfContextType {
     updateSticker: (id: string, updates: Partial<Sticker>) => void;
     deleteSticker: (id: string) => void;
     selectSticker: (id: string | null) => void;
+    bringToTop: (id: string) => void;
 }
 
 const ZenShelfContext = createContext<ZenShelfContextType | undefined>(undefined);
@@ -69,13 +70,18 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // ========================================================================
 
     const addSticker = useCallback((input: StickerInput) => {
-        const newSticker: Sticker = {
-            ...input,
-            id: generateId(),
-            // 确保文字贴纸有默认样式
-            style: input.type === 'text' ? (input.style || DEFAULT_TEXT_STYLE) : undefined,
-        };
-        setStickers(prev => [...prev, newSticker]);
+        setStickers(prev => {
+            // Calculate next zIndex (one higher than current max)
+            const maxZ = Math.max(...prev.map(s => s.zIndex || 1), 0);
+            const newSticker: Sticker = {
+                ...input,
+                id: generateId(),
+                zIndex: maxZ + 1,
+                // 确保文字贴纸有默认样式
+                style: input.type === 'text' ? (input.style || DEFAULT_TEXT_STYLE) : undefined,
+            };
+            return [...prev, newSticker];
+        });
     }, []);
 
     const updateSticker = useCallback((id: string, updates: Partial<Sticker>) => {
@@ -90,7 +96,15 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSelectedStickerId(prev => prev === id ? null : prev);
     }, []);
 
-
+    const bringToTop = useCallback((id: string) => {
+        setStickers(prev => {
+            // 计算当前最大 zIndex
+            const maxZ = Math.max(...prev.map(s => s.zIndex || 1), 0);
+            return prev.map(sticker =>
+                sticker.id === id ? { ...sticker, zIndex: maxZ + 1 } : sticker
+            );
+        });
+    }, []);
 
     const selectSticker = useCallback((id: string | null) => {
         setSelectedStickerId(id);
@@ -108,6 +122,7 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateSticker,
         deleteSticker,
         selectSticker,
+        bringToTop,
     }), [
         stickers,
         selectedStickerId,
@@ -115,6 +130,7 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateSticker,
         deleteSticker,
         selectSticker,
+        bringToTop,
     ]);
 
     return (
