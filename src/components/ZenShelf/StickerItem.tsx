@@ -275,13 +275,52 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             // Stickers can now be placed in these areas freely
 
             // Ensure sticker stays within screen bounds
-            const maxX = (windowWidth - stickerWidth - UI_ZONES.EDGE_MARGIN) / viewportScale;
-            const maxY = (windowHeight - stickerHeight - UI_ZONES.EDGE_MARGIN) / viewportScale;
-            finalX = Math.max(UI_ZONES.EDGE_MARGIN / viewportScale, Math.min(maxX, finalX));
-            finalY = Math.max(UI_ZONES.EDGE_MARGIN / viewportScale, Math.min(maxY, finalY));
+            // Convert sticker dimensions to original coordinate system for proper boundary calculation
+            const stickerWidthOriginal = stickerWidth / viewportScale;
+            const stickerHeightOriginal = stickerHeight / viewportScale;
+            const maxX = (windowWidth / viewportScale) - stickerWidthOriginal - (UI_ZONES.EDGE_MARGIN / viewportScale);
+            const maxY = (windowHeight / viewportScale) - stickerHeightOriginal - (UI_ZONES.EDGE_MARGIN / viewportScale);
+            const minX = UI_ZONES.EDGE_MARGIN / viewportScale;
+            const minY = UI_ZONES.EDGE_MARGIN / viewportScale;
 
-            // Apply bounce animation if adjustment needed
+            // Check if position needs clamping (will trigger bounce)
+            let clampedX = finalX;
+            if (maxX < minX) {
+                // Sticker wider than screen: allow panning but keep sticker covering the screen (or at least bounded)
+                clampedX = Math.max(maxX, Math.min(minX, finalX));
+            } else {
+                // Sticker narrower than screen: keep within screen bounds
+                clampedX = Math.max(minX, Math.min(maxX, finalX));
+            }
+
+            let clampedY = finalY;
+            if (maxY < minY) {
+                // Sticker taller than screen
+                clampedY = Math.max(maxY, Math.min(minY, finalY));
+            } else {
+                // Sticker shorter than screen
+                clampedY = Math.max(minY, Math.min(maxY, finalY));
+            }
+
+            // Mark as needing adjustment if position was clamped
+            if (Math.abs(clampedX - finalX) > 0.1 || Math.abs(clampedY - finalY) > 0.1) {
+                needsAdjustment = true;
+            }
+
+
+            finalX = clampedX;
+            finalY = clampedY;
+
+            // Apply bounce animation if adjustment needed (from Dock/Searcher overlap OR edge clamping)
             if (needsAdjustment) {
+                // Manually trigger animation start to handle cases where React prop doesn't change
+                // (e.g. dragging away and bouncing back to same spot)
+                if (elementRef.current) {
+                    elementRef.current.classList.add(styles.bounceBack);
+                    elementRef.current.style.left = `${finalX * viewportScale}px`;
+                    elementRef.current.style.top = `${finalY * viewportScale}px`;
+                }
+
                 setIsBouncing(true);
                 // Remove bounce class after animation completes
                 setTimeout(() => setIsBouncing(false), 350);
