@@ -1,5 +1,7 @@
 # Eclipse Tab - 新一代浏览器新标签页扩展
 
+[English](README-en.md) | 简体中文
+
 <div align="center">
 
 ![Eclipse Tab 预览](https://github.com/user-attachments/assets/f7674f4f-3830-43bc-8ac4-00fdc0ceec7d)

@@ -1,5 +1,7 @@
 # Eclipse Tab - Next-Gen Browser New Tab Extension
 
+English | [简体中文](README.md)
+
 <div align="center">
 
 ![Eclipse Tab Preview](https://github.com/user-attachments/assets/f7674f4f-3830-43bc-8ac4-00fdc0ceec7d)

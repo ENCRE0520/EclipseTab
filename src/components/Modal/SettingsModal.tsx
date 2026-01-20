@@ -4,8 +4,7 @@ import { useSystemTheme } from '../../hooks/useSystemTheme';
 import { GRADIENT_PRESETS } from '../../constants/gradients';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import styles from './SettingsModal.module.css';
-import pointTexturePreview from '../../assets/Point Texture Preview.svg';
-import xTexturePreview from '../../assets/X Texture Preview.svg';
+import { TEXTURE_PATTERNS, generateTextureDataUrl } from '../../constants/textures';
 import defaultIcon from '../../assets/icons/star3.svg';
 import lightIcon from '../../assets/icons/sun.svg';
 import darkIcon from '../../assets/icons/moon.svg';
@@ -212,22 +211,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                     <img src={slashIcon} alt="No Texture" width={24} height={24} />
                                 </div>
                             </button>
-                            {/* Point Texture */}
-                            <button
-                                className={`${styles.textureOption} ${texture === 'point' ? styles.textureOptionActive : ''}`}
-                                onClick={() => handleTextureSelect('point')}
-                                title="Point Texture"
-                            >
-                                <img src={pointTexturePreview} alt="Point Texture" className={styles.texturePreviewImage} />
-                            </button>
-                            {/* X Texture */}
-                            <button
-                                className={`${styles.textureOption} ${texture === 'x' ? styles.textureOptionActive : ''}`}
-                                onClick={() => handleTextureSelect('x')}
-                                title="X Texture"
-                            >
-                                <img src={xTexturePreview} alt="X Texture" className={styles.texturePreviewImage} />
-                            </button>
+                            {/* Dynamic Texture Options */}
+                            {(['point', 'x'] as const).map(textureId => {
+                                const pattern = TEXTURE_PATTERNS[textureId];
+                                const previewDataUrl = generateTextureDataUrl(textureId, 'rgba(128, 128, 128, 0.4)');
+                                return (
+                                    <button
+                                        key={textureId}
+                                        className={`${styles.textureOption} ${texture === textureId ? styles.textureOptionActive : ''}`}
+                                        onClick={() => handleTextureSelect(textureId)}
+                                        title={pattern.nameZh}
+                                    >
+                                        <div
+                                            className={styles.texturePreviewPattern}
+                                            style={{
+                                                backgroundImage: `url("${previewDataUrl}")`,
+                                                backgroundSize: `${pattern.size / 2}px ${pattern.size / 2}px`,
+                                                backgroundRepeat: 'repeat',
+                                            }}
+                                        />
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

@@ -15,7 +15,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    transition: opacity 0.3s ease-in-out;
+    transition: opacity 0.25s ease-in-out;
     will-change: opacity;
 }
 
@@ -27,8 +27,5 @@ img.layer {
 }
 
 /* For div tags (gradients/solid colors) */
-div.layer {
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
+/* background-size, background-position, and background-repeat are set via inline styles
+   to properly handle multi-layer backgrounds (e.g., texture + solid color) */

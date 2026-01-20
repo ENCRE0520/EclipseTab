@@ -203,6 +203,14 @@
     object-fit: cover;
 }
 
+/* 纹理预览图案 - 用于动态生成的纹理 */
+.texturePreviewPattern {
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-bg-primary);
+    border-radius: 2px;
+}
+
 /* ===== 颜色选择区域 ===== */
 /* 颜色选项容器 - 2x5 网格 */
 .colorOptionsContainer {

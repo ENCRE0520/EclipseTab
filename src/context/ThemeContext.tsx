@@ -3,11 +3,10 @@ import { storage } from '../utils/storage';
 import { useSystemTheme } from '../hooks/useSystemTheme';
 import { useWallpaperStorage } from '../hooks/useWallpaperStorage';
 import { GRADIENT_PRESETS } from '../constants/gradients';
-import pointTextureBg from '../assets/PointTextureBG.svg';
-import xTextureBg from '../assets/XTextureBG.svg';
+import { generateTextureDataUrl, getTextureSize, type TextureId } from '../constants/textures';
 
 export type Theme = 'default' | 'light' | 'dark';
-export type Texture = 'none' | 'point' | 'x';
+export type Texture = TextureId;
 export type DockPosition = 'center' | 'bottom';
 export type IconSize = 'large' | 'small';
 
@@ -311,9 +310,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
             }
 
+            // Apply texture pattern if enabled (not in default theme and not 'none')
             if (!isDefaultTheme && texture !== 'none') {
-                const textureUrl = texture === 'point' ? pointTextureBg : xTextureBg;
-                bgValue = `url(${textureUrl}), ${bgValue}`;
+                // Use darker color with higher opacity for better visibility on light backgrounds
+                const isDarkTheme = theme === 'dark';
+                const textureColor = isDarkTheme
+                    ? 'rgba(255, 255, 255, 0.12)' // Light texture on dark background
+                    : 'rgba(60, 60, 60, 0.18)';   // Dark texture on light background
+                const textureDataUrl = generateTextureDataUrl(texture, textureColor);
+                bgValue = `url("${textureDataUrl}"), ${bgValue}`;
             }
         }
 
@@ -338,16 +343,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Set CSS variables
         root.style.setProperty('--background-custom', backgroundValue);
 
-        // 统一使用 cover 填充方式
-        // 纹理和背景都使用 cover，保持宽高比完全覆盖容器
+        // Configure background sizing and positioning
         const hasTexture = !isDefaultTheme && texture !== 'none' && !wallpaper;
         if (hasTexture) {
-            // 多层背景：两层都使用 cover
-            root.style.setProperty('--background-size', 'cover, cover');
-            root.style.setProperty('--background-position', 'center, center');
-            root.style.setProperty('--background-repeat', 'no-repeat, no-repeat');
+            // Texture pattern layer + solid/gradient layer
+            const textureSize = getTextureSize(texture);
+            root.style.setProperty('--background-size', `${textureSize}, cover`);
+            root.style.setProperty('--background-position', '0 0, center');
+            root.style.setProperty('--background-repeat', 'repeat, no-repeat');
         } else {
-            // 单层背景
+            // Single layer (wallpaper or solid/gradient)
             root.style.setProperty('--background-size', 'cover');
             root.style.setProperty('--background-position', 'center');
             root.style.setProperty('--background-repeat', 'no-repeat');
