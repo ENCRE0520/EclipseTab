@@ -204,6 +204,11 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
         setEditingSticker(null);
     }, []);
 
+    const handleEditSticker = useCallback((sticker: Sticker) => {
+        setEditingSticker(sticker);
+        setTextInputPos({ x: sticker.x * viewportScale, y: sticker.y * viewportScale });
+    }, [viewportScale]);
+
     // Handle paste - add image sticker
     useEffect(() => {
         const handlePaste = async (e: ClipboardEvent) => {
@@ -278,6 +283,11 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                         }}
                         isEditMode={isEditMode}
                         viewportScale={viewportScale}
+                        onDoubleClick={() => {
+                            if (sticker.type === 'text') {
+                                handleEditSticker(sticker);
+                            }
+                        }}
                     />
                 ))}
 
@@ -318,9 +328,7 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                     onEditSticker={() => {
                         const sticker = stickers.find(s => s.id === contextMenu.stickerId);
                         if (sticker) {
-                            setEditingSticker(sticker);
-                            // Convert reference coordinates to screen coordinates
-                            setTextInputPos({ x: sticker.x * viewportScale, y: sticker.y * viewportScale });
+                            handleEditSticker(sticker);
                         }
                     }}
                     onDeleteSticker={() => {

@@ -56,6 +56,7 @@ interface StickerItemProps {
     onScaleChange: (scale: number) => void;
     isEditMode?: boolean;
     viewportScale: number;
+    onDoubleClick?: () => void;
 }
 
 const StickerItemComponent: React.FC<StickerItemProps> = ({
@@ -70,6 +71,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     onScaleChange,
     isEditMode,
     viewportScale,
+    onDoubleClick,
 }) => {
     const { theme } = useThemeData();
     const elementRef = useRef<HTMLDivElement>(null);
@@ -456,6 +458,11 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
         setImageNaturalWidth(e.currentTarget.naturalWidth);
     };
 
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onDoubleClick?.();
+    };
+
     const classNames = [
         styles.sticker,
         sticker.type === 'text' && styles.stickerText,
@@ -486,6 +493,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                 }}
                 data-sticker-id={sticker.id}
                 onMouseDown={handleMouseDown}
+                onDoubleClick={handleDoubleClick}
             >
                 {sticker.type === 'text' ? (
                     <div

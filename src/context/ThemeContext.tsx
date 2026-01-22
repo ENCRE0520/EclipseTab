@@ -4,6 +4,7 @@ import { useSystemTheme } from '../hooks/useSystemTheme';
 import { useWallpaperStorage } from '../hooks/useWallpaperStorage';
 import { GRADIENT_PRESETS } from '../constants/gradients';
 import { generateTextureDataUrl, getTextureSize, type TextureId } from '../constants/textures';
+import { getTextureColorFromBackground } from '../utils/colorUtils';
 
 export type Theme = 'default' | 'light' | 'dark';
 export type Texture = TextureId;
@@ -27,6 +28,9 @@ interface ThemeDataContextType {
     texture: Texture;
     wallpaperId: string | null;
     backgroundValue: string;
+    backgroundBaseValue: string;
+    backgroundTextureValue: string | null;
+    backgroundTextureTileSize: string;
     backgroundBlendMode: string;
     dockPosition: DockPosition;
     iconSize: IconSize;
@@ -274,27 +278,33 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Apply wallpaper or gradient/solid/texture to body background
     // Compute background value and blend mode
-    const { backgroundValue, backgroundBlendMode } = React.useMemo(() => {
-        let bgValue = '';
+    // Apply wallpaper or gradient/solid/texture to body background
+    // Compute background value and blend mode
+    const { backgroundValue, backgroundBaseValue, backgroundTextureValue, backgroundTextureTileSize, backgroundBlendMode } = React.useMemo(() => {
+        let fullBgValue = '';
+        let baseValue = '';
+        let textureValue: string | null = null;
+        let textureTileSize = 'cover';
         let blendMode = 'normal';
 
         if (wallpaper) {
-            bgValue = `url(${wallpaper})`;
+            baseValue = `url(${wallpaper})`;
+            fullBgValue = baseValue;
         } else {
             if (gradientId) {
                 const preset = GRADIENT_PRESETS.find(g => g.id === gradientId);
                 if (preset) {
                     if (preset.id === 'theme-default') {
                         if (isDefaultTheme) {
-                            bgValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #7e9ecb 100%)';
+                            baseValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #7e9ecb 100%)';
                         } else {
                             const isDarkTheme = theme === 'dark';
-                            bgValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
+                            baseValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
                         }
                     } else if (isDefaultTheme) {
-                        bgValue = preset.gradient;
+                        baseValue = preset.gradient;
                     } else {
-                        bgValue = preset.solid;
+                        baseValue = preset.solid;
                     }
 
                     if ('blendMode' in preset && preset.blendMode) {
@@ -303,26 +313,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 }
             } else {
                 if (isDefaultTheme) {
-                    bgValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #7e9ecb 100%)';
+                    baseValue = 'linear-gradient(180deg, #00020E 0%, #071633 25%, #3966AD 65%, #7e9ecb 100%)';
                 } else {
                     const isDarkTheme = theme === 'dark';
-                    bgValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
+                    baseValue = isDarkTheme ? DEFAULT_THEME_COLORS.dark : DEFAULT_THEME_COLORS.light;
                 }
             }
 
+            fullBgValue = baseValue;
+
             // Apply texture pattern if enabled (not in default theme and not 'none')
             if (!isDefaultTheme && texture !== 'none') {
-                // Use darker color with higher opacity for better visibility on light backgrounds
-                const isDarkTheme = theme === 'dark';
-                const textureColor = isDarkTheme
-                    ? 'rgba(255, 255, 255, 0.12)' // Light texture on dark background
-                    : 'rgba(60, 60, 60, 0.18)';   // Dark texture on light background
+                // Calculate dynamic color from the base background
+                const textureColor = getTextureColorFromBackground(baseValue);
+
                 const textureDataUrl = generateTextureDataUrl(texture, textureColor);
-                bgValue = `url("${textureDataUrl}"), ${bgValue}`;
+                textureValue = `url("${textureDataUrl}")`;
+                textureTileSize = getTextureSize(texture);
+                fullBgValue = `${textureValue}, ${baseValue}`;
             }
         }
 
-        return { backgroundValue: bgValue, backgroundBlendMode: blendMode };
+        return {
+            backgroundValue: fullBgValue,
+            backgroundBaseValue: baseValue,
+            backgroundTextureValue: textureValue,
+            backgroundTextureTileSize: textureTileSize,
+            backgroundBlendMode: blendMode
+        };
     }, [wallpaper, gradientId, texture, isDefaultTheme, theme]);
 
     // Apply theme to document and set CSS variables for backward compatibility
@@ -380,10 +398,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         texture,
         wallpaperId,
         backgroundValue,
+        backgroundBaseValue,
+        backgroundTextureValue,
+        backgroundTextureTileSize,
         backgroundBlendMode,
         dockPosition,
         iconSize,
-    }), [theme, followSystem, wallpaper, lastWallpaper, gradientId, texture, wallpaperId, backgroundValue, backgroundBlendMode, dockPosition, iconSize]);
+    }), [theme, followSystem, wallpaper, lastWallpaper, gradientId, texture, wallpaperId, backgroundValue, backgroundBaseValue, backgroundTextureValue, backgroundTextureTileSize, backgroundBlendMode, dockPosition, iconSize]);
 
     const actionsValue: ThemeActionsContextType = useMemo(() => ({
         setTheme,

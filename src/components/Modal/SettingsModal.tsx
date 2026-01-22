@@ -4,13 +4,15 @@ import { useSystemTheme } from '../../hooks/useSystemTheme';
 import { GRADIENT_PRESETS } from '../../constants/gradients';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import styles from './SettingsModal.module.css';
-import { TEXTURE_PATTERNS, generateTextureDataUrl } from '../../constants/textures';
+import { TEXTURE_PATTERNS } from '../../constants/textures';
 import defaultIcon from '../../assets/icons/star3.svg';
 import lightIcon from '../../assets/icons/sun.svg';
 import darkIcon from '../../assets/icons/moon.svg';
 import autoIcon from '../../assets/icons/monitor.svg';
 import slashIcon from '../../assets/icons/slash.svg';
 import asteriskIcon from '../../assets/icons/asterisk.svg';
+import circleIcon from '../../assets/icons/texture background/Circle.svg';
+import crossIcon from '../../assets/icons/texture background/Cross.svg';
 import { WallpaperGallery } from '../WallpaperGallery/WallpaperGallery';
 
 interface SettingsModalProps {
@@ -212,9 +214,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                 </div>
                             </button>
                             {/* Dynamic Texture Options */}
-                            {(['point', 'x'] as const).map(textureId => {
+                            {(['point', 'cross'] as const).map(textureId => {
                                 const pattern = TEXTURE_PATTERNS[textureId];
-                                const previewDataUrl = generateTextureDataUrl(textureId, 'rgba(128, 128, 128, 0.4)');
+                                const Icon = textureId === 'point' ? circleIcon : crossIcon;
                                 return (
                                     <button
                                         key={textureId}
@@ -222,14 +224,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                         onClick={() => handleTextureSelect(textureId)}
                                         title={pattern.nameZh}
                                     >
-                                        <div
-                                            className={styles.texturePreviewPattern}
-                                            style={{
-                                                backgroundImage: `url("${previewDataUrl}")`,
-                                                backgroundSize: `${pattern.size / 2}px ${pattern.size / 2}px`,
-                                                backgroundRepeat: 'repeat',
-                                            }}
-                                        />
+                                        <div className={styles.texturePreviewNone}>
+                                            <img
+                                                src={Icon}
+                                                alt={pattern.name}
+                                                width={24}
+                                                height={24}
+                                                style={{ opacity: 0.6 }} // Slight opacity to match the subtle look
+                                            />
+                                        </div>
                                     </button>
                                 );
                             })}

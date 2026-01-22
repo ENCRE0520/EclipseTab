@@ -1,6 +1,6 @@
 {
   "name": "eclipse-tab",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Eclipse Tab - 个人化新标签页浏览器扩展",
   "scripts": {
     "dev": "vite",
@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "colord": "^2.9.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

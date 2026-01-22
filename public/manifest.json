@@ -15,10 +15,6 @@
             }
         }
     },
-    "permissions": [
-        "storage",
-        "tabs"
-    ],
     "host_permissions": [
         "https://suggestqueries.google.com/*",
         "https://www.google.com/*",
