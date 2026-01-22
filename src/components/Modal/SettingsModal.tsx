@@ -21,6 +21,81 @@ interface SettingsModalProps {
     anchorPosition: { x: number; y: number };
 }
 
+// Simple permission toggle component
+const PermissionToggle: React.FC = () => {
+    const [enabled, setEnabled] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        // Check initial permission status
+        if (typeof chrome !== 'undefined' && chrome.permissions) {
+            chrome.permissions.contains({
+                origins: ['https://suggestqueries.google.com/*']
+            }, (result) => {
+                setEnabled(result);
+            });
+        }
+    }, []);
+
+    const handleToggle = () => {
+        if (loading) return;
+        setLoading(true);
+
+        const origins = ['https://suggestqueries.google.com/*', 'https://www.google.com/*', 'https://suggestion.baidu.com/*'];
+
+        if (enabled) {
+            // Remove permission
+            if (typeof chrome !== 'undefined' && chrome.permissions) {
+                chrome.permissions.remove({ origins }, (removed) => {
+                    if (removed) {
+                        setEnabled(false);
+                    }
+                    setLoading(false);
+                });
+            } else {
+                setLoading(false);
+            }
+        } else {
+            // Request permission
+            if (typeof chrome !== 'undefined' && chrome.permissions) {
+                chrome.permissions.request({ origins }, (granted) => {
+                    if (granted) {
+                        setEnabled(true);
+                    }
+                    setLoading(false);
+                });
+            } else {
+                setLoading(false);
+            }
+        }
+    };
+
+    return (
+        <div className={styles.layoutToggleGroup}>
+            <div
+                className={styles.layoutHighlight}
+                style={{
+                    transform: `translateX(${enabled ? 0 : 100}%)`,
+                }}
+            />
+            <button
+                className={styles.layoutToggleOption}
+                onClick={enabled ? undefined : handleToggle}
+                title="Enable"
+            >
+                {loading ? '...' : 'On'}
+            </button>
+            <button
+                className={styles.layoutToggleOption}
+                onClick={enabled ? handleToggle : undefined}
+                title="Disable"
+            >
+                Off
+            </button>
+        </div>
+    );
+};
+
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, anchorPosition }) => {
     const {
         theme,
@@ -346,6 +421,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                     Small
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Search Suggestions (Optional Permission) */}
+                        <div className={styles.layoutRow}>
+                            <span className={styles.layoutLabel}>Suggestions</span>
+                            <PermissionToggle />
                         </div>
                     </div>
 

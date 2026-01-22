@@ -10,6 +10,10 @@ interface UseSearchSuggestionsResult {
  * 搜索建议 API 配置
  * 使用 fetch 调用（需要浏览器扩展权限）
  */
+/**
+ * 搜索建议 API 配置
+ * 使用 fetch 调用（需要浏览器扩展权限）
+ */
 const SUGGESTION_API = {
     // Google 搜索建议 API (推荐，响应快)
     google: {
@@ -41,11 +45,39 @@ const SUGGESTION_API = {
 
 /**
  * 尝试使用 fetch 获取搜索建议
- * 在浏览器扩展环境下，由于 manifest.json 中的 host_permissions，可以跨域请求
+ * 在浏览器扩展环境下，需检查 optional_host_permissions
  */
 async function fetchSuggestions(query: string): Promise<string[]> {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return [];
+
+    // 检查是否有权限 (Chrome Extension 环境)
+    // 使用回调函数以此获得最佳兼容性 (Firefox/Edge/Chrome)
+    if (typeof chrome !== 'undefined' && chrome.permissions) {
+        try {
+            const hasPermission = await new Promise<boolean>((resolve) => {
+                chrome.permissions.contains({
+                    origins: ['https://suggestqueries.google.com/*']
+                }, (result) => {
+                    // Chrome runtime.lastError check (good practice though usually not needed for contains)
+                    if (chrome.runtime && chrome.runtime.lastError) {
+                        resolve(false);
+                    } else {
+                        resolve(!!result);
+                    }
+                });
+            });
+
+            if (!hasPermission) return [];
+        } catch (e) {
+            // 开发环境或 API 不可用
+            console.warn('Failed to check permissions:', e);
+            return [];
+        }
+    } else {
+        // 开发环境：如果想在本地调试，可以临时返回 true，或者直接允许
+        return [];
+    }
 
     // 优先使用 Google API
     try {
@@ -64,7 +96,7 @@ async function fetchSuggestions(query: string): Promise<string[]> {
             }
         }
     } catch (error) {
-        console.warn('Google suggestions API failed, trying Baidu...', error);
+        // quiet fail
     }
 
     // 备选：百度 API
@@ -78,7 +110,7 @@ async function fetchSuggestions(query: string): Promise<string[]> {
             return SUGGESTION_API.baidu.parseResponse(data);
         }
     } catch (error) {
-        console.warn('Baidu suggestions API also failed', error);
+        // quiet fail
     }
 
     return [];
