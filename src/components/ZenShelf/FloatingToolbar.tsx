@@ -43,21 +43,21 @@ const FloatingToolbarComponent: React.FC<FloatingToolbarProps> = ({ sticker, sti
             <button
                 className={`${styles.alignButton} ${currentAlign === 'left' ? styles.active : ''}`}
                 onClick={() => onStyleChange({ textAlign: 'left' })}
-                title="左对齐"
+                title="Align Left"
             >
                 ☰
             </button>
             <button
                 className={`${styles.alignButton} ${currentAlign === 'center' ? styles.active : ''}`}
                 onClick={() => onStyleChange({ textAlign: 'center' })}
-                title="居中"
+                title="Center"
             >
                 ≡
             </button>
             <button
                 className={`${styles.alignButton} ${currentAlign === 'right' ? styles.active : ''}`}
                 onClick={() => onStyleChange({ textAlign: 'right' })}
-                title="右对齐"
+                title="Align Right"
             >
                 ≡
             </button>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Space } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './DockNavigator.module.css';
 
 interface DockNavigatorProps {
@@ -34,6 +35,8 @@ export function DockNavigator({
     onContextMenu,
     disabled = false,
 }: DockNavigatorProps) {
+    const { t } = useLanguage();
+
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -53,7 +56,7 @@ export function DockNavigator({
             className={`${styles.navigator} ${disabled ? styles.disabled : ''}`}
             onClick={handleClick}
             onContextMenu={handleContextMenu}
-            title={`当前空间: ${currentSpace.name}\n左键: 切换空间\n右键: 管理空间`}
+            title={`${t.space.tooltip}: ${currentSpace.name}\n${t.space.switch}\n${t.space.manage}`}
         >
             {/* 空间名称 */}
             <span className={styles.spaceName}>{currentSpace.name}</span>

@@ -352,6 +352,7 @@
     cursor: pointer;
     z-index: 1;
     transition: color var(--transition-fast);
+    white-space: nowrap;
 }
 
 /* 布局选项悬停效果 */

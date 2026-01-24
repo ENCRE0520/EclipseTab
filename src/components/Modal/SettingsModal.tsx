@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Theme, useTheme, Texture } from '../../context/ThemeContext';
 import { useSystemTheme } from '../../hooks/useSystemTheme';
+import { useLanguage } from '../../context/LanguageContext';
 import { GRADIENT_PRESETS } from '../../constants/gradients';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import styles from './SettingsModal.module.css';
@@ -11,8 +12,8 @@ import darkIcon from '../../assets/icons/moon.svg';
 import autoIcon from '../../assets/icons/monitor.svg';
 import slashIcon from '../../assets/icons/slash.svg';
 import asteriskIcon from '../../assets/icons/asterisk.svg';
-import circleIcon from '../../assets/icons/texture background/Circle.svg';
-import crossIcon from '../../assets/icons/texture background/Cross.svg';
+import circleIcon from '../../assets/icons/texture background/circle-preview.svg';
+import crossIcon from '../../assets/icons/texture background/cross-preview.svg';
 import { WallpaperGallery } from '../WallpaperGallery/WallpaperGallery';
 
 interface SettingsModalProps {
@@ -26,6 +27,7 @@ const PermissionToggle: React.FC = () => {
     const [enabled, setEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [initialCheckDone, setInitialCheckDone] = useState(false);
+    const { t } = useLanguage();
 
     // Define all required origins consistently
     const REQUIRED_ORIGINS = [
@@ -98,16 +100,16 @@ const PermissionToggle: React.FC = () => {
             <button
                 className={styles.layoutToggleOption}
                 onClick={enabled ? undefined : handleToggle}
-                title="Enable"
+                title={t.settings.on}
             >
-                On
+                {t.settings.on}
             </button>
             <button
                 className={styles.layoutToggleOption}
                 onClick={enabled ? handleToggle : undefined}
-                title="Disable"
+                title={t.settings.off}
             >
-                Off
+                {t.settings.off}
             </button>
         </div>
     );
@@ -130,6 +132,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         iconSize,
         setIconSize,
     } = useTheme();
+
+    const { language, setLanguage, t } = useLanguage();
 
     const systemTheme = useSystemTheme();
     const [isVisible, setIsVisible] = useState(isOpen);
@@ -261,21 +265,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                             <button
                                 className={styles.themeGroupOption}
                                 onClick={handleToggleFollowSystem}
-                                title="Follow System"
+                                title={t.settings.followSystem}
                             >
                                 <img src={autoIcon} alt="Follow System" width={24} height={24} />
                             </button>
                             <button
                                 className={styles.themeGroupOption}
                                 onClick={() => handleThemeSelect('light')}
-                                title="Light Theme"
+                                title={t.settings.lightTheme}
                             >
                                 <img src={lightIcon} alt="Light Theme" width={24} height={24} />
                             </button>
                             <button
                                 className={styles.themeGroupOption}
                                 onClick={() => handleThemeSelect('dark')}
-                                title="Dark Theme"
+                                title={t.settings.darkTheme}
                             >
                                 <img src={darkIcon} alt="Dark Theme" width={24} height={24} />
                             </button>
@@ -284,7 +288,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                         <button
                             className={`${styles.defaultTheme} ${isDefaultTheme ? styles.defaultThemeActive : ''}`}
                             onClick={() => handleThemeSelect('default')}
-                            title="Default Theme"
+                            title={t.settings.defaultTheme}
                         >
                             <img src={defaultIcon} alt="Default Theme" width={24} height={24} />
                         </button>
@@ -299,7 +303,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                             <button
                                 className={`${styles.textureOption} ${texture === 'none' ? styles.textureOptionActive : ''}`}
                                 onClick={() => handleTextureSelect('none')}
-                                title="No Texture"
+                                title={t.settings.noTexture}
                             >
                                 <div className={styles.texturePreviewNone}>
                                     <img src={slashIcon} alt="No Texture" width={24} height={24} />
@@ -314,7 +318,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                         key={textureId}
                                         className={`${styles.textureOption} ${texture === textureId ? styles.textureOptionActive : ''}`}
                                         onClick={() => handleTextureSelect(textureId)}
-                                        title={pattern.nameZh}
+                                        title={pattern.name}
                                     >
                                         <div className={styles.texturePreviewNone}>
                                             <img
@@ -322,7 +326,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                                 alt={pattern.name}
                                                 width={24}
                                                 height={24}
-                                                style={{ opacity: 0.6 }} // Slight opacity to match the subtle look
                                             />
                                         </div>
                                     </button>
@@ -387,9 +390,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
 
                     {/* Layout Settings Section */}
                     <div className={styles.layoutSection}>
+                        {/* Language Setting */}
+                        <div className={styles.layoutRow}>
+                            <span className={styles.layoutLabel}>{t.settings.language}</span>
+                            <div className={styles.layoutToggleGroup}>
+                                <div
+                                    className={styles.layoutHighlight}
+                                    style={{
+                                        transform: `translateX(${language === 'zh' ? 0 : 100}%)`,
+                                    }}
+                                />
+                                <button
+                                    className={styles.layoutToggleOption}
+                                    onClick={() => setLanguage('zh')}
+                                    title="中文"
+                                >
+                                    中文
+                                </button>
+                                <button
+                                    className={styles.layoutToggleOption}
+                                    onClick={() => setLanguage('en')}
+                                    title="EN"
+                                >
+                                    EN
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Dock Position */}
                         <div className={styles.layoutRow}>
-                            <span className={styles.layoutLabel}>Position</span>
+                            <span className={styles.layoutLabel}>{t.settings.position}</span>
                             <div className={styles.layoutToggleGroup}>
                                 <div
                                     className={styles.layoutHighlight}
@@ -400,22 +430,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                 <button
                                     className={styles.layoutToggleOption}
                                     onClick={() => setDockPosition('center')}
-                                    title="Center"
+                                    title={t.settings.center}
                                 >
-                                    Center
+                                    {t.settings.center}
                                 </button>
                                 <button
                                     className={styles.layoutToggleOption}
                                     onClick={() => setDockPosition('bottom')}
-                                    title="Bottom"
+                                    title={t.settings.bottom}
                                 >
-                                    Bottom
+                                    {t.settings.bottom}
                                 </button>
                             </div>
                         </div>
                         {/* Icon Size */}
                         <div className={styles.layoutRow}>
-                            <span className={styles.layoutLabel}>Icon Size</span>
+                            <span className={styles.layoutLabel}>{t.settings.iconSize}</span>
                             <div className={styles.layoutToggleGroup}>
                                 <div
                                     className={styles.layoutHighlight}
@@ -426,23 +456,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                 <button
                                     className={styles.layoutToggleOption}
                                     onClick={() => setIconSize('large')}
-                                    title="Large"
+                                    title={t.settings.large}
                                 >
-                                    Large
+                                    {t.settings.large}
                                 </button>
                                 <button
                                     className={styles.layoutToggleOption}
                                     onClick={() => setIconSize('small')}
-                                    title="Small"
+                                    title={t.settings.small}
                                 >
-                                    Small
+                                    {t.settings.small}
                                 </button>
                             </div>
                         </div>
 
                         {/* Search Suggestions (Optional Permission) */}
                         <div className={styles.layoutRow}>
-                            <span className={styles.layoutLabel}>Suggestions</span>
+                            <span className={styles.layoutLabel}>{t.settings.suggestions}</span>
                             <PermissionToggle />
                         </div>
                     </div>

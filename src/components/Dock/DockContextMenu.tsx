@@ -6,6 +6,7 @@ import styles from './DockContextMenu.module.css';
 import writeIcon from '../../assets/icons/write.svg';
 import editIcon from '../../assets/icons/edit.svg';
 import trashIcon from '../../assets/icons/trash.svg';
+import { useLanguage } from '../../context/LanguageContext';
 
 // ============================================================================
 // DockContextMenu - Right-click context menu for Dock items
@@ -32,6 +33,7 @@ export const DockContextMenu: React.FC<DockContextMenuProps> = ({
     onToggleEditMode,
     onDelete,
 }) => {
+    const { t } = useLanguage();
     const menuRef = useRef<HTMLDivElement>(null);
     const isClosingRef = useRef(false);
 
@@ -118,18 +120,18 @@ export const DockContextMenu: React.FC<DockContextMenuProps> = ({
                 {item.type !== 'folder' && (
                     <button className={styles.menuItem} onClick={() => { onEdit(); handleClose(); }}>
                         <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${writeIcon})`, maskImage: `url(${writeIcon})` }} />
-                        <span>Edit</span>
+                        <span>{t.contextMenu.edit}</span>
                     </button>
                 )}
                 {/* Toggle Edit Mode */}
                 <button className={styles.menuItem} onClick={() => { onToggleEditMode(); handleClose(); }}>
                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${editIcon})`, maskImage: `url(${editIcon})` }} />
-                    <span>{isEditMode ? 'Exit Edit Mode' : 'Edit Mode'}</span>
+                    <span>{isEditMode ? t.contextMenu.exitEditMode : t.contextMenu.editMode}</span>
                 </button>
                 {/* Delete */}
                 <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => { onDelete(); handleClose(); }}>
                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${trashIcon})`, maskImage: `url(${trashIcon})` }} />
-                    <span>Delete</span>
+                    <span>{t.contextMenu.delete}</span>
                 </button>
             </div>
         </div>,

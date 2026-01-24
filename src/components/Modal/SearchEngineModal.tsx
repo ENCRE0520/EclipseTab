@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SearchEngine } from '../../types';
 import { Modal } from './Modal';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './SearchEngineModal.module.css';
 
 interface SearchEngineModalProps {
@@ -20,6 +21,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
   onSelect,
   anchorRect,
 }) => {
+  const { t } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, engines.findIndex(e => e.id === selectedEngine.id)));
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
         tabIndex={0}
         onKeyDown={handleKeyDown}
       >
-        <div className={styles.label}>Search by</div>
+        <div className={styles.label}>{t.search.searchBy}</div>
         <div className={styles.divider}></div>
         <div className={styles.optionsContainer}>
           {engines.map((engine, idx) => (

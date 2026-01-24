@@ -12,9 +12,9 @@ interface ThemeModalProps {
 }
 
 const THEME_OPTIONS: { value: Theme; label: string; description: string }[] = [
-    { value: 'default', label: '默认主题', description: '经典渐变背景' },
-    { value: 'light', label: '浅色主题', description: '明亮清新风格' },
-    { value: 'dark', label: '深色主题', description: '深邃优雅风格' },
+    { value: 'default', label: 'Default', description: 'Classic Gradient' },
+    { value: 'light', label: 'Light', description: 'Bright & Fresh' },
+    { value: 'dark', label: 'Dark', description: 'Deep & Elegant' },
 ];
 
 export const ThemeModal: React.FC<ThemeModalProps> = ({

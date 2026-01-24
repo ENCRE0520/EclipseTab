@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import { useThemeData } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import alignLeftIcon from '../../assets/icons/align-left.svg';
 import alignCenterIcon from '../../assets/icons/align-center.svg';
 import alignRightIcon from '../../assets/icons/align-right.svg';
@@ -34,15 +35,6 @@ const getThemeAwareColor = (color: string, theme: string): string => {
 // TextInput Component - Enhanced popup with style options
 // ============================================================================
 
-// Font size options: small, medium, large
-const FONT_SIZES = [
-    { label: '小', value: 24 },
-    { label: '中', value: 32 },
-    { label: '大', value: 40 },
-] as const;
-
-type FontSizeValue = typeof FONT_SIZES[number]['value'];
-
 interface TextInputProps {
     x: number;
     y: number;
@@ -54,22 +46,34 @@ interface TextInputProps {
 }
 
 export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', initialStyle, onSubmit, onCancel, viewportScale }) => {
+    const { t } = useLanguage();
     const { theme } = useThemeData();
     const inputRef = useRef<HTMLDivElement>(null);
+    const inputWrapperRef = useRef<HTMLDivElement>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [value, setValue] = useState(initialText);
     const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(initialStyle?.textAlign || 'left');
     const [textColor, setTextColor] = useState(initialStyle?.color || TEXT_COLORS[0]);
-    const [fontSize, setFontSize] = useState<FontSizeValue>(
-        (initialStyle?.fontSize as FontSizeValue) || 40
+    const [fontSize, setFontSize] = useState<number>(
+        (initialStyle?.fontSize as number) || 40
     );
     const [isExiting, setIsExiting] = useState(false);
+
+    // Font size options with translated labels
+    const fontSizes = [
+        { label: t.textInput.s, value: 24 },
+        { label: t.textInput.m, value: 32 },
+        { label: t.textInput.l, value: 40 },
+    ];
 
     // Focus on mount and play enter animation for toolbar only
     useEffect(() => {
         if (toolbarRef.current) {
             scaleFadeIn(toolbarRef.current, 200);
+        }
+        if (inputWrapperRef.current) {
+            scaleFadeIn(inputWrapperRef.current, 200);
         }
         if (inputRef.current) {
             inputRef.current.focus();
@@ -94,10 +98,15 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
         }
     }, [fontSize, viewportScale]);
 
-    // Trigger exit animation for toolbar only
-    const triggerExit = useCallback((callback: () => void) => {
+    // Trigger exit animation for toolbar and input
+    const triggerExit = useCallback((callback: () => void, animateInput: boolean = true) => {
         if (isExiting) return;
         setIsExiting(true);
+
+        if (animateInput && inputWrapperRef.current) {
+            scaleFadeOut(inputWrapperRef.current, 150);
+        }
+
         if (toolbarRef.current) {
             scaleFadeOut(toolbarRef.current, 150, callback);
         } else {
@@ -117,7 +126,8 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             // Submit if has content, otherwise cancel
             const text = inputRef.current?.innerText?.trim() || '';
             if (text) {
-                triggerExit(() => onSubmit(text, { color: textColor, textAlign, fontSize }));
+                // Don't animate input out if submitting content
+                triggerExit(() => onSubmit(text, { color: textColor, textAlign, fontSize }), false);
             } else {
                 triggerExit(onCancel);
             }
@@ -160,7 +170,8 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     const handleSubmit = () => {
         const trimmed = inputRef.current?.innerText?.trim() || '';
         if (trimmed) {
-            triggerExit(() => onSubmit(trimmed, { color: textColor, textAlign, fontSize }));
+            // Don't animate input out if submitting content
+            triggerExit(() => onSubmit(trimmed, { color: textColor, textAlign, fontSize }), false);
         } else {
             handleCancel();
         }
@@ -171,7 +182,7 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     };
 
     // Get font size index for highlight position
-    const fontSizeIndex = FONT_SIZES.findIndex(fs => fs.value === fontSize);
+    const fontSizeIndex = fontSizes.findIndex(fs => fs.value === fontSize);
 
     return createPortal(
         <div
@@ -180,22 +191,24 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             style={{ left: x, top: y }}
         >
             {/* 实时预览贴纸 - 直接在背景上显示 */}
-            <div
-                ref={inputRef}
-                className={styles.stickerPreviewInput}
-                contentEditable
-                suppressContentEditableWarning
-                style={{
-                    color: getThemeAwareColor(textColor, theme),
-                    textAlign: textAlign,
-                    fontSize: `${fontSize * viewportScale}px`,
-                }}
-                onInput={handleInput}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                onClick={(e) => e.stopPropagation()}
-                data-placeholder="Enter text..."
-            />
+            <div ref={inputWrapperRef}>
+                <div
+                    ref={inputRef}
+                    className={styles.stickerPreviewInput}
+                    contentEditable
+                    suppressContentEditableWarning
+                    style={{
+                        color: getThemeAwareColor(textColor, theme),
+                        textAlign: textAlign,
+                        fontSize: `${fontSize * viewportScale}px`,
+                    }}
+                    onInput={handleInput}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    onClick={(e) => e.stopPropagation()}
+                    data-placeholder={t.textInput.placeholder}
+                />
+            </div>
 
             {/* 工具栏 - 跟随在输入区域下方 */}
             <div
@@ -214,21 +227,21 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
                     <button
                         className={styles.toolbarAlignBtn}
                         onClick={() => setTextAlign('left')}
-                        title="左对齐"
+                        title="Align Left"
                     >
                         <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignLeftIcon})`, maskImage: `url(${alignLeftIcon})` }} />
                     </button>
                     <button
                         className={styles.toolbarAlignBtn}
                         onClick={() => setTextAlign('center')}
-                        title="居中"
+                        title="Center"
                     >
                         <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignCenterIcon})`, maskImage: `url(${alignCenterIcon})` }} />
                     </button>
                     <button
                         className={styles.toolbarAlignBtn}
                         onClick={() => setTextAlign('right')}
-                        title="右对齐"
+                        title="Align Right"
                     >
                         <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignRightIcon})`, maskImage: `url(${alignRightIcon})` }} />
                     </button>
@@ -244,12 +257,12 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
                             transform: `translateX(${fontSizeIndex * 100}%)`,
                         }}
                     />
-                    {FONT_SIZES.map((fs) => (
+                    {fontSizes.map((fs) => (
                         <button
                             key={fs.value}
                             className={styles.toolbarAlignBtn}
                             onClick={() => setFontSize(fs.value)}
-                            title={`字体大小: ${fs.value}px`}
+                            title={`Font Size: ${fs.value}px`}
                         >
                             {fs.label}
                         </button>
@@ -275,14 +288,14 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
 
                 {/* 操作按钮 */}
                 <button className={styles.toolbarCancelBtn} onClick={handleCancel}>
-                    Cancel
+                    {t.textInput.cancel}
                 </button>
                 <button
                     className={styles.toolbarConfirmBtn}
                     onClick={handleSubmit}
                     disabled={!value.trim()}
                 >
-                    Confirm
+                    {t.textInput.confirm}
                 </button>
             </div>
         </div>,

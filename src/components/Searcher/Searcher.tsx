@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SearchEngine } from '../../types';
 import styles from './Searcher.module.css';
 import { useSearchSuggestions } from '../../hooks/useSearchSuggestions';
+import { useLanguage } from '../../context/LanguageContext';
 import { SuggestionsList } from './SuggestionsList';
 
 interface SearcherProps {
@@ -108,6 +109,8 @@ export const Searcher: React.FC<SearcherProps> = ({
     }
   }, [shouldRender, suggestions]);
 
+  const { t } = useLanguage();
+
   return (
     <header ref={containerRef} className={styles.searcher} style={containerStyle}>
       {/* Suggestions List */}
@@ -125,7 +128,7 @@ export const Searcher: React.FC<SearcherProps> = ({
       <div className={styles.innerContainer}>
         <div className={styles.divider}></div>
         <div className={styles.searchInfo}>
-          <p className={styles.label}>Search by</p>
+          <p className={styles.label}>{t.search.searchBy}</p>
           <div className={styles.searchTool}>
             <p
               className={styles.searchEngine}
@@ -162,7 +165,7 @@ export const Searcher: React.FC<SearcherProps> = ({
               <path d="M2.25 7.50001C2.25014 6.54516 2.47816 5.60412 2.91513 4.75512C3.3521 3.90611 3.98538 3.17366 4.76235 2.61862C5.53933 2.06359 6.43755 1.70201 7.38237 1.56393C8.32719 1.42586 9.29132 1.51527 10.1946 1.82474C11.0979 2.13422 11.9144 2.65481 12.576 3.34326C13.2377 4.03171 13.7254 4.86814 13.9988 5.78302C14.2722 6.6979 14.3233 7.66482 14.1478 8.60342C13.9724 9.54201 13.5754 10.4252 12.99 11.1795L17.0303 15.2198C17.1669 15.3612 17.2425 15.5507 17.2408 15.7473C17.239 15.944 17.1602 16.1321 17.0211 16.2711C16.8821 16.4102 16.6939 16.4891 16.4973 16.4908C16.3007 16.4925 16.1112 16.4169 15.9698 16.2803L11.9295 12.24C11.0426 12.9286 9.98027 13.3545 8.86332 13.4692C7.74638 13.584 6.61964 13.3831 5.61124 12.8893C4.60283 12.3955 3.75322 11.6286 3.15902 10.6759C2.56482 9.72317 2.24988 8.62284 2.25 7.50001ZM8.25 3.00002C7.65905 3.00002 7.07389 3.11641 6.52792 3.34255C5.98196 3.5687 5.48588 3.90017 5.06802 4.31803C4.65016 4.73589 4.31869 5.23197 4.09254 5.77794C3.8664 6.3239 3.75 6.90906 3.75 7.50001C3.75 8.09096 3.8664 8.67612 4.09254 9.22209C4.31869 9.76805 4.65016 10.2641 5.06802 10.682C5.48588 10.9999 5.98196 11.4313 6.52792 11.6575C7.07389 11.8836 7.65905 12 8.25 12C9.44347 12 10.5881 11.5259 11.432 10.682C12.2759 9.83808 12.75 8.69349 12.75 7.50001C12.75 6.30654 12.2759 5.16194 11.432 4.31803C10.5881 3.47412 9.44347 3.00002 8.25 3.00002Z" fill="currentColor" />
             </svg>
           </div>
-          <p className={styles.searchButtonLabel}>Search</p>
+          <p className={styles.searchButtonLabel}>{t.search.searchButton}</p>
           <div className={styles.searchButtonIcon}>
             {/* corner-down-left.svg */}
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">

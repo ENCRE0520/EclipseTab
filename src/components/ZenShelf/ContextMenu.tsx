@@ -1,6 +1,7 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
+import { useLanguage } from '../../context/LanguageContext';
 import styles from './ZenShelf.module.css';
 import plusIcon from '../../assets/icons/plus.svg';
 import writeIcon from '../../assets/icons/write.svg';
@@ -52,6 +53,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onExportImageSticker,
     onOpenSettings,
 }) => {
+    const { t } = useLanguage();
     const menuRef = useRef<HTMLDivElement>(null);
     const isClosingRef = useRef(false);
 
@@ -138,19 +140,19 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                     <>
                         <button className={styles.menuItem} onClick={() => { onAddSticker(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${plusIcon})`, maskImage: `url(${plusIcon})` }} />
-                            <span>Add Sticker</span>
+                            <span>{t.contextMenu.addSticker}</span>
                         </button>
                         <button className={styles.menuItem} onClick={() => { onUploadImage(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${uploadIcon})`, maskImage: `url(${uploadIcon})` }} />
-                            <span>Upload Image</span>
+                            <span>{t.contextMenu.uploadImage}</span>
                         </button>
                         <button className={styles.menuItem} onClick={() => { onToggleEditMode(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${editIcon})`, maskImage: `url(${editIcon})` }} />
-                            <span>{isEditMode ? 'Quit Edit Mode' : 'Edit Mode'}</span>
+                            <span>{isEditMode ? t.contextMenu.exitEditMode : t.contextMenu.editMode}</span>
                         </button>
                         <button className={styles.menuItem} onClick={() => { onOpenSettings?.(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${settingsIcon})`, maskImage: `url(${settingsIcon})` }} />
-                            <span>Settings</span>
+                            <span>{t.contextMenu.settings}</span>
                         </button>
                     </>
                 ) : (
@@ -159,32 +161,32 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                             <>
                                 <button className={styles.menuItem} onClick={() => { onCopyImage?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
-                                    <span>Copy Image</span>
+                                    <span>{t.contextMenu.copyImage}</span>
                                 </button>
                                 <button className={styles.menuItem} onClick={() => { onExportImageSticker?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${uploadIcon})`, maskImage: `url(${uploadIcon})` }} />
-                                    <span>Export Image</span>
+                                    <span>{t.contextMenu.exportImage}</span>
                                 </button>
                             </>
                         ) : (
                             <>
                                 <button className={styles.menuItem} onClick={() => { onCopyText?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${exportIcon})`, maskImage: `url(${exportIcon})` }} />
-                                    <span>Copy Text</span>
+                                    <span>{t.contextMenu.copyText}</span>
                                 </button>
                                 <button className={styles.menuItem} onClick={() => { onEditSticker?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${writeIcon})`, maskImage: `url(${writeIcon})` }} />
-                                    <span>Edit Sticker</span>
+                                    <span>{t.contextMenu.editSticker}</span>
                                 </button>
                                 <button className={styles.menuItem} onClick={() => { onExportImage?.(); onClose(); }}>
                                     <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${uploadIcon})`, maskImage: `url(${uploadIcon})` }} />
-                                    <span>Export as Image</span>
+                                    <span>{t.contextMenu.exportAsImage}</span>
                                 </button>
                             </>
                         )}
                         <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => { onDeleteSticker?.(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${trashIcon})`, maskImage: `url(${trashIcon})` }} />
-                            <span>Delete Sticker</span>
+                            <span>{t.contextMenu.deleteSticker}</span>
                         </button>
                     </>
                 )}
