@@ -4,7 +4,7 @@ English | [简体中文](README.md)
 
 <div align="center">
 
-![Eclipse Tab Preview](https://github.com/user-attachments/assets/f7674f4f-3830-43bc-8ac4-00fdc0ceec7d)
+<img width="2940" height="1846" alt="图片" src="https://github.com/user-attachments/assets/19ba09a7-3917-4110-a9f7-10622905a06d" />
 
 **Creative Canvas · Multiple Spaces · Beautiful & Efficient**
 
