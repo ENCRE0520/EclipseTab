@@ -2,6 +2,11 @@ import { SearchEngine } from '../types';
 
 export const SEARCH_ENGINES: SearchEngine[] = [
   {
+    id: 'default',
+    name: 'System Default',
+    url: '',
+  },
+  {
     id: 'google',
     name: 'Google',
     url: 'https://www.google.com/search?q=',

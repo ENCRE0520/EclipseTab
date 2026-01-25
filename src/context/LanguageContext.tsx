@@ -22,7 +22,9 @@ interface Translations {
     };
     search: {
         searchBy: string;
+        searchBySuffix: string;
         searchButton: string;
+        systemDefault: string;
     };
     contextMenu: {
         addSticker: string;
@@ -102,7 +104,9 @@ const translations: Record<Language, Translations> = {
         },
         search: {
             searchBy: 'Search by',
+            searchBySuffix: '',
             searchButton: 'Search',
+            systemDefault: 'System Default',
         },
         contextMenu: {
             addSticker: 'Add Sticker',
@@ -179,8 +183,10 @@ const translations: Record<Language, Translations> = {
             noTexture: '无纹理',
         },
         search: {
-            searchBy: '搜索引擎',
+            searchBy: '使用',
+            searchBySuffix: '',
             searchButton: '搜索',
+            systemDefault: '系统默认',
         },
         contextMenu: {
             addSticker: '添加贴纸',

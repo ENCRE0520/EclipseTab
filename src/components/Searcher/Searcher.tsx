@@ -138,6 +138,7 @@ export const Searcher: React.FC<SearcherProps> = ({
               }}
             >
               {searchEngine.name}
+              {t.search.searchBySuffix}
             </p>
           </div>
         </div>
