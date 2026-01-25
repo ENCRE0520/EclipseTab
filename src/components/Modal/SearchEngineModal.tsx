@@ -80,7 +80,9 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
               onMouseEnter={() => setActiveIndex(idx)}
               onClick={() => handleSelect(engine)}
             >
-              <span className={styles.engineName}>{engine.name}</span>
+              <span className={styles.engineName}>
+                {engine.id === 'default' ? t.search.systemDefault : engine.name}
+              </span>
             </button>
           ))}
         </div>

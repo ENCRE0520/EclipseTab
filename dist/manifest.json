@@ -15,6 +15,9 @@
             }
         }
     },
+    "permissions": [
+        "search"
+    ],
     "optional_host_permissions": [
         "https://suggestqueries.google.com/*",
         "https://www.google.com/*",

@@ -137,7 +137,8 @@ export const Searcher: React.FC<SearcherProps> = ({
                 onSearchEngineClick(rect);
               }}
             >
-              {searchEngine.name}
+              {/* Use localized name for default engine */}
+              {searchEngine.id === 'default' ? t.search.systemDefault : searchEngine.name}
               {t.search.searchBySuffix}
             </p>
           </div>

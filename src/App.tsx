@@ -148,6 +148,20 @@ function App() {
   }, []);
 
   const handleSearch = (query: string) => {
+    if (selectedSearchEngine.id === 'default') {
+      // 使用 Chrome Search API (如果在扩展环境)
+      // @ts-ignore - chrome namespace
+      if (typeof chrome !== 'undefined' && chrome.search && chrome.search.query) {
+        // @ts-ignore - chrome.search types
+        chrome.search.query({ text: query, disposition: 'CURRENT_TAB' });
+        return;
+      }
+
+      // 开发环境或 API 不可用时的回退方案 (使用 Google)
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+      return;
+    }
+
     const searchUrl = `${selectedSearchEngine.url}${encodeURIComponent(query)}`;
     window.open(searchUrl, '_blank');
   };
