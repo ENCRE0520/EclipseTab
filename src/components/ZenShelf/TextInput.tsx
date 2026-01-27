@@ -60,11 +60,11 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     );
     const [isExiting, setIsExiting] = useState(false);
 
-    // Font size options with translated labels
+    // Font size options with translated labels (L, M, S order)
     const fontSizes = [
-        { label: t.textInput.s, value: 24 },
-        { label: t.textInput.m, value: 32 },
         { label: t.textInput.l, value: 40 },
+        { label: t.textInput.m, value: 32 },
+        { label: t.textInput.s, value: 24 },
     ];
 
     // Focus on mount and play enter animation for toolbar only

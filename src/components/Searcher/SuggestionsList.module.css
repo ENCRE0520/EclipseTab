@@ -9,7 +9,7 @@
     z-index: 2002;
     padding: 8px 8px;
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 0;
     transform-origin: bottom center;
     opacity: 0;

@@ -247,14 +247,12 @@ export const storage = {
       // 尝试从旧版数据迁移
       const legacyItems = this.getDockItems();
       if (legacyItems.length > 0) {
-        console.log('[Storage] Migrating legacy dockItems to Spaces...');
         const migratedState = createDefaultSpacesState(legacyItems);
         this.saveSpaces(migratedState);
         return migratedState;
       }
 
       // 创建默认状态并立即保存
-      console.log('[Storage] Creating default spaces state...');
       const defaultState = createDefaultSpacesState();
       this.saveSpaces(defaultState);
       return defaultState;

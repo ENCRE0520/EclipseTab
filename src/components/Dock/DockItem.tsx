@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { DockItem as DockItemType } from '../../types';
 import { Tooltip } from '../Tooltip/Tooltip';
 import styles from './DockItem.module.css';
+import editIcon from '../../assets/icons/edit.svg';
 
 interface DockItemProps {
   item: DockItemType;
@@ -36,7 +37,6 @@ const DockItemComponent: React.FC<DockItemProps> = ({
 }) => {
   // ... (existing state)
   const [isHovered, setIsHovered] = useState(false);
-  const [showDeleteButton, setShowDeleteButton] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const [pressTimer, setPressTimer] = useState<number | null>(null);
 
@@ -68,9 +68,6 @@ const DockItemComponent: React.FC<DockItemProps> = ({
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (isEditMode) {
-      setShowDeleteButton(true);
-    }
 
     // Start tooltip timer
     if (!isDragging && !isEditMode) { // Don't show tooltip while dragging or in edit mode
@@ -82,7 +79,6 @@ const DockItemComponent: React.FC<DockItemProps> = ({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setShowDeleteButton(false);
     if (pressTimer) {
       clearTimeout(pressTimer);
       setPressTimer(null);
@@ -153,6 +149,12 @@ const DockItemComponent: React.FC<DockItemProps> = ({
       }}
     >
       <div className={`${styles.iconContainer} ${item.type !== 'folder' ? styles.nonFolderBg : ''} ${isHovered && !isEditMode ? styles.hovered : ''}`}>
+        {/* Edit mode hover overlay - always rendered for fade animation */}
+        {isEditMode && item.type !== 'folder' && (
+          <div className={`${styles.editOverlay} ${isHovered ? styles.editOverlayVisible : ''}`}>
+            <img src={editIcon} alt="edit" className={styles.editIcon} />
+          </div>
+        )}
         {item.type === 'folder' ? (
           <div className={styles.folderIcon}>
             {item.items && item.items.slice(0, 4).map((subItem) => (
@@ -175,7 +177,7 @@ const DockItemComponent: React.FC<DockItemProps> = ({
           />
         )}
       </div>
-      {isEditMode && showDeleteButton && (
+      {isEditMode && (
         <button
           className={styles.deleteButton}
           onClick={handleDeleteClick}

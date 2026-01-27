@@ -52,6 +52,9 @@ export const fetchIcon = async (url: string, minSize: number = 100): Promise<Ico
 
 /**
  * 内部图标获取逻辑
+ * 优化策略: 分批并行请求，减少不必要的网络请求
+ * 第一批: 高优先级本地路径 (网络开销小)
+ * 第二批: 外部 API 备用 (仅在第一批全部失败时尝试)
  */
 const fetchIconInternal = async (url: string, domain: string, minSize: number): Promise<IconResult> => {
   try {
@@ -60,16 +63,30 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
     const protocol = urlObj.protocol;
     const origin = `${protocol}//${domain}`;
 
-    // Candidates to probe, prioritized by likelihood of high resolution
-    const candidates = [
-      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`, // Google High Res
+    // ========================================================================
+    // 优化: 分批候选 URL，减少不必要的网络请求
+    // ========================================================================
+
+    // 第一批: 高优先级本地路径 (通常网络开销较小)
+    const highPriorityCandidates = [
+      // Apple Touch Icons (通常最高质量)
       `${origin}/apple-touch-icon.png`,
-      `${origin}/apple-touch-icon-precomposed.png`, // Precomposed often better
+      `${origin}/apple-touch-icon-180x180.png`,
+      `${origin}/apple-touch-icon-precomposed.png`,
+      // 常见的高分辨率图标路径
+      `${origin}/icon-192x192.png`,
       `${origin}/favicon.ico`,
     ];
 
+    // 第二批: 外部 API 备用 (仅在第一批失败时尝试)
+    const fallbackCandidates = [
+      // DuckDuckGo Icons API (隐私友好)
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      // Google Favicon API (最终备用)
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+    ];
+
     // Helper to probe an image URL
-    // Modified to return image dimensions
     const probeImage = (src: string): Promise<{ url: string; width: number; height: number }> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -89,8 +106,6 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
         img.onload = () => {
           settled = true;
           // Check for min resolution (100x100) or at least not tiny (1x1)
-          // But requirement says "if < 100*100 -> use text icon"
-          // So we should only consider it a "valid high res icon" if >= minSize.
           if (img.naturalWidth >= minSize && img.naturalHeight >= minSize) {
             resolve({ url: src, width: img.naturalWidth, height: img.naturalHeight });
           } else if (img.naturalWidth > 1) {
@@ -99,8 +114,6 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
               resolve({ url: src, width: img.naturalWidth, height: img.naturalHeight });
               return;
             }
-
-            // Otherwise reject
             reject(`Image too small (< ${minSize}x${minSize})`);
           } else {
             reject('Image invalid');
@@ -121,17 +134,26 @@ const fetchIconInternal = async (url: string, domain: string, minSize: number): 
       });
     };
 
-    // Probe all candidates in parallel
-    const results = await Promise.allSettled(candidates.map(src => probeImage(src)));
+    // 辅助函数: 从候选列表中找到最佳图标
+    const findBestIcon = async (candidates: string[]): Promise<{ url: string; width: number; height: number } | null> => {
+      const results = await Promise.allSettled(candidates.map(src => probeImage(src)));
+      const validIcons = results
+        .filter((r): r is PromiseFulfilledResult<{ url: string; width: number; height: number }> => r.status === 'fulfilled')
+        .map(r => r.value)
+        .sort((a, b) => b.width - a.width); // Sort by size descending
+      return validIcons.length > 0 ? validIcons[0] : null;
+    };
 
-    // Filter successful results
-    const validIcons = results
-      .filter((r): r is PromiseFulfilledResult<{ url: string; width: number; height: number }> => r.status === 'fulfilled')
-      .map(r => r.value)
-      .sort((a, b) => b.width - a.width); // Sort by size descending
+    // 第一批: 尝试高优先级本地路径
+    let bestIcon = await findBestIcon(highPriorityCandidates);
 
-    if (validIcons.length > 0) {
-      const result = { url: validIcons[0].url, isFallback: false };
+    // 第二批: 如果第一批失败，尝试外部 API
+    if (!bestIcon) {
+      bestIcon = await findBestIcon(fallbackCandidates);
+    }
+
+    if (bestIcon) {
+      const result = { url: bestIcon.url, isFallback: false };
       // 缓存结果
       setCachedIcon(domain, result);
       return result;
@@ -203,12 +225,25 @@ export const generateTextIcon = (text: string): string => {
         const mainName = hostname.split('.')[0];
 
         if (mainName) {
-          // Capitalize
-          displayText = mainName.charAt(0).toUpperCase() + mainName.slice(1);
+          displayText = mainName;
         }
       }
     } catch {
       // ignore, use text as is
+    }
+
+    // 判断是否包含中文字符
+    const hasChinese = /[\u4e00-\u9fa5]/.test(displayText);
+
+    // 根据文字类型处理显示文本
+    if (hasChinese) {
+      // 中文：取第一个汉字
+      const chineseMatch = displayText.match(/[\u4e00-\u9fa5]/);
+      displayText = chineseMatch ? chineseMatch[0] : displayText.charAt(0);
+    } else {
+      // 英文：取前两个字母，首字母大写
+      const twoLetters = displayText.substring(0, 2).toLowerCase();
+      displayText = twoLetters.charAt(0).toUpperCase() + twoLetters.slice(1);
     }
 
     // 1. Random low brightness background
@@ -225,35 +260,14 @@ export const generateTextIcon = (text: string): string => {
     const textLig = 80 + Math.floor(Math.random() * 15);
     ctx.fillStyle = `hsl(${ranTextHue}, ${textSat}%, ${textLig}%)`;
 
-    // Font settings
-    ctx.font = '500 128px "Bricolage Grotesque", sans-serif';
+    // Font settings - 字重900，居中对齐
+    ctx.font = '900 360px "Bricolage Grotesque", sans-serif';
     ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
+    ctx.textAlign = 'center';
 
-
-    const lines: string[] = [];
-
-    if (displayText.length <= 4) {
-      lines.push(displayText);
-    } else {
-      // Simple chunking
-      const chunkSize = 4; // 4 chars per line approx
-      for (let i = 0; i < displayText.length; i += chunkSize) {
-        lines.push(displayText.slice(i, i + chunkSize));
-      }
-    }
-
-    // Draw lines
-    const lineHeight = 137; // 120% of 114px = 136.8px
-    const totalHeight = lines.length * lineHeight;
-    const startY = (576 - totalHeight) / 2 + (lineHeight / 2); // vertical center
-
-    // Left alignment padding
-    const paddingLeft = 48;
-
-    lines.forEach((line, index) => {
-      ctx.fillText(line, paddingLeft, startY + (index * lineHeight));
-    });
+    // 居中绘制文字（根据文字类型应用不同偏移以修正视觉居中）
+    const yOffset = hasChinese ? 40 : 20;
+    ctx.fillText(displayText, CANVAS_SIZE / 2, CANVAS_SIZE / 2 + yOffset);
 
     return canvas.toDataURL('image/png');
   } catch {

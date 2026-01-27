@@ -421,22 +421,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                 <div
                                     className={styles.layoutHighlight}
                                     style={{
-                                        transform: `translateX(${dockPosition === 'center' ? 0 : 100}%)`,
+                                        transform: `translateX(${dockPosition === 'bottom' ? 0 : 100}%)`,
                                     }}
                                 />
-                                <button
-                                    className={styles.layoutToggleOption}
-                                    onClick={() => setDockPosition('center')}
-                                    title={t.settings.center}
-                                >
-                                    {t.settings.center}
-                                </button>
                                 <button
                                     className={styles.layoutToggleOption}
                                     onClick={() => setDockPosition('bottom')}
                                     title={t.settings.bottom}
                                 >
                                     {t.settings.bottom}
+                                </button>
+                                <button
+                                    className={styles.layoutToggleOption}
+                                    onClick={() => setDockPosition('center')}
+                                    title={t.settings.center}
+                                >
+                                    {t.settings.center}
                                 </button>
                             </div>
                         </div>

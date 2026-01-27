@@ -1,6 +1,6 @@
 {
   "name": "eclipse-tab",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Eclipse Tab - 个人化新标签页浏览器扩展",
   "scripts": {
     "dev": "vite",

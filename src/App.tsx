@@ -263,7 +263,7 @@ function App() {
         style={containerScale < 1 ? {
           transform: dockPosition === 'center'
             ? `translate(-50%, -50%) scale(${containerScale})`
-            : `translateX(-50%) scale(${containerScale})`,
+            : `translate(-50%, -100%) scale(${containerScale})`,
           transformOrigin: dockPosition === 'center' ? 'center center' : 'bottom center',
         } : undefined}
       >

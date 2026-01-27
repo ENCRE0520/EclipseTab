@@ -11,11 +11,12 @@
 }
 
 /* 内容容器 - 底部固定定位 */
+/* 使用 top + transform 统一定位策略，避免 bottom/top 切换导致的动画跳跃 */
 .container {
   position: absolute;
-  bottom: 25px;
+  top: calc(100% - 25px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -27,14 +28,14 @@
   /* 移除 min-width 以支持响应式缩放 */
   z-index: 100;
   /* Above stickers (canvas z-index: 1) */
-  /* Position transition animation + scale transition */
-  transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 统一使用 top 和 transform 进行过渡，实现平滑动画 */
+  transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* 内容容器 - 屏幕中央定位 */
+/* 使用相同的 top + transform 定位策略 */
 .containerCenter {
   position: absolute;
   top: 50%;
@@ -49,11 +50,10 @@
   max-width: var(--container-max-width);
   /* 移除 min-width 以支持响应式缩放 */
   z-index: 100;
-  /* Position transition animation + scale transition */
-  transition: top 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 使用相同的过渡参数确保两个状态间平滑切换 */
+  transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+    width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* 设置按钮区域 - 左上角 */
