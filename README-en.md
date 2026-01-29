@@ -19,11 +19,9 @@ Eclipse Tab is a powerful browser new tab extension, centered around **Zen Shelf
 ## 📖 Table of Contents
 
 - [✨ Product Overview](#-product-overview)
-- [🎯 Core Features](#-core-features)
-  - [Zen Shelf - Creative Canvas](#zen-shelf---creative-canvas)
-  - [Focus Spaces - Multiple Workspaces](#focus-spaces---multiple-workspaces)
-- [🌟 Additional Features](#-additional-features)
 - [📦 Installation & Usage](#-installation--usage)
+- [🎯 Core Features](#-core-features)
+- [🌟 Additional Features](#-additional-features)
 
 ---
 
@@ -39,131 +37,82 @@ Eclipse Tab transforms your browser's new tab page into a powerful workspace:
 
 ---
 
+## 📦 Installation & Usage
+
+### Install from Extension Stores (Recommended)
+
+- **Chrome** - [Chrome Web Store](https://chromewebstore.google.com/detail/eclipse-tab/lcnmbgidemidmfffplkpflpdpmfdgabp?utm_source=ext_app_menu)
+- **Edge** - [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/eclipse-tab/omlbmhdkajhbcdhjdgjalelbbmjoekfj?hl=zh-cn)
+- **Firefox** - [Firefox Add-ons](https://addons.mozilla.org/zh-CN/firefox/addon/eclipse-tab/)
+
+### Manual Installation
+
+<details>
+<summary>Click to expand manual installation steps</summary>
+
+**Chrome / Edge**
+1. Download and build the project (`npm run build`)
+2. Open `chrome://extensions/` or `edge://extensions/`
+3. Enable "Developer mode"
+4. Click "Load unpacked" and select the `dist` folder
+
+**Firefox**
+1. Download the `.xpi` file from [Releases](../../releases)
+2. Drag into Firefox browser window and confirm installation
+
+</details>
+
+### Getting Started
+
+After installation, open a new tab:
+
+1. **Add Apps** - Click edit button to add websites
+2. **Create Spaces** - Right-click Navigator to create workspaces
+3. **Capture Ideas** - Double-click to add stickers
+4. **Personalize** - Set themes and wallpapers
+
+---
+
 ## 🎯 Core Features
 
 ### Zen Shelf - Creative Canvas
 
-**Your creative canvas for capturing inspiration**
+Transform your new tab into a free creative space, like sticky notes and photo walls on your desk for capturing inspiration anytime.
 
-Zen Shelf transforms your new tab page into a free creative space, like sticky notes and photo walls on your desk, letting inspiration stick anywhere.
+**Text Stickers**
+- Double-click page or use right-click menu to create
+- Customize font color, alignment, and size
+- Edit and export as images
 
-#### 📝 Text Stickers
+**Image Stickers**
+- Upload, paste (Ctrl+V), or drag-and-drop to add
+- Resize with mouse wheel
+- Copy to clipboard or export as PNG
 
-**Quick Idea Capture**
-- Double-click blank space to instantly create text stickers
-- Right-click menu for quick addition
-
-**Customizable Styling**
-- Choose your favorite font colors
-- Adjust text alignment (left, center, right)
-- Slide to adjust font size
-
-**Flexible Editing**
-- Right-click stickers to edit
-- Preserve original styling when modifying
-- Export as images with one click
-
-#### 🖼️ Image Stickers
-
-**Multiple Adding Methods**
-- Upload local images via right-click menu
-- Paste clipboard images directly (Ctrl+V)
-- Drag and drop image files onto the page
-
-**Convenient Operations**
-- Resize images with mouse wheel
-- Copy images to clipboard
-- Export as PNG files
-
-#### 🎨 Natural Interactions
-
-**Drag Experience**
-- Click and drag stickers to any position
-- Slight rotation effect while dragging, simulating real paper movement
-- Text stickers automatically wrap near edges
-- Smart boundary detection prevents stickers from going off-screen
-
-**Physical Animations**
-- Shadow shrinks on click, providing press feedback
-- Smooth shadow animation while dragging, enhancing realism
-- Natural bounce-back effect on release
-
-**Layer Management**
-- Click stickers to automatically bring to top
-- Smart layer relationship management
-
-**Smart Avoidance**
-- Stickers automatically avoid bottom Dock and search bar areas
-- Auto bounce-back to safe position when dragged to UI areas
-- Smooth bounce-back animation for fluid visual experience
-
-**Creative Mode**
-- Enable creative mode via right-click menu
-- Hide all UI elements for focused creation
-- Get a pure creative space
-
-#### ⌨️ Quick Shortcuts
-
-- `Double-click background` - Quickly add text sticker
-- `Ctrl+V` - Paste image
-- `Delete / Backspace` - Delete selected sticker
-- `Mouse wheel` - Resize image sticker
-- `Right-click` - Open function menu
+**Interactive Features**
+- Free dragging with auto-avoidance of UI elements
+- Creative mode hides all UI for focused work
+- Shortcuts: Double-click to add, Ctrl+V to paste, Delete to remove
 
 ---
 
 ### Focus Spaces - Multiple Workspaces
 
-**Scenario-based workspaces, switch focus with one click**
+Create independent workspaces for different scenarios, each with its own app list, achieving true separation of work, study, and entertainment.
 
-Focus Spaces lets you create independent workspaces for different scenarios, each with its own app list, achieving true separation of work, study, and entertainment.
+**Space Management**
+- Right-click Navigator to create new spaces
+- Customize names and pin frequently used spaces
+- Import/export space configurations (JSON format)
 
-#### 🌐 Multi-Space Management
+**Quick Switching**
+- Click Navigator to cycle through spaces
+- Smooth transition animations
 
-**Easy Space Creation**
-- Right-click the Navigator button on the right side of Dock
-- Select "Add space" to create new space
-- Customize space names
-
-**Flexible Management**
-- Rename spaces to clearly identify different scenarios
-- Delete unnecessary spaces
-- Pin frequently used spaces for quick access
-
-#### 🔄 Quick Switching
-
-**One-Click Switch**
-- Click Navigator button to cycle through spaces
-- Smooth animation transitions for fluid visual experience
-
-**Animation Effects**
-- Current space icons elegantly exit
-- New space icons enter sequentially
-- Dock width automatically adapts
-
-#### 📦 Import/Export
-
-**Backup and Share**
-- Export current space as JSON file
-- Includes all apps and configurations
-- Import space configurations shared by others
-
-#### 🎯 Scenario Applications
-
-**Work Space**
-- Email, project management tools
-- Development tools, documentation platforms
-- Team collaboration apps
-
-**Study Space**
-- Online courses, note-taking apps
-- Learning resources, dictionary tools
-- Document readers
-
-**Entertainment Space**
-- Video sites, music platforms
-- Social media, gaming websites
-- News and information
+**Use Cases**
+- Work: Email, project management, development tools
+- Study: Online courses, notes, documentation
+- Entertainment: Videos, music, social media
 
 ---
 
@@ -206,33 +155,6 @@ Focus Spaces lets you create independent workspaces for different scenarios, eac
 **Smart Adaptation**
 - Auto-adjust text colors to ensure readability
 - Good visual effects on any background
-
----
-
-## 📦 Installation & Usage
-
-### Browser Extension Installation
-
-**Chrome / Edge**
-1. Download the project
-2. Open `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked"
-5. Select the `dist` folder in the project
-
-**Firefox**
-1. Download the `.xpi` file from the [Releases](../../releases) page
-2. Open Firefox and drag the `.xpi` file into the browser window
-3. Click "Add" to confirm installation
-
-### Getting Started
-
-After installation, open a new tab to start using:
-
-1. **Add Apps** - Click the edit button in the top right to add frequently used websites
-2. **Create Spaces** - Right-click Navigator to create spaces for different scenarios
-3. **Capture Inspiration** - Double-click page to add text stickers, or paste images
-4. **Personalize Theme** - Click settings in top left to choose your favorite theme
 
 ---
 
