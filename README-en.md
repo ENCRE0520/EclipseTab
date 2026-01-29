@@ -77,7 +77,7 @@ Multi-engine support with real-time suggestions
 
 ### 🎯 Install from Extension Stores (Recommended)
 
-<div align="center">
+<div align="left">
 
 | Browser | Install Link |
 |:---:|:---|
