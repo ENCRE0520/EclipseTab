@@ -59,7 +59,7 @@ Eclipse Tab 将你的浏览器新标签页变成一个强大的工作台：
 |:---|:---|
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/main/src/chrome/chrome_48x48.png" width="24" /> **Chrome** | [Chrome 扩展商店](https://chromewebstore.google.com/detail/eclipse-tab/lcnmbgidemidmfffplkpflpdpmfdgabp?utm_source=ext_app_menu) |
 | <img src="https://raw.githubusercontent.com/alrra/browser-logos/main/src/edge/edge_48x48.png" width="24" /> **Edge** | [Edge 扩展商店](https://microsoftedge.microsoft.com/addons/detail/eclipse-tab/omlbmhdkajhbcdhjdgjalelbbmjoekfj?hl=zh-cn) |
-| <img src="https://raw.githubusercontent.com/alrra/browser-logos/main/src/firefox/firefox_48x48.png" width="24" /> **Firefox** | [Firefox 扩展商店](https://addons.mozilla.org/zh-CN/firefox/addon/eclipse-tab/) |
+| <img src="https://raw.githubusercontent.com/alrra/browser-logos/main/src/firefox/firefox_48x48.png" width="24" /> **Firefox** | [Firefox 扩展商店（审核中）](https://addons.mozilla.org/zh-CN/firefox/addon/eclipse-tab/) |
 
 ### 🛠️ 手动安装
 
