@@ -3,9 +3,8 @@ import { createPortal } from 'react-dom';
 import { scaleFadeIn, scaleFadeOut } from '../../utils/animations';
 import { useThemeData } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import alignLeftIcon from '../../assets/icons/align-left.svg';
-import alignCenterIcon from '../../assets/icons/align-center.svg';
-import alignRightIcon from '../../assets/icons/align-right.svg';
+import plusIcon from '../../assets/icons/plus.svg';
+import minusIcon from '../../assets/icons/minus.svg';
 import { TEXT_COLORS } from './FloatingToolbar';
 import styles from './ZenShelf.module.css';
 
@@ -53,19 +52,13 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
     const toolbarRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [value, setValue] = useState(initialText);
-    const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>(initialStyle?.textAlign || 'left');
+    // 始终使用左对齐
+    const textAlign = 'left' as const;
     const [textColor, setTextColor] = useState(initialStyle?.color || TEXT_COLORS[0]);
     const [fontSize, setFontSize] = useState<number>(
         (initialStyle?.fontSize as number) || 40
     );
     const [isExiting, setIsExiting] = useState(false);
-
-    // 带有翻译标签的字体大小选项（L、M、S 顺序）
-    const fontSizes = [
-        { label: t.textInput.l, value: 40 },
-        { label: t.textInput.m, value: 32 },
-        { label: t.textInput.s, value: 24 },
-    ];
 
     // 挂载时聚焦并仅对工具栏播放入场动画
     useEffect(() => {
@@ -143,9 +136,13 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             clearTimeout(timer);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [textColor, textAlign, fontSize, onSubmit, onCancel, isExiting, triggerExit]);
+    }, [textColor, fontSize, onSubmit, onCancel, isExiting, triggerExit]);
 
-
+    // 字体大小调整常量
+    const FONT_SIZE_STEP = 2; // 每次调整的步长（px）
+    const FONT_SIZE_STEP_LARGE = 12; // 按住 Shift 时的大步长（px）
+    const MIN_FONT_SIZE = 12; // 最小字体大小（px）
+    const MAX_FONT_SIZE = 120; // 最大字体大小（px）
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -153,6 +150,16 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
             handleSubmit();
         } else if (e.key === 'Escape') {
             handleCancel();
+        } else if (e.key === '+' || e.key === '=') {
+            // 按 + 或 = 键增大字体（Shift 加大步长）
+            e.preventDefault();
+            const step = e.shiftKey ? FONT_SIZE_STEP_LARGE : FONT_SIZE_STEP;
+            setFontSize(prev => Math.min(prev + step, MAX_FONT_SIZE));
+        } else if (e.key === '-' || e.key === '_') {
+            // 按 - 或 _ 键减小字体（Shift 加大步长）
+            e.preventDefault();
+            const step = e.shiftKey ? FONT_SIZE_STEP_LARGE : FONT_SIZE_STEP;
+            setFontSize(prev => Math.max(prev - step, MIN_FONT_SIZE));
         }
         // Shift+Enter 允许换行（默认行为）
     };
@@ -185,8 +192,25 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
         triggerExit(onCancel);
     };
 
-    // 获取字体大小索引以实现高亮位置
-    const fontSizeIndex = fontSizes.findIndex(fs => fs.value === fontSize);
+    const [localFontSize, setLocalFontSize] = useState<string>(fontSize.toString());
+
+    // 当 fontSize 外部变更（例如快捷键）时同步更新输入框
+    useEffect(() => {
+        setLocalFontSize(fontSize.toString());
+    }, [fontSize]);
+
+    const commitFontSize = (val: string) => {
+        let num = parseInt(val, 10);
+        if (isNaN(num)) {
+            num = fontSize; // 恢复旧值
+        } else {
+            // 范围限制
+            if (num < MIN_FONT_SIZE) num = MIN_FONT_SIZE;
+            if (num > MAX_FONT_SIZE) num = MAX_FONT_SIZE;
+        }
+        setFontSize(num);
+        setLocalFontSize(num.toString());
+    };
 
     return createPortal(
         <div
@@ -220,57 +244,53 @@ export const TextInput: React.FC<TextInputProps> = ({ x, y, initialText = '', in
                 className={styles.stickerToolbar}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* 对齐选项 */}
-                <div className={styles.toolbarAlignGroup}>
-                    <div
-                        className={styles.toolbarHighlight}
-                        style={{
-                            transform: `translateX(${['left', 'center', 'right'].indexOf(textAlign) * 100}%)`,
+                {/* 字体大小控制 */}
+                <div className={styles.toolbarFontSizeControl}>
+                    <button
+                        className={styles.toolbarFontSizeBtn}
+                        onClick={(e) => {
+                            const step = e.shiftKey ? FONT_SIZE_STEP_LARGE : FONT_SIZE_STEP;
+                            setFontSize(prev => Math.max(prev - step, MIN_FONT_SIZE));
                         }}
+                        title={t.textInput.fontSizeDecrease}
+                    >
+                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${minusIcon})`, maskImage: `url(${minusIcon})` }} />
+                    </button>
+                    <input
+                        className={styles.toolbarFontSizeInput}
+                        value={localFontSize}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            // 仅允许输入数字
+                            if (val === '' || /^\d*$/.test(val)) {
+                                setLocalFontSize(val);
+                            }
+                        }}
+                        onBlur={() => commitFontSize(localFontSize)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                commitFontSize(localFontSize);
+                                (e.target as HTMLInputElement).blur();
+                                // 将焦点还给文本编辑器
+                                inputRef.current?.focus();
+                            }
+                        }}
+                        // 防止事件冒泡导致贴纸提交
+                        onClick={(e) => e.stopPropagation()}
+                        title={t.textInput.fontSizeIncrease}
                     />
                     <button
-                        className={styles.toolbarAlignBtn}
-                        onClick={() => setTextAlign('left')}
-                        title="Align Left"
-                    >
-                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignLeftIcon})`, maskImage: `url(${alignLeftIcon})` }} />
-                    </button>
-                    <button
-                        className={styles.toolbarAlignBtn}
-                        onClick={() => setTextAlign('center')}
-                        title="Center"
-                    >
-                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignCenterIcon})`, maskImage: `url(${alignCenterIcon})` }} />
-                    </button>
-                    <button
-                        className={styles.toolbarAlignBtn}
-                        onClick={() => setTextAlign('right')}
-                        title="Align Right"
-                    >
-                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${alignRightIcon})`, maskImage: `url(${alignRightIcon})` }} />
-                    </button>
-                </div>
-
-                <div className={styles.toolbarDivider} />
-
-                {/* 字体大小选项 */}
-                <div className={styles.toolbarAlignGroup}>
-                    <div
-                        className={styles.toolbarHighlight}
-                        style={{
-                            transform: `translateX(${fontSizeIndex * 100}%)`,
+                        className={styles.toolbarFontSizeBtn}
+                        onClick={(e) => {
+                            const step = e.shiftKey ? FONT_SIZE_STEP_LARGE : FONT_SIZE_STEP;
+                            setFontSize(prev => Math.min(prev + step, MAX_FONT_SIZE));
                         }}
-                    />
-                    {fontSizes.map((fs) => (
-                        <button
-                            key={fs.value}
-                            className={styles.toolbarAlignBtn}
-                            onClick={() => setFontSize(fs.value)}
-                            title={`Font Size: ${fs.value}px`}
-                        >
-                            {fs.label}
-                        </button>
-                    ))}
+                        title={t.textInput.fontSizeIncrease}
+                    >
+                        <span className={styles.toolbarIcon} style={{ WebkitMaskImage: `url(${plusIcon})`, maskImage: `url(${plusIcon})` }} />
+                    </button>
                 </div>
 
                 <div className={styles.toolbarDivider} />

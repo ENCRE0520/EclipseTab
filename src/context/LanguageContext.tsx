@@ -41,6 +41,7 @@ interface Translations {
         deleteSticker: string;
         edit: string;
         delete: string;
+        restore: string;
     };
     modal: {
         edit: string;
@@ -74,6 +75,10 @@ interface Translations {
         switch: string;
         manage: string;
         deleteStickerConfirm: string;
+        recycleBin: string;
+        restoreHint: string;
+        emptyRecycleBin: string;
+        emptyRecycleBinHint: string;
     };
     textInput: {
         placeholder: string;
@@ -82,6 +87,8 @@ interface Translations {
         l: string;
         cancel: string;
         confirm: string;
+        fontSizeIncrease: string;
+        fontSizeDecrease: string;
     };
 }
 
@@ -125,6 +132,7 @@ const translations: Record<Language, Translations> = {
             deleteSticker: 'Delete Sticker',
             edit: 'Edit',
             delete: 'Delete',
+            restore: 'Restore',
         },
         modal: {
             edit: 'Edit',
@@ -158,6 +166,10 @@ const translations: Record<Language, Translations> = {
             switch: 'Left click: Switch space',
             manage: 'Right click: Manage space',
             deleteStickerConfirm: 'Are you sure you want to delete this sticker?',
+            recycleBin: 'Recycle Bin',
+            restoreHint: 'Swipe left to restore, swipe right to delete',
+            emptyRecycleBin: 'No deleted items',
+            emptyRecycleBinHint: 'Deleted stickers will appear here',
         },
         textInput: {
             placeholder: 'Enter text...',
@@ -166,6 +178,8 @@ const translations: Record<Language, Translations> = {
             l: 'L',
             cancel: 'Cancel',
             confirm: 'Confirm',
+            fontSizeIncrease: 'Press + Increase, Shift for larger step',
+            fontSizeDecrease: 'Press - Decrease, Shift for larger step',
         }
     },
     zh: {
@@ -207,6 +221,7 @@ const translations: Record<Language, Translations> = {
             deleteSticker: '删除贴纸',
             edit: '编辑',
             delete: '删除',
+            restore: '还原',
         },
         modal: {
             edit: '编辑',
@@ -240,6 +255,10 @@ const translations: Record<Language, Translations> = {
             switch: '左键：切换空间',
             manage: '右键：管理空间',
             deleteStickerConfirm: '确定要删除这个贴纸吗？',
+            recycleBin: '回收站',
+            restoreHint: '左滑还原，右滑删除',
+            emptyRecycleBin: '没有已删除的项目',
+            emptyRecycleBinHint: '删除的贴纸将在这里显示',
         },
         textInput: {
             placeholder: '输入文本...',
@@ -248,6 +267,8 @@ const translations: Record<Language, Translations> = {
             l: '大',
             cancel: '取消',
             confirm: '确认',
+            fontSizeIncrease: '按 + 键增大字号，Shift 增大更多',
+            fontSizeDecrease: '按 - 键减小字号，Shift 减小更多',
         }
     }
 };

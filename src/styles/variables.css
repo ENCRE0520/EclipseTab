@@ -21,6 +21,7 @@
   --radius-large: 20px;
   --radius-medium: 12px;
   --radius-small: 8px;
+  --radius-extrasmall: 4px;
 
   /* ===== 原始颜色变量 ===== */
   /* 白色和黑色基础色 */
@@ -80,9 +81,12 @@
   --color-text-secondary: var(--white-alpha-85);
   --color-text-tertiary: var(--gray-600);
   --color-sticker-stroke: var(--white-alpha-70);
+  --recycle-bin-bg: transparent;
 
   /* ===== 阴影变量 ===== */
   /* 用于创建层次感和深度 */
+  --recycle-bin-modal-bg: rgba(0, 0, 0, 0);
+  /* 默认完全透明，依赖 backdrop-filter */
   --shadow-small: 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
   --shadow-medium: 0px 4px 12px 0px rgba(0, 0, 0, 0.08);
   --shadow-combined: 0px 4px 12px 0px rgba(0, 0, 0, 0.08), 0px 0px 4px 0px rgba(0, 0, 0, 0.08);
@@ -163,6 +167,9 @@
   --color-text-tertiary: var(--gray-600);
   --color-sticker-stroke: var(--gray-100);
 
+
+  --recycle-bin-modal-bg: rgba(255, 255, 255, 0.5);
+
   /* 亮色主题阴影 - 比默认主题更明显 */
   --shadow-small: 0px 0px 4px 0px rgba(0, 0, 0, 0.1);
   --shadow-medium: 0px 4px 12px 0px rgba(0, 0, 0, 0.1);
@@ -183,6 +190,10 @@
   --color-text-secondary: var(--gray-300);
   --color-text-tertiary: var(--gray-300);
   --color-sticker-stroke: var(--gray-750);
+  --recycle-bin-bg: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%);
+
+
+  --recycle-bin-modal-bg: rgba(0, 0, 0, 0.5);
 
   /* 暗色主题阴影 - 更深更柔和 */
   --shadow-small: 0px 0px 8px 0px rgba(0, 0, 0, 0.4);

@@ -15,6 +15,11 @@
     overflow: hidden;
 }
 
+.canvas.dragging {
+    /* Lift canvas above Recycle Bin (2500) during drag */
+    z-index: 2501;
+}
+
 /* 创作模式下的画布 - 不阻挡 UI 层 */
 .canvas.creativeMode {
     /* 注意：不设置 pointer-events: auto，让贴纸自己接收事件 */
@@ -114,12 +119,10 @@
     font-size: 40px;
     font-weight: 900;
     /* 紧凑行间距 */
-    line-height: 0.9;
+    line-height: 0.95;
     /* 紧凑字间距 (0.9 效果) */
     letter-spacing: -0.05em;
-    white-space: pre-wrap;
-    word-break: break-word;
-    max-width: 720px;
+    white-space: pre;
     min-width: 60px;
     /* Firefox 文本渲染优化 */
     text-rendering: geometricPrecision;
@@ -134,7 +137,7 @@
 @supports (-moz-appearance: none) {
     .textSticker {
         -webkit-text-stroke: 0.3px currentColor;
-        line-height: 0.8;
+        line-height: 0.85;
     }
 }
 
@@ -605,6 +608,11 @@
     opacity: 0.8;
 }
 
+.sticker.returningFromDelete {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(1) rotate(0deg) !important;
+}
+
 /* ===== 贴纸实时预览模式 ===== */
 
 /* 预览容器 - 包含输入框和工具栏 */
@@ -619,7 +627,6 @@
 
 /* 可编辑的贴纸预览 */
 .stickerPreviewInput {
-    max-width: 720px;
     min-width: 60px;
     padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     background: transparent;
@@ -628,11 +635,10 @@
     /* Allow inline style to control font size */
     font-weight: 900;
     /* 紧凑行间距 */
-    line-height: 0.9;
+    line-height: 0.95;
     /* 紧凑字间距 (0.9 效果) */
     letter-spacing: -0.05em;
-    white-space: pre-wrap;
-    word-break: break-word;
+    white-space: pre;
     outline: none;
     border: none;
     cursor: text;
@@ -654,7 +660,7 @@
 @supports (-moz-appearance: none) {
     .stickerPreviewInput {
         -webkit-text-stroke: 0.3px currentColor;
-        line-height: 0.8;
+        line-height: 0.95;
     }
 }
 
@@ -739,6 +745,66 @@
     color: var(--blue-500);
 }
 
+/* 字体大小控制 [-][字号][+] */
+.toolbarFontSizeControl {
+    display: flex;
+    align-items: center;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-small);
+    padding: var(--spacing-padding-extrasmall);
+}
+
+.toolbarFontSizeBtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-extrasmall);
+    cursor: pointer;
+    color: var(--color-text-primary);
+    font-size: 16px;
+    font-weight: 500;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.toolbarFontSizeBtn:hover {
+    background: var(--color-bg-primary);
+    color: var(--blue-500);
+}
+
+.toolbarFontSizeBtn:active {
+    background: var(--color-bg-tertiary);
+}
+
+.toolbarFontSizeInput {
+    width: 40px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-family: var(--font-family);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    padding: 0 4px;
+    background: transparent;
+    border: none;
+    outline: none;
+    text-align: center;
+    /* 移除 spinner */
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.toolbarFontSizeInput::-webkit-outer-spin-button,
+.toolbarFontSizeInput::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 /* 颜色按钮组 */
 .toolbarColorGroup {
     display: flex;
@@ -819,7 +885,7 @@
     /* Below dragging sticker (3000) but above other UI */
     pointer-events: none;
     /* Let events pass through to document for drag logic */
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+    background: var(--recycle-bin-bg);
     /* Subtle glow backdrop */
     border-radius: 50%;
 }
@@ -839,4 +905,463 @@
 /* Hover effect handled by JS drag detection, but we can add scale for visual feedback */
 .recycleBin.dragOver .recycleIcon {
     transform: scale(1.1);
+}
+
+.recycleBin.active {
+    bottom: -120px;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.recycleBin.active .recycleIcon {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.recycleBin.active:hover .recycleIcon {
+    transform: scale(1.1);
+}
+
+.recycleBin.peek {
+    bottom: -120px;
+    pointer-events: auto;
+    /* Allow hovering */
+}
+
+/* ----------------------------------------------------------------------------
+   Recycle Bin Modal
+   ---------------------------------------------------------------------------- */
+
+
+.recycleBinContent {
+    width: 90%;
+    height: 100%;
+    max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-top: 10vh;
+    box-sizing: border-box;
+    /* 使用文件夹弹出动画风格 */
+    animation: recycleBinPopIn 0.35s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+}
+
+.recycleBinHeader {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-primary);
+    padding: 0;
+}
+
+.recycleBinTitle {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Close button wrapper - glassmorphism */
+/* Header text wrapper for title and subtitle */
+.headerTextWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+}
+
+.recycleBinSubtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.recycleBinCloseWrapper {
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-default);
+    padding: var(--spacing-border-default);
+    cursor: pointer;
+    transition: transform var(--transition-normal);
+    opacity: 1;
+    pointer-events: auto;
+    /* Remove default button styles */
+    border: 1px solid var(--color-border);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.recycleBinCloseWrapper:hover {
+    transform: scale(1.05);
+}
+
+/* Close button inner container */
+.recycleBinCloseInner {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-default-in);
+    padding: var(--spacing-gap-small);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-small);
+    width: 40px;
+    height: 40px;
+}
+
+/* Close button icon */
+.recycleBinCloseIcon {
+    width: 24px;
+    height: 24px;
+    color: var(--color-text-primary);
+}
+
+.recycleBinGrid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 0px;
+    overflow-y: auto;
+}
+
+
+
+.recycleBinItem:active {
+    cursor: grabbing;
+    transition: none;
+    /* Instant movement during drag */
+}
+
+/* Tooltip on hover handled via subtitle now, removed styles */
+.recycleBinItem::after {
+    display: none;
+}
+
+.recycleBinItem:hover {
+    transform: scale(1.02);
+    /* No border/shadow changes on hover */
+}
+
+.recycleItemPreview {
+    max-width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+    /* Match image sticker style */
+    outline: 6px solid var(--color-sticker-stroke);
+    outline-offset: 0;
+    border-radius: var(--radius-medium);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-text-secondary);
+    gap: 24px;
+    padding: 60px 20px;
+}
+
+.emptyStateIcon {
+    width: 120px;
+    height: 120px;
+    opacity: 0.6;
+    color: var(--color-text-secondary);
+}
+
+.emptyStateText {
+    font-size: 18px;
+    font-weight: 500;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.emptyStateHint {
+    font-size: 14px;
+    opacity: 0.5;
+    text-align: center;
+}
+
+/* ===== Swipe Item Wrapper ===== */
+.recycleBinItemWrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    /* overflow: hidden; Removed to allow shadow/stroke overflow */
+    border-radius: var(--radius-medium);
+    /* 平滑补位动画 - 所有属性过渡 */
+    transition: all 0.3s cubic-bezier(0.34, 1.25, 0.64, 1);
+
+    /* Entrance Animation */
+    opacity: 0;
+    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+}
+
+/* ... existing styles ... */
+
+/* Update Item Animation for staggered entry */
+.recycleBinItem {
+    position: relative;
+    /* Remove card styling to look like raw sticker */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: grab;
+
+    /* Base state for entrance animation - REMOVED to avoid conflict with drag transform */
+    /* opacity: 0; */
+    /* animation: fadeInUp 0.4s cubic-bezier(0.34, 1.25, 0.64, 1) forwards; */
+
+    transition: transform 0.2s ease;
+    /* Default transition, override during drag */
+    width: 100%;
+    /* Max width constraint is now on the wrapper */
+    max-width: 100%;
+    z-index: 2;
+    /* Above background */
+    touch-action: pan-y;
+    /* Allow vertical scroll, handle horizontal in JS */
+}
+
+/* Swipe background layer */
+.swipeBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-radius: var(--radius-medium);
+    z-index: 1;
+    transition: opacity 0.15s ease;
+}
+
+.swipeBackground.delete {
+    background: linear-gradient(90deg, rgba(255, 59, 48, 0.9) 0%, rgba(255, 59, 48, 0.6) 50%, transparent 100%);
+}
+
+.swipeBackground.restore {
+    background: linear-gradient(270deg, rgba(52, 199, 89, 0.9) 0%, rgba(52, 199, 89, 0.6) 50%, transparent 100%);
+}
+
+/* Threshold reached state - enhanced visual feedback */
+.swipeBackground.delete.threshold {
+    background: linear-gradient(90deg, rgba(255, 59, 48, 1) 0%, rgba(255, 59, 48, 0.8) 60%, transparent 100%);
+}
+
+.swipeBackground.restore.threshold {
+    background: linear-gradient(270deg, rgba(52, 199, 89, 1) 0%, rgba(52, 199, 89, 0.8) 60%, transparent 100%);
+}
+
+/* Swipe action content (icons and text) */
+.swipeActionContent {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.swipeActionContent svg {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s ease;
+}
+
+.swipeActionIcon {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1);
+    /* Make icon white */
+    transition: transform 0.2s ease;
+}
+
+/* Icon scale up when threshold reached */
+.swipeBackground.threshold .swipeActionContent svg,
+.swipeBackground.threshold .swipeActionContent .swipeActionIcon {
+    transform: scale(1.2);
+}
+
+/* ===== Delete/Restore Animations ===== */
+.recycleBinItem.restoring {
+    transition: transform 0.4s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.4s ease !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.recycleBinItem.permanentlyDeleting {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Spring-back animation for when swipe doesn't reach threshold */
+.recycleBinItem.springBack {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* ===== Modal Closing Animation ===== */
+.recycleBinModal.closing .recycleBinContent {
+    animation: recycleBinPopOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* ===== Keyframe Animations ===== */
+/* ===== Keyframe Animations ===== */
+@keyframes recycleBinPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+        filter: blur(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px);
+    }
+}
+
+@keyframes recycleBinPopOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0px);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+        filter: blur(8px);
+    }
+}
+
+@keyframes restoreSlideOut {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(-100px) scale(0.9);
+    }
+}
+
+@keyframes deleteDissolve {
+    0% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(80px) scale(0.8);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+
+    to {
+        opacity: 1;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+}
+
+/* Update Modal Animation */
+.recycleBinModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Theme-aware background */
+    background: var(--recycle-bin-modal-bg);
+
+    /* Blur effect - Initial State */
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+.recycleBinModal.open {
+    opacity: 1;
+    pointer-events: auto;
+    /* Use animation for more control over blur interpolation if needed, or stick to transition */
+    animation: modalFadeIn 0.3s ease forwards;
+}
+
+.recycleBinModal.closing {
+    /* Ensure opacity fades out when closing */
+    opacity: 0 !important;
+    backdrop-filter: blur(0px) !important;
+    -webkit-backdrop-filter: blur(0px) !important;
+    pointer-events: none;
+    transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+}
+
+/* Update Item Animation for staggered entry */
+/* Update Item Animation for staggered entry */
+.recycleBinItem {
+    position: relative;
+    /* Remove card styling to look like raw sticker */
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: grab;
+
+    transition: transform 0.2s ease;
+    /* Default transition, override during drag */
+    width: 100%;
+    /* Max width constraint is now on the wrapper */
+    max-width: 100%;
+    z-index: 2;
+    /* Above background */
+    touch-action: pan-y;
+    /* Allow vertical scroll, handle horizontal in JS */
 }

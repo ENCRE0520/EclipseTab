@@ -95,6 +95,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     });
     const isDraggingRef = useRef(false);
     const rafRef = useRef<number>();
+    const cleaningTimerRef = useRef<NodeJS.Timeout>();
 
     // 选中时更新矩形
     useEffect(() => {
@@ -234,12 +235,24 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                         recycleBin.classList.add(styles.dragOver);
                         if (elementRef.current) {
                             elementRef.current.classList.add(styles.deleting);
+                            elementRef.current.classList.remove(styles.returningFromDelete);
+                            if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
                         }
                     } else {
-                        recycleBin.classList.remove(styles.dragOver);
-                        if (elementRef.current) {
+                        // 如果之前是 deleting 状态，则添加返回动画 class
+                        if (elementRef.current && elementRef.current.classList.contains(styles.deleting)) {
                             elementRef.current.classList.remove(styles.deleting);
+                            elementRef.current.classList.add(styles.returningFromDelete);
+
+                            if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
+                            cleaningTimerRef.current = setTimeout(() => {
+                                if (elementRef.current) {
+                                    elementRef.current.classList.remove(styles.returningFromDelete);
+                                }
+                            }, 300);
                         }
+
+                        recycleBin.classList.remove(styles.dragOver);
                     }
                 }
             }
@@ -429,6 +442,8 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             }
             if (elementRef.current) {
                 elementRef.current.classList.remove(styles.deleting);
+                elementRef.current.classList.remove(styles.returningFromDelete);
+                if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
             }
 
             // 将目标旋转重置为 0 以便动画返回
@@ -453,6 +468,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     useEffect(() => {
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
         };
     }, []);
 

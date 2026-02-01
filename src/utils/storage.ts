@@ -22,6 +22,8 @@ const STORAGE_KEYS = {
   SPACES: 'EclipseTab_spaces',
   // Zen Shelf Stickers
   STICKERS: 'EclipseTab_stickers',
+  // Deleted Stickers (Recycle Bin)
+  DELETED_STICKERS: 'EclipseTab_deletedStickers',
 } as const;
 
 // Unified Configuration Interface
@@ -54,6 +56,7 @@ interface CacheEntry<T> {
 const memoryCache = {
   spaces: null as CacheEntry<SpacesState> | null,
   stickers: null as CacheEntry<import('../types').Sticker[]> | null,
+  deletedStickers: null as CacheEntry<import('../types').Sticker[]> | null,
   config: null as CacheEntry<AppConfig> | null,
 };
 
@@ -375,6 +378,34 @@ export const storage = {
       memoryCache.stickers = { data: stickers, raw: json };
     } catch (error) {
       console.error('Failed to save stickers:', error);
+    }
+  },
+
+  getDeletedStickers(): import('../types').Sticker[] {
+    try {
+      const cached = getCached(STORAGE_KEYS.DELETED_STICKERS, memoryCache.deletedStickers);
+      if (cached) return cached;
+
+      const deletedStickersJson = localStorage.getItem(STORAGE_KEYS.DELETED_STICKERS);
+      if (deletedStickersJson) {
+        const parsed = JSON.parse(deletedStickersJson);
+        memoryCache.deletedStickers = { data: parsed, raw: deletedStickersJson };
+        return parsed;
+      }
+      return [];
+    } catch (error) {
+      console.error('Failed to get deleted stickers:', error);
+      return [];
+    }
+  },
+
+  saveDeletedStickers(stickers: import('../types').Sticker[]): void {
+    try {
+      const json = JSON.stringify(stickers);
+      localStorage.setItem(STORAGE_KEYS.DELETED_STICKERS, json);
+      memoryCache.deletedStickers = { data: stickers, raw: json };
+    } catch (error) {
+      console.error('Failed to save deleted stickers:', error);
     }
   },
 };

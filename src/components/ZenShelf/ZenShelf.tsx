@@ -8,6 +8,7 @@ import { StickerItem } from './StickerItem';
 import { TextInput } from './TextInput';
 import { ContextMenu } from './ContextMenu';
 import { RecycleBin } from './RecycleBin';
+import { RecycleBinModal } from './RecycleBinModal';
 import styles from './ZenShelf.module.css';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -36,6 +37,8 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
 
     // 响应式缩放的参考宽度（以 1920px 为基准）
     const REFERENCE_WIDTH = 1920;
+
+    const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false);
 
     // 用于响应式贴纸尺寸的视口缩放比例
     const [viewportScale, setViewportScale] = useState(() => window.innerWidth / REFERENCE_WIDTH);
@@ -299,7 +302,7 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
     return (
         <div
             ref={canvasRef}
-            className={`${styles.canvas} ${isEditMode ? styles.creativeMode : ''}`}
+            className={`${styles.canvas} ${isEditMode ? styles.creativeMode : ''} ${isAnyDragging ? styles.dragging : ''}`}
         >
             {stickers
                 .filter((sticker) => !editingSticker || sticker.id !== editingSticker.id)
@@ -345,7 +348,15 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                 />
             )}
 
-            <RecycleBin isVisible={isAnyDragging} />
+            <RecycleBin
+                isVisible={isAnyDragging}
+                onClick={() => setIsRecycleBinOpen(true)}
+            />
+
+            <RecycleBinModal
+                isOpen={isRecycleBinOpen}
+                onClose={() => setIsRecycleBinOpen(false)}
+            />
 
             {/* 上下文菜单 */}
             {contextMenu && (

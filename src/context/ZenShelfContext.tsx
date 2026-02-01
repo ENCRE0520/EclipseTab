@@ -12,6 +12,7 @@ const SAVE_DEBOUNCE_MS = 500;
 interface ZenShelfContextType {
     // 状态
     stickers: Sticker[];
+    deletedStickers: Sticker[];
     selectedStickerId: string | null;
     confirmDelete: boolean;
 
@@ -22,6 +23,9 @@ interface ZenShelfContextType {
     selectSticker: (id: string | null) => void;
     bringToTop: (id: string) => void;
     setConfirmDelete: (confirm: boolean) => void;
+    restoreSticker: (sticker: Sticker) => void;
+    permanentlyDeleteSticker: (id: string) => void;
+    clearRecycleBin: () => void;
 }
 
 const ZenShelfContext = createContext<ZenShelfContextType | undefined>(undefined);
@@ -44,6 +48,7 @@ const generateId = (): string => {
 export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // 状态初始化：从 localStorage 加载
     const [stickers, setStickers] = useState<Sticker[]>(() => storage.getStickers());
+    const [deletedStickers, setDeletedStickers] = useState<Sticker[]>(() => storage.getDeletedStickers());
     const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
     const [confirmDelete, setConfirmDeleteState] = useState<boolean>(() => {
         const saved = localStorage.getItem('sticker_confirm_delete');
@@ -60,6 +65,7 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
         saveTimeoutRef.current = window.setTimeout(() => {
             storage.saveStickers(stickers);
+            storage.saveDeletedStickers(deletedStickers);
         }, SAVE_DEBOUNCE_MS);
 
         return () => {
@@ -67,7 +73,12 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [stickers]);
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [stickers, deletedStickers]);
 
     const setConfirmDelete = useCallback((confirm: boolean) => {
         setConfirmDeleteState(confirm);
@@ -102,9 +113,43 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, []);
 
     const deleteSticker = useCallback((id: string) => {
+        const stickerToDelete = stickers.find(s => s.id === id);
+
         setStickers(prev => prev.filter(sticker => sticker.id !== id));
+
+        if (stickerToDelete) {
+            setDeletedStickers(prev => {
+                const newDeleted = [stickerToDelete, ...prev];
+                // Limit to 30 items
+                if (newDeleted.length > 30) {
+                    return newDeleted.slice(0, 30);
+                }
+                return newDeleted;
+            });
+        }
+
         // 如果删除的是选中的贴纸，取消选中
         setSelectedStickerId(prev => prev === id ? null : prev);
+    }, [stickers]);
+
+    const restoreSticker = useCallback((stickerToRestore: Sticker) => {
+        // Remove from deleted
+        setDeletedStickers(prev => prev.filter(s => s.id !== stickerToRestore.id));
+
+        // Add back to active stickers
+        setStickers(prev => {
+            // Recalculate zIndex to be on top
+            const maxZ = Math.max(...prev.map(s => s.zIndex || 1), 0);
+            return [...prev, { ...stickerToRestore, zIndex: maxZ + 1 }];
+        });
+    }, []);
+
+    const permanentlyDeleteSticker = useCallback((id: string) => {
+        setDeletedStickers(prev => prev.filter(s => s.id !== id));
+    }, []);
+
+    const clearRecycleBin = useCallback(() => {
+        setDeletedStickers([]);
     }, []);
 
     const bringToTop = useCallback((id: string) => {
@@ -128,21 +173,29 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const contextValue: ZenShelfContextType = useMemo(() => ({
         stickers,
+        deletedStickers,
         selectedStickerId,
         confirmDelete,
         addSticker,
         updateSticker,
         deleteSticker,
+        restoreSticker,
+        permanentlyDeleteSticker,
+        clearRecycleBin,
         selectSticker,
         bringToTop,
         setConfirmDelete,
     }), [
         stickers,
+        deletedStickers,
         selectedStickerId,
         confirmDelete,
         addSticker,
         updateSticker,
         deleteSticker,
+        restoreSticker,
+        permanentlyDeleteSticker,
+        clearRecycleBin,
         selectSticker,
         bringToTop,
         setConfirmDelete,
