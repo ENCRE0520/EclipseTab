@@ -942,8 +942,8 @@
     gap: 24px;
     padding-top: 10vh;
     box-sizing: border-box;
-    /* 使用文件夹弹出动画风格 */
-    animation: recycleBinPopIn 0.35s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+    /* 使用文件夹弹出动画风格 - smoother ease out */
+    animation: recycleBinPopIn 0.3s ease-out forwards;
 }
 
 .recycleBinHeader {
@@ -1025,7 +1025,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    /* gap: 24px; Removed gap to allow margin collapse animation */
     padding: 0px;
     overflow-y: auto;
 }
@@ -1092,18 +1092,35 @@
 }
 
 /* ===== Swipe Item Wrapper ===== */
+@keyframes stickerEnter {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+        filter: blur(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+    }
+}
+
+/* Update Modal Animation */
+/* ... (unchanged modal styles) ... */
+
+/* Update Item Animation for staggered entry */
 .recycleBinItemWrapper {
     position: relative;
     width: 100%;
     max-width: 600px;
-    /* overflow: hidden; Removed to allow shadow/stroke overflow */
     border-radius: var(--radius-medium);
-    /* 平滑补位动画 - 所有属性过渡 */
-    transition: all 0.3s cubic-bezier(0.34, 1.25, 0.64, 1);
+    margin-bottom: 24px;
 
-    /* Entrance Animation */
+    /* Entrance Animation - Refined for smoothness */
     opacity: 0;
-    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.25, 0.64, 1) forwards;
+    /* Uses a confident ease-out curve */
+    animation: stickerEnter 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 /* ... existing styles ... */
@@ -1227,8 +1244,8 @@
 @keyframes recycleBinPopIn {
     from {
         opacity: 0;
-        transform: scale(0.9);
-        filter: blur(8px);
+        transform: scale(0.95);
+        filter: blur(10px);
     }
 
     to {
@@ -1247,8 +1264,8 @@
 
     to {
         opacity: 0;
-        transform: scale(0.9);
-        filter: blur(8px);
+        transform: scale(0.95);
+        filter: blur(10px);
     }
 }
 
@@ -1276,17 +1293,7 @@
     }
 }
 
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
 @keyframes modalFadeIn {
     from {
@@ -1299,6 +1306,20 @@
         opacity: 1;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
+    }
+}
+
+@keyframes modalFadeOut {
+    from {
+        opacity: 1;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    to {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
     }
 }
 
@@ -1323,7 +1344,6 @@
 
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .recycleBinModal.open {
@@ -1335,11 +1355,10 @@
 
 .recycleBinModal.closing {
     /* Ensure opacity fades out when closing */
-    opacity: 0 !important;
-    backdrop-filter: blur(0px) !important;
-    -webkit-backdrop-filter: blur(0px) !important;
+    opacity: 1;
+    backdrop-filter: blur(20px);
     pointer-events: none;
-    transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
+    animation: modalFadeOut 0.25s ease forwards;
 }
 
 /* Update Item Animation for staggered entry */

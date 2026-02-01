@@ -5,6 +5,7 @@ import styles from './ZenShelf.module.css';
 import { useLanguage } from '../../context/LanguageContext';
 import TrashIcon from '../../assets/icons/trash.svg';
 import CancelIcon from '../../assets/icons/cancel.svg';
+import TrashCanEmpty from '../../assets/icons/TrashCan-empty.svg';
 
 interface RecycleBinModalProps {
     isOpen: boolean;
@@ -37,6 +38,7 @@ const RecycleBinItem: React.FC<{
     const [isDragging, setIsDragging] = useState(false);
     const [isSpringBack, setIsSpringBack] = useState(false);
     const [animationState, setAnimationState] = useState<'idle' | 'restoring' | 'deleting'>('idle');
+    const [isCollapsing, setIsCollapsing] = useState(false);
     const startX = useRef<number | null>(null);
     const startY = useRef<number | null>(null);
     const isHorizontalSwipe = useRef<boolean | null>(null);
@@ -96,12 +98,30 @@ const RecycleBinItem: React.FC<{
             setAnimationState('deleting');
             // 设置目标位置，让 transition 从当前位置动画到目标
             setOffsetX(400); // 向右飞出
-            setTimeout(() => { onDelete(sticker); }, 400);
+
+            // Step 1: Fly out (Wait 400ms)
+            setTimeout(() => {
+                // Step 2: Collapse height (Wait 300ms)
+                setIsCollapsing(true);
+                setTimeout(() => {
+                    // Step 3: Unmount (Total 700ms)
+                    onDelete(sticker);
+                }, 300);
+            }, 400);
         } else if (currentOffset < -THRESHOLD) {
             setAnimationState('restoring');
             // 设置目标位置，让 transition 从当前位置动画到目标
             setOffsetX(-400); // 向左飞出
-            setTimeout(() => { onRestore(sticker); }, 400);
+
+            // Step 1: Fly out (Wait 400ms)
+            setTimeout(() => {
+                // Step 2: Collapse height (Wait 300ms)
+                setIsCollapsing(true);
+                setTimeout(() => {
+                    // Step 3: Unmount (Total 700ms)
+                    onRestore(sticker);
+                }, 300);
+            }, 400);
         } else {
             setIsSpringBack(true);
             setOffsetX(0);
@@ -171,7 +191,15 @@ const RecycleBinItem: React.FC<{
     return (
         <div
             className={styles.recycleBinItemWrapper}
-            style={{ animationDelay: `${index * 0.05}s` }}
+            style={{
+                animationDelay: `${index * 0.05}s`,
+                maxHeight: isCollapsing ? 0 : '400px', // Assuming max height of sticker, or plenty of space
+                marginBottom: isCollapsing ? 0 : '24px',
+                opacity: isCollapsing ? 0 : undefined, // Fade out wrapper for good measure
+                overflow: isCollapsing ? 'hidden' : undefined, // Clip content during collapse
+                // Only apply transition during collapse to avoid fighting with entrance animation
+                transition: isCollapsing ? 'all 0.3s cubic-bezier(0.34, 1.25, 0.64, 1)' : undefined
+            }}
         >
             {/* Background Layer */}
             <div
@@ -233,55 +261,7 @@ const RecycleBinItem: React.FC<{
     );
 };
 
-// 空状态图标 - 空盒子 SVG
-const EmptyBoxIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg className={className} viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* 盒子底部 */}
-        <path
-            d="M20 50 L60 70 L100 50 L100 90 L60 110 L20 90 Z"
-            fill="currentColor"
-            fillOpacity="0.1"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-        />
-        {/* 盒子左侧面 */}
-        <path
-            d="M20 50 L60 70 L60 110 L20 90 Z"
-            fill="currentColor"
-            fillOpacity="0.15"
-        />
-        {/* 盒子顶部开口 */}
-        <path
-            d="M20 50 L60 30 L100 50 L60 70 Z"
-            fill="currentColor"
-            fillOpacity="0.05"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinejoin="round"
-        />
-        {/* 盒盖左半部分 - 打开状态 */}
-        <path
-            d="M20 50 L40 25 L60 30 L60 30"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="currentColor"
-            fillOpacity="0.08"
-        />
-        {/* 盒盖右半部分 - 打开状态 */}
-        <path
-            d="M100 50 L80 25 L60 30"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="currentColor"
-            fillOpacity="0.08"
-        />
-    </svg>
-);
+
 
 export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ isOpen, onClose }) => {
     const { deletedStickers, restoreSticker, permanentlyDeleteSticker } = useZenShelf();
@@ -368,7 +348,7 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ isOpen, onClos
                         ))
                     ) : (
                         <div className={styles.emptyState}>
-                            <EmptyBoxIcon className={styles.emptyStateIcon} />
+                            <img src={TrashCanEmpty} alt="Empty Recycle Bin" className={styles.emptyStateIcon} />
                             <span className={styles.emptyStateText}>
                                 {t.space?.emptyRecycleBin || "No deleted items"}
                             </span>

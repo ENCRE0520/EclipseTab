@@ -63,14 +63,10 @@ Eclipse Tab 将你的浏览器新标签页变成一个强大的工作台：
 <br>
 
 **Chrome / Edge**
-1. 下载项目并构建（`npm run build`）
+1. 下载项目并解压
 2. 打开 `chrome://extensions/` 或 `edge://extensions/`
 3. 开启"开发者模式"
 4. 点击"加载已解压的扩展程序"，选择 `dist` 文件夹
-
-**Firefox**
-1. 从 [Releases](../../releases) 下载 `.xpi` 文件
-2. 拖入 Firefox 浏览器窗口并确认安装
 
 </details>
 

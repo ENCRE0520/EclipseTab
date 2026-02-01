@@ -63,14 +63,11 @@ Eclipse Tab transforms your browser's new tab page into a powerful workspace:
 <br>
 
 **Chrome / Edge**
-1. Download and build the project (`npm run build`)
+1. Download the project and unzip it
 2. Open `chrome://extensions/` or `edge://extensions/`
 3. Enable "Developer mode"
 4. Click "Load unpacked" and select the `dist` folder
 
-**Firefox**
-1. Download the `.xpi` file from [Releases](../../releases)
-2. Drag into Firefox browser window and confirm installation
 </details>
 
 ### 🦊 Zen Browser Setup
