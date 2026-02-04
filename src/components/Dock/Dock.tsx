@@ -119,32 +119,37 @@ export const Dock: React.FC<DockProps> = ({
             setTimeout(() => {
                 setAnimationPhase('entering');
 
-                // 触发宽度过渡
+                // 触发宽度过渡 - 使用双重 rAF 确保 Firefox 兼容性
                 if (dockContentRef.current) {
                     // 临时移除宽度锁定，获取新的自然宽度
                     dockContentRef.current.style.width = '';
-                    // 强制回流
                     const targetWidth = dockContentRef.current.getBoundingClientRect().width;
 
                     // 只有当宽度有变化时才做过渡动画
                     if (startWidth > 0 && Math.abs(targetWidth - startWidth) > 1) {
-                        // 立即设置回起始宽度
-                        dockContentRef.current.style.width = `${startWidth}px`;
-                        // 强制回流以应用起始宽度
-                        dockContentRef.current.offsetHeight;
+                        const el = dockContentRef.current;
 
-                        // 下一帧设置目标宽度，触发 CSS transition
+                        // 立即设置回起始宽度，并添加过渡类
+                        el.style.width = `${startWidth}px`;
+                        el.classList.add(styles.widthTransition);
+
+                        // 双重 rAF: 确保在 Firefox 生产扩展环境也能触发过渡
+                        // 第一个 rAF: 浏览器将起始宽度渲染到屏幕
+                        // 第二个 rAF: 设置目标宽度，此时浏览器识别为值变化，触发过渡
                         requestAnimationFrame(() => {
-                            if (dockContentRef.current) {
-                                dockContentRef.current.style.width = `${targetWidth}px`;
+                            requestAnimationFrame(() => {
+                                if (dockContentRef.current) {
+                                    dockContentRef.current.style.width = `${targetWidth}px`;
 
-                                // 过渡结束后清除固定宽度
-                                setTimeout(() => {
-                                    if (dockContentRef.current) {
-                                        dockContentRef.current.style.width = '';
-                                    }
-                                }, WIDTH_TRANSITION);
-                            }
+                                    // 过渡结束后清除固定宽度和过渡类
+                                    setTimeout(() => {
+                                        if (dockContentRef.current) {
+                                            dockContentRef.current.style.width = '';
+                                            dockContentRef.current.classList.remove(styles.widthTransition);
+                                        }
+                                    }, WIDTH_TRANSITION);
+                                }
+                            });
                         });
                     }
                     // 如果宽度没变化，不需要额外处理

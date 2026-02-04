@@ -40,6 +40,11 @@
     will-change: width;
 }
 
+/* 宽度过渡状态类 - 用于 Space 切换动画 (Firefox 兼容) */
+.dockContent.widthTransition {
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
 /* Dock 项目包装器 - 控制间距和动画 */
 .dockItemWrapper {
     will-change: transform;
