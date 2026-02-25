@@ -20,12 +20,14 @@ interface Translations {
         defaultTheme: string;
         noTexture: string;
         confirmDelete: string;
+        tabOpeningBehavior: string;
+        openInNewTab: string;
+        openInCurrentTab: string;
     };
     search: {
         searchBy: string;
         searchBySuffix: string;
         searchButton: string;
-        systemDefault: string;
     };
     contextMenu: {
         addSticker: string;
@@ -115,12 +117,14 @@ const translations: Record<Language, Translations> = {
             defaultTheme: 'Default Theme',
             noTexture: 'No Texture',
             confirmDelete: 'Delete Confirmation',
+            tabOpeningBehavior: 'Open Tabs In',
+            openInNewTab: 'New',
+            openInCurrentTab: 'Current',
         },
         search: {
             searchBy: 'Search by',
             searchBySuffix: '',
             searchButton: 'Search',
-            systemDefault: 'System Default',
         },
         contextMenu: {
             addSticker: 'Add Sticker',
@@ -208,12 +212,14 @@ const translations: Record<Language, Translations> = {
             defaultTheme: '默认主题',
             noTexture: '无纹理',
             confirmDelete: '删除二次确认',
+            tabOpeningBehavior: '新标签页打开',
+            openInNewTab: '开启',
+            openInCurrentTab: '关闭',
         },
         search: {
             searchBy: '使用',
             searchBySuffix: '',
             searchButton: '搜索',
-            systemDefault: '系统默认',
         },
         contextMenu: {
             addSticker: '添加贴纸',

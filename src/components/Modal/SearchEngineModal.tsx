@@ -81,7 +81,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
               onClick={() => handleSelect(engine)}
             >
               <span className={styles.engineName}>
-                {engine.id === 'default' ? t.search.systemDefault : engine.name}
+                {engine.name}
               </span>
             </button>
           ))}

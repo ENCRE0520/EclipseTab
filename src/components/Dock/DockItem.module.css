@@ -15,7 +15,7 @@
     .iconContainer {
         width: 100%;
         height: 100%;
-        border-radius: var(--radius-default);
+        border-radius: var(--icon-border-radius, var(--radius-default));
         overflow: hidden;
         outline: 1px solid var(--color-border);
         transition: transform var(--transition-normal),
@@ -90,7 +90,7 @@
         gap: 4px;
         background: var(--color-bg-tertiary);
         padding: 6px;
-        border-radius: var(--radius-default);
+        border-radius: var(--icon-border-radius, var(--radius-default));
     }
 
     /* 文件夹图标块 - 单个网格元素 */

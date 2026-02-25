@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Sticker, IMAGE_MAX_WIDTH } from '../../types';
 import { FloatingToolbar } from './FloatingToolbar';
 import { useThemeData } from '../../context/ThemeContext';
+import { db } from '../../utils/db';
 import styles from './ZenShelf.module.css';
 
 // ============================================================================
@@ -87,6 +88,35 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
     const dragStartRef = useRef<{ x: number; y: number; stickerX: number; stickerY: number } | null>(null);
     const resizeStartRef = useRef<{ x: number; y: number; startScale: number } | null>(null);
     const [imageNaturalWidth, setImageNaturalWidth] = useState<number>(300);
+    // 图片贴纸的解析后 Blob URL
+    const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
+
+    // 从 IndexedDB 加载图片贴纸数据
+    useEffect(() => {
+        if (sticker.type !== 'image') return;
+
+        // 如果 content 是 base64 数据（旧格式兼容），直接使用
+        if (sticker.content.startsWith('data:')) {
+            setResolvedImageUrl(sticker.content);
+            return;
+        }
+
+        let url: string | null = null;
+        let cancelled = false;
+
+        db.getStickerImage(sticker.content).then(item => {
+            if (cancelled) return;
+            if (item) {
+                url = URL.createObjectURL(item.data);
+                setResolvedImageUrl(url);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+            if (url) URL.revokeObjectURL(url);
+        };
+    }, [sticker.type, sticker.content]);
 
     // 物理效果 Refs
     const physicsRef = useRef({
@@ -609,7 +639,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                 ) : (
                     <div className={styles.imageContainer}>
                         <img
-                            src={sticker.content}
+                            src={resolvedImageUrl || ''}
                             alt="sticker"
                             className={[
                                 styles.imageSticker,

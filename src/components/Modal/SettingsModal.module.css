@@ -322,6 +322,8 @@
     background: var(--color-bg-primary);
     border-radius: 6px;
     padding: 2px;
+    width: 130px;
+    /* 固定宽度使对齐更整齐 */
     isolation: isolate;
 }
 
@@ -344,7 +346,11 @@
     background: transparent;
     border: none;
     border-radius: 4px;
-    padding: 6px 12px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
     font-family: var(--font-family);
     font-size: var(--font-size-small);
     font-weight: var(--font-weight-regular);

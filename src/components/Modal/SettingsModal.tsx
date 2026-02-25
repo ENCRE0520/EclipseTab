@@ -129,6 +129,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
         setDockPosition,
         iconSize,
         setIconSize,
+        openInNewTab,
+        setOpenInNewTab,
     } = useTheme();
 
     const { language, setLanguage, t } = useLanguage();
@@ -463,6 +465,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, a
                                     title={t.settings.small}
                                 >
                                     {t.settings.small}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* 标签页打开方式 */}
+                        <div className={styles.layoutRow}>
+                            <span className={styles.layoutLabel}>{t.settings.tabOpeningBehavior}</span>
+                            <div className={styles.layoutToggleGroup}>
+                                <div
+                                    className={styles.layoutHighlight}
+                                    style={{
+                                        transform: `translateX(${openInNewTab ? 0 : 100}%)`,
+                                    }}
+                                />
+                                <button
+                                    className={styles.layoutToggleOption}
+                                    onClick={() => setOpenInNewTab(true)}
+                                    title={t.settings.openInNewTab}
+                                >
+                                    {t.settings.openInNewTab}
+                                </button>
+                                <button
+                                    className={styles.layoutToggleOption}
+                                    onClick={() => setOpenInNewTab(false)}
+                                    title={t.settings.openInCurrentTab}
+                                >
+                                    {t.settings.openInCurrentTab}
                                 </button>
                             </div>
                         </div>

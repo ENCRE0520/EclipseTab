@@ -8,8 +8,8 @@ import { DockItem } from '../types';
 /** 目标压缩尺寸 - 图标 (192px 足够显示 56px 图标) */
 const ICON_TARGET_SIZE = 192;
 
-/** 目标压缩尺寸 - 贴纸图片 (800px 保证高清晰度) */
-const STICKER_TARGET_WIDTH = 800;
+/** 目标压缩尺寸 - 贴纸图片 (1600px 保证高清晰度，IndexedDB 无空间限制) */
+const STICKER_TARGET_WIDTH = 1600;
 
 /** WebP 压缩质量 - 图标 (更高压缩) */
 const ICON_COMPRESSION_QUALITY = 0.6;
@@ -219,6 +219,63 @@ export async function compressStickerImage(dataUrl: string): Promise<string> {
     });
 }
 
+/**
+ * 压缩贴纸图片并直接返回 Blob（用于 IndexedDB 存储）
+ * @param file 图片 File 或 Blob
+ * @returns 压缩后的 Blob
+ */
+export async function compressStickerImageToBlob(file: File | Blob): Promise<Blob> {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            try {
+                let { width, height } = img;
+
+                if (width > STICKER_TARGET_WIDTH) {
+                    height = Math.round((height * STICKER_TARGET_WIDTH) / width);
+                    width = STICKER_TARGET_WIDTH;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    resolve(file);
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob && blob.size < file.size) {
+                            resolve(blob);
+                        } else {
+                            resolve(file);
+                        }
+                    },
+                    'image/webp',
+                    STICKER_COMPRESSION_QUALITY
+                );
+            } catch (error) {
+                console.error('Failed to compress sticker image to blob:', error);
+                resolve(file);
+            }
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            console.error('Failed to load image for sticker compression');
+            resolve(file);
+        };
+
+        img.src = url;
+    });
+}
 
 /**
  * 递归压缩 DockItem 数组中的所有图标

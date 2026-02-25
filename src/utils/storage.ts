@@ -14,8 +14,6 @@ const STORAGE_KEYS = {
   // GRADIENT: 'EclipseTab_gradient',
   // TEXTURE: 'EclipseTab_texture',
 
-  WALLPAPER: 'EclipseTab_wallpaper',
-  LAST_WALLPAPER: 'EclipseTab_lastWallpaper',
   WALLPAPER_ID: 'EclipseTab_wallpaperId',
 
   // Focus Spaces
@@ -24,6 +22,8 @@ const STORAGE_KEYS = {
   STICKERS: 'EclipseTab_stickers',
   // Deleted Stickers (Recycle Bin)
   DELETED_STICKERS: 'EclipseTab_deletedStickers',
+  // 贴纸图片迁移标记
+  STICKER_IMAGES_MIGRATED: 'EclipseTab_stickerImagesMigrated',
 } as const;
 
 // Unified Configuration Interface
@@ -34,6 +34,7 @@ interface AppConfig {
   iconSize: 'large' | 'small';
   texture: string;
   gradient: string | null;
+  openInNewTab: boolean;
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -43,6 +44,7 @@ const DEFAULT_CONFIG: AppConfig = {
   iconSize: 'large',
   texture: 'point',
   gradient: null,
+  openInNewTab: true,
 };
 
 // ============================================================================
@@ -115,6 +117,9 @@ export const storage = {
 
       const legacyGradient = localStorage.getItem('EclipseTab_gradient');
       if (legacyGradient) config.gradient = legacyGradient;
+
+      const legacyOpenInNewTab = localStorage.getItem('EclipseTab_openInNewTab');
+      if (legacyOpenInNewTab !== null) config.openInNewTab = legacyOpenInNewTab === 'true';
 
       // Save migrated config
       const newJson = JSON.stringify(config);
@@ -195,6 +200,14 @@ export const storage = {
     this.updateConfig({ gradient });
   },
 
+  getOpenInNewTab(): boolean {
+    return this.getConfig().openInNewTab;
+  },
+
+  saveOpenInNewTab(openInNewTab: boolean): void {
+    this.updateConfig({ openInNewTab });
+  },
+
   // ==========================================================================
   // Large Data / Independent Storage
   // ==========================================================================
@@ -233,27 +246,6 @@ export const storage = {
     }
   },
 
-  getWallpaper(): string | null {
-    try {
-      return localStorage.getItem(STORAGE_KEYS.WALLPAPER);
-    } catch {
-      return null;
-    }
-  },
-
-  saveWallpaper(wallpaper: string | null): void {
-    try {
-      if (wallpaper) {
-        localStorage.setItem(STORAGE_KEYS.WALLPAPER, wallpaper);
-        localStorage.setItem(STORAGE_KEYS.LAST_WALLPAPER, wallpaper);
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.WALLPAPER);
-      }
-    } catch (error) {
-      console.error('Failed to save wallpaper:', error);
-    }
-  },
-
   getWallpaperId(): string | null {
     try {
       return localStorage.getItem(STORAGE_KEYS.WALLPAPER_ID);
@@ -271,26 +263,6 @@ export const storage = {
       }
     } catch (error) {
       console.error('Failed to save wallpaper ID:', error);
-    }
-  },
-
-  getLastWallpaper(): string | null {
-    try {
-      return localStorage.getItem(STORAGE_KEYS.LAST_WALLPAPER);
-    } catch {
-      return null;
-    }
-  },
-
-  saveLastWallpaper(wallpaper: string | null): void {
-    try {
-      if (wallpaper) {
-        localStorage.setItem(STORAGE_KEYS.LAST_WALLPAPER, wallpaper);
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.LAST_WALLPAPER);
-      }
-    } catch (error) {
-      console.error('Failed to save last wallpaper:', error);
     }
   },
 
@@ -406,6 +378,38 @@ export const storage = {
       memoryCache.deletedStickers = { data: stickers, raw: json };
     } catch (error) {
       console.error('Failed to save deleted stickers:', error);
+    }
+  },
+
+  // ==========================================================================
+  // 贴纸图片迁移
+  // ==========================================================================
+
+  isStickerImagesMigrated(): boolean {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.STICKER_IMAGES_MIGRATED) === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  markStickerImagesMigrated(): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.STICKER_IMAGES_MIGRATED, 'true');
+    } catch (error) {
+      console.error('Failed to mark sticker images migrated:', error);
+    }
+  },
+
+  /**
+   * 清理旧版壁纸 localStorage 数据
+   */
+  cleanupLegacyWallpaper(): void {
+    try {
+      localStorage.removeItem('EclipseTab_wallpaper');
+      localStorage.removeItem('EclipseTab_lastWallpaper');
+    } catch {
+      // ignore
     }
   },
 };

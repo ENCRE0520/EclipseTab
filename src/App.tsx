@@ -53,7 +53,7 @@ function App() {
   const { draggingItem, setDraggingItem, setFolderPlaceholderActive } = useDockDrag();
 
   // 布局设置
-  const { dockPosition } = useThemeData();
+  const { dockPosition, openInNewTab } = useThemeData();
 
   // 计算派生状态
   const openFolder = useMemo(
@@ -67,9 +67,9 @@ function App() {
       setOpenFolderId(item.id);
       setFolderAnchor(rect ?? null);
     } else if (item.url) {
-      window.open(item.url, '_blank');
+      window.open(item.url, openInNewTab ? '_blank' : '_self');
     }
-  }, [setOpenFolderId, setFolderAnchor]);
+  }, [setOpenFolderId, setFolderAnchor, openInNewTab]);
 
   const handleHoverOpenFolder = useCallback((_item: DockItem, folder: DockItem) => {
     if (folder.type === 'folder') {
@@ -184,12 +184,12 @@ function App() {
       }
 
       // 开发环境或 API 不可用时的回退方案 (使用 Google)
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, openInNewTab ? '_blank' : '_self');
       return;
     }
 
     const searchUrl = `${selectedSearchEngine.url}${encodeURIComponent(query)}`;
-    window.open(searchUrl, '_blank');
+    window.open(searchUrl, openInNewTab ? '_blank' : '_self');
   };
 
   const handleItemEdit = (item: DockItem, rect?: DOMRect) => {
@@ -211,9 +211,9 @@ function App() {
 
   const handleFolderItemClick = useCallback((item: DockItem) => {
     if (item.url) {
-      window.open(item.url, '_blank');
+      window.open(item.url, openInNewTab ? '_blank' : '_self');
     }
-  }, []);
+  }, [openInNewTab]);
 
   const handleFolderItemEdit = useCallback((item: DockItem, rect?: DOMRect) => {
     handleItemEdit(item, rect);
@@ -300,6 +300,7 @@ function App() {
             setSearchEngineAnchor(rect);
             setIsSearchEngineModalOpen(true);
           }}
+          openInNewTab={openInNewTab}
           containerStyle={dockWidth ? { width: `${dockWidth}px` } : undefined}
         />
         <Dock

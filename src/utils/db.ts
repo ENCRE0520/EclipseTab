@@ -1,6 +1,7 @@
 export const DB_NAME = 'EclipseTabDB';
 export const STORE_NAME = 'wallpapers';
-const DB_VERSION = 1;
+export const STICKER_IMAGES_STORE = 'sticker_images';
+const DB_VERSION = 2;
 
 export interface WallpaperItem {
     id: string;
@@ -9,13 +10,24 @@ export interface WallpaperItem {
     createdAt: number;
 }
 
+export interface StickerImageItem {
+    id: string;
+    data: Blob;
+}
+
 interface DBWrapper {
+    // 壁纸操作
     save: (item: WallpaperItem) => Promise<string>;
     saveMultiple: (items: WallpaperItem[]) => Promise<string[]>;
     get: (id: string) => Promise<WallpaperItem | null>;
     remove: (id: string) => Promise<void>;
     removeMultiple: (ids: string[]) => Promise<void>;
     getAll: () => Promise<WallpaperItem[]>;
+    // 贴纸图片操作
+    saveStickerImage: (item: StickerImageItem) => Promise<string>;
+    getStickerImage: (id: string) => Promise<StickerImageItem | null>;
+    removeStickerImage: (id: string) => Promise<void>;
+    removeStickerImages: (ids: string[]) => Promise<void>;
 }
 
 class IndexedDBWrapper implements DBWrapper {
@@ -44,9 +56,13 @@ class IndexedDBWrapper implements DBWrapper {
 
                     request.onupgradeneeded = (event) => {
                         const db = (event.target as IDBOpenDBRequest).result;
+                        // v1: 创建 wallpapers store
                         if (!db.objectStoreNames.contains(STORE_NAME)) {
-                            // Use keyPath 'id' for future extensibility and easier querying
                             db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        }
+                        // v2: 创建 sticker_images store
+                        if (!db.objectStoreNames.contains(STICKER_IMAGES_STORE)) {
+                            db.createObjectStore(STICKER_IMAGES_STORE, { keyPath: 'id' });
                         }
                     };
                 } catch (e) {
@@ -57,6 +73,10 @@ class IndexedDBWrapper implements DBWrapper {
         }
         return this.dbPromise;
     }
+
+    // ========================================================================
+    // 壁纸操作
+    // ========================================================================
 
     async save(item: WallpaperItem): Promise<string> {
         try {
@@ -175,6 +195,83 @@ class IndexedDBWrapper implements DBWrapper {
         } catch (error) {
             console.error('DB GetAll Error:', error);
             return [];
+        }
+    }
+
+    // ========================================================================
+    // 贴纸图片操作
+    // ========================================================================
+
+    async saveStickerImage(item: StickerImageItem): Promise<string> {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STICKER_IMAGES_STORE, 'readwrite');
+                const store = transaction.objectStore(STICKER_IMAGES_STORE);
+                const request = store.put(item);
+
+                request.onsuccess = () => resolve(item.id);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error('DB SaveStickerImage Error:', error);
+            throw error;
+        }
+    }
+
+    async getStickerImage(id: string): Promise<StickerImageItem | null> {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STICKER_IMAGES_STORE, 'readonly');
+                const store = transaction.objectStore(STICKER_IMAGES_STORE);
+                const request = store.get(id);
+
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error('DB GetStickerImage Error:', error);
+            return null;
+        }
+    }
+
+    async removeStickerImage(id: string): Promise<void> {
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STICKER_IMAGES_STORE, 'readwrite');
+                const store = transaction.objectStore(STICKER_IMAGES_STORE);
+                const request = store.delete(id);
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        } catch (error) {
+            console.error('DB RemoveStickerImage Error:', error);
+            throw error;
+        }
+    }
+
+    async removeStickerImages(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+
+        try {
+            const db = await this.getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(STICKER_IMAGES_STORE, 'readwrite');
+                const store = transaction.objectStore(STICKER_IMAGES_STORE);
+
+                ids.forEach(id => {
+                    store.delete(id);
+                });
+
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = () => reject(transaction.error);
+            });
+        } catch (error) {
+            console.error('DB RemoveStickerImages Error:', error);
+            throw error;
         }
     }
 }

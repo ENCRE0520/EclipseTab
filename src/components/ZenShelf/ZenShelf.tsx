@@ -2,8 +2,12 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useDockUI } from '../../context/DockContext';
 import { useZenShelf } from '../../context/ZenShelfContext';
 import { Sticker, IMAGE_MAX_WIDTH } from '../../types';
-import { compressStickerImage } from '../../utils/imageCompression';
-import { copyBlobToClipboard, createImageStickerImage, createTextStickerImage, downloadBlob, imageToBlob } from '../../utils/canvasUtils';
+import { compressStickerImageToBlob } from '../../utils/imageCompression';
+import { copyBlobToClipboard, createImageStickerImage, createTextStickerImage, downloadBlob } from '../../utils/canvasUtils';
+import { db } from '../../utils/db';
+
+// 贴纸图片 ID 前缀
+const STICKER_IMG_PREFIX = 'stickerimg_';
 import { StickerItem } from './StickerItem';
 import { TextInput } from './TextInput';
 import { ContextMenu } from './ContextMenu';
@@ -168,30 +172,36 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async () => {
-            const base64 = reader.result as string;
-            const compressed = await compressStickerImage(base64);
+        try {
+            // 压缩为 Blob 并存入 IndexedDB
+            const compressedBlob = await compressStickerImageToBlob(file);
+            const id = `${STICKER_IMG_PREFIX}${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            await db.saveStickerImage({ id, data: compressedBlob });
+
+            // 使用临时 URL 计算图片尺寸
+            const url = URL.createObjectURL(compressedBlob);
             const img = new Image();
             img.onload = () => {
-                // 在参考坐标系（1920px 基准）中存储位置
+                URL.revokeObjectURL(url);
                 const x = (window.innerWidth / 2 - Math.min(img.width, IMAGE_MAX_WIDTH) / 2) / viewportScale;
                 const y = (window.innerHeight / 2 - (img.height * Math.min(img.width, IMAGE_MAX_WIDTH) / img.width) / 2) / viewportScale;
                 addSticker({
                     type: 'image',
-                    content: compressed,
+                    content: id, // 存储 IndexedDB 引用 ID
                     x,
                     y,
                 });
             };
-            img.src = compressed;
-        };
-        reader.readAsDataURL(file);
+            img.onerror = () => URL.revokeObjectURL(url);
+            img.src = url;
+        } catch (error) {
+            console.error('Failed to save sticker image:', error);
+        }
 
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
-    }, [addSticker]);
+    }, [addSticker, viewportScale]);
 
     // 处理文本输入提交
     const handleTextSubmit = useCallback((content: string, style?: { color: string; textAlign: 'left' | 'center' | 'right'; fontSize: number }) => {
@@ -251,25 +261,30 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                     const blob = item.getAsFile();
                     if (!blob) continue;
 
-                    const reader = new FileReader();
-                    reader.onload = async () => {
-                        const base64 = reader.result as string;
-                        const compressed = await compressStickerImage(base64);
+                    try {
+                        // 压缩为 Blob 并存入 IndexedDB
+                        const compressedBlob = await compressStickerImageToBlob(blob);
+                        const id = `${STICKER_IMG_PREFIX}${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                        await db.saveStickerImage({ id, data: compressedBlob });
+
+                        const url = URL.createObjectURL(compressedBlob);
                         const img = new Image();
                         img.onload = () => {
-                            // 在参考坐标系中存储位置
+                            URL.revokeObjectURL(url);
                             const x = (window.innerWidth / 2 - Math.min(img.width, IMAGE_MAX_WIDTH) / 2) / viewportScale;
                             const y = (window.innerHeight / 2 - (img.height * Math.min(img.width, IMAGE_MAX_WIDTH) / img.width) / 2) / viewportScale;
                             addSticker({
                                 type: 'image',
-                                content: compressed,
+                                content: id, // 存储 IndexedDB 引用 ID
                                 x,
                                 y,
                             });
                         };
-                        img.src = compressed;
-                    };
-                    reader.readAsDataURL(blob);
+                        img.onerror = () => URL.revokeObjectURL(url);
+                        img.src = url;
+                    } catch (error) {
+                        console.error('Failed to save pasted sticker image:', error);
+                    }
                     break;
                 }
             }
@@ -277,7 +292,7 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
 
         document.addEventListener('paste', handlePaste);
         return () => document.removeEventListener('paste', handlePaste);
-    }, [addSticker]);
+    }, [addSticker, viewportScale]);
 
     return (
         <div
@@ -375,14 +390,11 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                         const sticker = stickers.find(s => s.id === contextMenu.stickerId);
                         if (sticker && sticker.type === 'image') {
                             try {
-                                const img = new Image();
-                                img.onload = async () => {
-                                    const blob = await imageToBlob(img);
-                                    if (blob) {
-                                        await copyBlobToClipboard(blob);
-                                    }
-                                };
-                                img.src = sticker.content;
+                                // 从 IndexedDB 获取图片 Blob
+                                const item = await db.getStickerImage(sticker.content);
+                                if (item) {
+                                    await copyBlobToClipboard(item.data);
+                                }
                             } catch (error) {
                                 console.error('Failed to copy image:', error);
                             }
@@ -411,9 +423,16 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                         const sticker = stickers.find(s => s.id === contextMenu.stickerId);
                         if (sticker && sticker.type === 'image') {
                             try {
-                                const blob = await createImageStickerImage(sticker);
-                                if (blob) {
-                                    downloadBlob(blob, `sticker-${Date.now()}.png`);
+                                // 从 IndexedDB 加载图片后导出
+                                const item = await db.getStickerImage(sticker.content);
+                                if (item) {
+                                    const blobUrl = URL.createObjectURL(item.data);
+                                    const stickerWithUrl = { ...sticker, content: blobUrl };
+                                    const blob = await createImageStickerImage(stickerWithUrl);
+                                    URL.revokeObjectURL(blobUrl);
+                                    if (blob) {
+                                        downloadBlob(blob, `sticker-${Date.now()}.png`);
+                                    }
                                 }
                             } catch (error) {
                                 console.error('Failed to export image sticker:', error);

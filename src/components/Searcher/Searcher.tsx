@@ -9,6 +9,7 @@ interface SearcherProps {
   searchEngine: SearchEngine;
   onSearch: (query: string) => void;
   onSearchEngineClick: (anchorRect: DOMRect) => void;
+  openInNewTab?: boolean;
   containerStyle?: React.CSSProperties;
 }
 
@@ -16,6 +17,7 @@ export const Searcher: React.FC<SearcherProps> = ({
   searchEngine,
   onSearch,
   onSearchEngineClick,
+  openInNewTab = true,
   containerStyle,
 }) => {
   const [query, setQuery] = useState('');
@@ -60,7 +62,7 @@ export const Searcher: React.FC<SearcherProps> = ({
     // 检查是否是 URL
     try {
       const url = new URL(searchQuery);
-      window.open(url.toString(), '_blank');
+      window.open(url.toString(), openInNewTab ? '_blank' : '_self');
     } catch {
       // 不是 URL，进行搜索
       onSearch(searchQuery);
@@ -138,7 +140,7 @@ export const Searcher: React.FC<SearcherProps> = ({
               }}
             >
               {/* 对于默认搜索引擎使用本地化的名称 */}
-              {searchEngine.id === 'default' ? t.search.systemDefault : searchEngine.name}
+              {searchEngine.name}
               {t.search.searchBySuffix}
             </p>
           </div>

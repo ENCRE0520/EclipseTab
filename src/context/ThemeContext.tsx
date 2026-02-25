@@ -23,7 +23,6 @@ interface ThemeDataContextType {
     theme: Theme;
     followSystem: boolean;
     wallpaper: string | null;
-    lastWallpaper: string | null;
     gradientId: string | null;
     texture: Texture;
     wallpaperId: string | null;
@@ -34,6 +33,7 @@ interface ThemeDataContextType {
     backgroundBlendMode: string;
     dockPosition: DockPosition;
     iconSize: IconSize;
+    openInNewTab: boolean;
 }
 
 const ThemeDataContext = createContext<ThemeDataContextType | undefined>(undefined);
@@ -51,6 +51,7 @@ interface ThemeActionsContextType {
     setWallpaperId: (id: string) => Promise<void>;
     setDockPosition: (position: DockPosition) => void;
     setIconSize: (size: IconSize) => void;
+    setOpenInNewTab: (openInNewTab: boolean) => void;
 }
 
 const ThemeActionsContext = createContext<ThemeActionsContextType | undefined>(undefined);
@@ -138,19 +139,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return storage.getFollowSystem();
     });
 
-    // Current wallpaper URL (blob URL or base64)
-    const [wallpaper, setWallpaperState] = useState<string | null>(() => {
-        return storage.getWallpaper();
-    });
+    // Current wallpaper URL (blob URL, 仅内存状态)
+    const [wallpaper, setWallpaperState] = useState<string | null>(null);
 
     // Current wallpaper ID (for IndexedDB)
     const [wallpaperId, setWallpaperIdState] = useState<string | null>(() => {
         return storage.getWallpaperId();
     });
 
-    const [lastWallpaper] = useState<string | null>(() => {
-        return storage.getLastWallpaper();
-    });
+    // 清理旧版壁纸 localStorage 数据
+    useEffect(() => {
+        storage.cleanupLegacyWallpaper();
+    }, []);
 
     const [gradientId, setGradientIdState] = useState<string | null>(() => {
         return storage.getGradient();
@@ -167,6 +167,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [iconSize, setIconSizeState] = useState<IconSize>(() => {
         return storage.getIconSize();
+    });
+
+    const [openInNewTab, setOpenInNewTabState] = useState<boolean>(() => {
+        return storage.getOpenInNewTab();
     });
 
     // 计算主题：如果启用了 followSystem，则使用系统主题
@@ -205,7 +209,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 更新壁纸
     const setWallpaper = useCallback((wp: string | null) => {
         setWallpaperState(wp);
-        storage.saveWallpaper(wp);
         if (!wp) {
             setWallpaperIdState(null);
             storage.saveWallpaperId(null);
@@ -220,7 +223,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (blob) {
             const url = createWallpaperUrl(blob);
             setWallpaperState(url);
-            storage.saveWallpaper(null); // Clear legacy base64 storage
         }
     }, [getFromDb, createWallpaperUrl]);
 
@@ -269,6 +271,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const setIconSize = useCallback((size: IconSize) => {
         setIconSizeState(size);
         storage.saveIconSize(size);
+    }, []);
+
+    // 更新打开标签页方式
+    const setOpenInNewTab = useCallback((open: boolean) => {
+        setOpenInNewTabState(open);
+        storage.saveOpenInNewTab(open);
     }, []);
 
     // 将主题应用到文档
@@ -382,6 +390,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // 设置图标大小 CSS 变量
         root.style.setProperty('--icon-size', iconSize === 'small' ? '52px' : '64px');
+        // 动态调整图标圆角
+        root.style.setProperty('--icon-border-radius', iconSize === 'small' ? '12px' : '16px');
     }, [backgroundValue, backgroundBlendMode, isDefaultTheme, iconSize, texture, wallpaper]);
 
     // ========================================================================
@@ -391,7 +401,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         theme,
         followSystem,
         wallpaper,
-        lastWallpaper,
         gradientId,
         texture,
         wallpaperId,
@@ -402,7 +411,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         backgroundBlendMode,
         dockPosition,
         iconSize,
-    }), [theme, followSystem, wallpaper, lastWallpaper, gradientId, texture, wallpaperId, backgroundValue, backgroundBaseValue, backgroundTextureValue, backgroundTextureTileSize, backgroundBlendMode, dockPosition, iconSize]);
+        openInNewTab,
+    }), [theme, followSystem, wallpaper, gradientId, texture, wallpaperId, backgroundValue, backgroundBaseValue, backgroundTextureValue, backgroundTextureTileSize, backgroundBlendMode, dockPosition, iconSize, openInNewTab]);
 
     const actionsValue: ThemeActionsContextType = useMemo(() => ({
         setTheme,
@@ -414,7 +424,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setWallpaperId,
         setDockPosition,
         setIconSize,
-    }), [setTheme, setFollowSystem, setWallpaper, uploadWallpaper, setGradientId, setTexture, setWallpaperId, setDockPosition, setIconSize]);
+        setOpenInNewTab,
+    }), [setTheme, setFollowSystem, setWallpaper, uploadWallpaper, setGradientId, setTexture, setWallpaperId, setDockPosition, setIconSize, setOpenInNewTab]);
 
     return (
         <ThemeDataContext.Provider value={dataValue}>

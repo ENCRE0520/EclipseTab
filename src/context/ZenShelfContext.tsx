@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Sticker, StickerInput, DEFAULT_TEXT_STYLE } from '../types';
 import { storage } from '../utils/storage';
+import { db } from '../utils/db';
 
 // 防抖保存延迟 (ms)
 const SAVE_DEBOUNCE_MS = 500;
@@ -69,10 +70,59 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
     }, [stickers, deletedStickers]);
 
+    // ========================================================================
+    // 数据迁移：将旧的 base64 图片贴纸迁移到 IndexedDB
+    // ========================================================================
+    useEffect(() => {
+        if (storage.isStickerImagesMigrated()) return;
 
+        const migrateStickers = async () => {
+            try {
+                // 迁移活跃贴纸
+                const activeStickers = storage.getStickers();
+                const deletedStickersList = storage.getDeletedStickers();
+                let hasChanges = false;
 
+                const migrateList = async (list: Sticker[]): Promise<Sticker[]> => {
+                    const migrated = [...list];
+                    for (let i = 0; i < migrated.length; i++) {
+                        const s = migrated[i];
+                        if (s.type === 'image' && s.content.startsWith('data:')) {
+                            try {
+                                // base64 转 Blob
+                                const response = await fetch(s.content);
+                                const blob = await response.blob();
+                                const id = `stickerimg_migrated_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                                await db.saveStickerImage({ id, data: blob });
+                                migrated[i] = { ...s, content: id };
+                                hasChanges = true;
+                            } catch (err) {
+                                console.warn('Failed to migrate sticker image:', s.id, err);
+                            }
+                        }
+                    }
+                    return migrated;
+                };
 
+                const migratedActive = await migrateList(activeStickers);
+                const migratedDeleted = await migrateList(deletedStickersList);
 
+                if (hasChanges) {
+                    storage.saveStickers(migratedActive);
+                    storage.saveDeletedStickers(migratedDeleted);
+                    setStickers(migratedActive);
+                    setDeletedStickers(migratedDeleted);
+                }
+
+                storage.markStickerImagesMigrated();
+                console.log('Sticker image migration completed');
+            } catch (error) {
+                console.error('Sticker image migration failed:', error);
+            }
+        };
+
+        migrateStickers();
+    }, []); // 仅在首次挂载时执行
     // ========================================================================
     // 操作函数
     // ========================================================================
@@ -108,6 +158,14 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 const newDeleted = [stickerToDelete, ...prev];
                 // Limit to 30 items
                 if (newDeleted.length > 30) {
+                    // 清理被截断的贴纸的 IndexedDB 图片数据
+                    const truncated = newDeleted.slice(30);
+                    const imageIds = truncated
+                        .filter(s => s.type === 'image' && !s.content.startsWith('data:'))
+                        .map(s => s.content);
+                    if (imageIds.length > 0) {
+                        db.removeStickerImages(imageIds).catch(console.error);
+                    }
                     return newDeleted.slice(0, 30);
                 }
                 return newDeleted;
@@ -131,11 +189,27 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, []);
 
     const permanentlyDeleteSticker = useCallback((id: string) => {
-        setDeletedStickers(prev => prev.filter(s => s.id !== id));
+        setDeletedStickers(prev => {
+            const sticker = prev.find(s => s.id === id);
+            // 清理 IndexedDB 中的图片数据
+            if (sticker && sticker.type === 'image' && !sticker.content.startsWith('data:')) {
+                db.removeStickerImage(sticker.content).catch(console.error);
+            }
+            return prev.filter(s => s.id !== id);
+        });
     }, []);
 
     const clearRecycleBin = useCallback(() => {
-        setDeletedStickers([]);
+        setDeletedStickers(prev => {
+            // 清理所有图片贴纸的 IndexedDB 数据
+            const imageIds = prev
+                .filter(s => s.type === 'image' && !s.content.startsWith('data:'))
+                .map(s => s.content);
+            if (imageIds.length > 0) {
+                db.removeStickerImages(imageIds).catch(console.error);
+            }
+            return [];
+        });
     }, []);
 
     const bringToTop = useCallback((id: string) => {

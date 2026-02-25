@@ -4,6 +4,7 @@ import { storage } from '../utils/storage';
 import { DEFAULT_SEARCH_ENGINE } from '../constants/searchEngines';
 import { generateFolderIcon, fetchIcon } from '../utils/iconFetcher';
 import { useSpaces } from './SpacesContext';
+import { useThemeData } from './ThemeContext';
 
 // ============================================================================
 // 数据层 Context (低频变化)
@@ -604,15 +605,17 @@ export const useDock = (): DockContextType => {
         throw new Error('useDock must be used within a DockProvider');
     }
 
+    const { openInNewTab } = useThemeData();
+
     // 组合操作 - 需要同时访问数据和 UI
     const handleItemClick = useCallback((item: DockItem, rect?: DOMRect) => {
         if (item.type === 'folder') {
             uiContext.setOpenFolderId(item.id);
             uiContext.setFolderAnchor(rect ?? null);
         } else if (item.url) {
-            window.open(item.url, '_blank');
+            window.open(item.url, openInNewTab ? '_blank' : '_self');
         }
-    }, [uiContext]);
+    }, [uiContext, openInNewTab]);
 
     const handleItemEdit = useCallback((_item: DockItem, _rect?: DOMRect) => {
         // 这个函数在 App 中处理

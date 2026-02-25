@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { useZenShelf } from '../../context/ZenShelfContext';
+import { db } from '../../utils/db';
 import styles from './ZenShelf.module.css';
 import { useLanguage } from '../../context/LanguageContext';
 import TrashIcon from '../../assets/icons/trash.svg';
@@ -47,6 +48,33 @@ const RecycleBinItem: React.FC<{
     const THRESHOLD = 100;
     const MAX_OFFSET = 200;
     const DIRECTION_THRESHOLD = 10;
+
+    // 解析图片贴纸的 Blob URL
+    const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (sticker.type !== 'image') return;
+        if (sticker.content.startsWith('data:')) {
+            setResolvedImageUrl(sticker.content);
+            return;
+        }
+
+        let url: string | null = null;
+        let cancelled = false;
+
+        db.getStickerImage(sticker.content).then(item => {
+            if (cancelled) return;
+            if (item) {
+                url = URL.createObjectURL(item.data);
+                setResolvedImageUrl(url);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+            if (url) URL.revokeObjectURL(url);
+        };
+    }, [sticker.type, sticker.content]);
 
     // 是否达到阈值
     const isThresholdReached = Math.abs(offsetX) >= THRESHOLD;
@@ -249,7 +277,7 @@ const RecycleBinItem: React.FC<{
                     </div>
                 ) : (
                     <img
-                        src={sticker.content}
+                        src={resolvedImageUrl || ''}
                         alt="sticker"
                         className={styles.recycleItemPreview}
                         draggable={false}

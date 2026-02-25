@@ -2,11 +2,6 @@ import { SearchEngine } from '../types';
 
 export const SEARCH_ENGINES: SearchEngine[] = [
   {
-    id: 'default',
-    name: '系统默认',
-    url: '',
-  },
-  {
     id: 'google',
     name: 'Google',
     url: 'https://www.google.com/search?q=',
@@ -25,6 +20,16 @@ export const SEARCH_ENGINES: SearchEngine[] = [
     id: 'duckduckgo',
     name: 'DuckDuckGo',
     url: 'https://duckduckgo.com/?q=',
+  },
+  {
+    id: 'yahoo',
+    name: 'Yahoo',
+    url: 'https://search.yahoo.com/search?p=',
+  },
+  {
+    id: 'ecosia',
+    name: 'Ecosia',
+    url: 'https://www.ecosia.org/search?q=',
   },
 ];
 
