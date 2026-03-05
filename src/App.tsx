@@ -1,21 +1,21 @@
 import { useState, useMemo, useCallback, lazy, Suspense, useEffect, useRef } from 'react';
-import { DockItem } from './types';
-import { SEARCH_ENGINES } from './constants/searchEngines';
-import { useDockData, useDockUI, useDockDrag } from './context/DockContext';
-import { DockLayoutContainer } from './components/DockLayoutContainer';
-import { Editor } from './components/Editor/Editor';
-import { Settings } from './components/Settings/Settings';
-import { Background } from './components/Background/Background';
-import { ZenShelf } from './components/ZenShelf';
+import { DockItem } from './shared/types';
+import { SEARCH_ENGINES } from './features/search/constants/searchEngines';
+import { useDockData, useDockUI, useDockDrag } from './features/dock/context/DockContext';
+import { DockLayoutContainer } from './features/dock/components/DockLayoutContainer';
+import { Editor } from './features/editor/components/Editor/Editor';
+import { Settings } from './features/settings/components/Settings/Settings';
+import { Background } from './features/theme/components/Background/Background';
+import { ZenShelf } from './features/shelf/components/ZenShelf';
 import styles from './App.module.css';
 
 // ============================================================================
 // 性能优化: 懒加载非核心组件，减少初始包大小
 // ============================================================================
-const FolderView = lazy(() => import('./components/FolderView/FolderView').then(m => ({ default: m.FolderView })));
-const AddEditModal = lazy(() => import('./components/Modal/AddEditModal').then(m => ({ default: m.AddEditModal })));
-const SearchEngineModal = lazy(() => import('./components/Modal/SearchEngineModal').then(m => ({ default: m.SearchEngineModal })));
-const SettingsModal = lazy(() => import('./components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const FolderView = lazy(() => import('./features/dock/components/FolderView/FolderView').then(m => ({ default: m.FolderView })));
+const AddEditModal = lazy(() => import('./features/dock/components/Modal/AddEditModal').then(m => ({ default: m.AddEditModal })));
+const SearchEngineModal = lazy(() => import('./features/search/components/Modal/SearchEngineModal').then(m => ({ default: m.SearchEngineModal })));
+const SettingsModal = lazy(() => import('./features/settings/components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
 
 function App() {
   // ============================================================================
