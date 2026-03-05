@@ -139,6 +139,7 @@ Zen Browser 基于 Firefox,需要额外配置才能正常使用 Eclipse Tab:
 - 📌 **快速访问** - 常用网站一键打开
 - 📁 **文件夹整理** - 拖拽创建文件夹,保持整洁
 - ✨ **流畅动画** - 优雅的交互体验
+- 🔍 **智能图标** - 自动提取高分辨率图标，支持智能文本图标生成
 
 </td>
 <td width="50%" valign="top">
@@ -220,15 +221,21 @@ Zen Browser 基于 Firefox,需要额外配置才能正常使用 Eclipse Tab:
 
 Eclipse Tab 是一个使用现代 Web 技术构建的浏览器扩展项目，90% 的代码通过 AI 辅助编码（VibeCoding）完成。
 
-**技术栈**
-- React 18 + TypeScript
-- Vite 构建工具
-- CSS Modules
+**技术栈与架构**
+- **React 18 + TypeScript + Vite**
+- **Feature-based 架构**：功能模块化分离（Dock, Shelf, Spaces, Theme 等）
+- **UI 样式**：CSS Modules 结合原生 CSS 变量实现动态主题系统
+
+**⚡ 性能与体验优化**
+- **智能渲染调度**：细粒度 Context 状态管理、非核心组件懒加载及 RAF (RequestAnimationFrame) 节流
+- **智能图标引擎**：支持多级缓存 (Memory + IndexedDB)、并发请求去重及多阶探测（高优本地策略，低阶 API 降级）
+- **原生层优化**：Web Worker 异步图片压缩，SVG 滤镜实现完美文字描边效果
+- **自适应布局**：Zen Shelf 使用视口缩放 (Viewport Scaling) 实现响应式贴纸布局
 
 **数据存储**
-- 所有数据自动保存到本地
-- 使用 localStorage 和 IndexedDB
-- 支持大容量壁纸存储（突破 5MB 限制）
+- 遵循完全本地化 (Local-First) 的数据策略
+- 基于 localStorage 与 IndexedDB 的混合存储
+- 支持大容量壁纸及图片贴纸存储（突破传统扩展 5MB 限制）
 
 ---
 

@@ -139,6 +139,7 @@ After installation, open a new tab:
 - 📌 **Quick Access** - One-click to frequently used sites
 - 📁 **Folder Organization** - Drag to create folders, stay tidy
 - ✨ **Smooth Animations** - Elegant interaction experience
+- 🔍 **Smart Icons** - Auto-fetches high-res icons with intelligent text icon fallback
 
 </td>
 <td width="50%" valign="top">
@@ -219,15 +220,21 @@ After installation, open a new tab:
 
 Eclipse Tab is a browser extension project built with modern web technologies, with 90% of the code completed through AI-assisted coding (VibeCoding).
 
-**Tech Stack**
-- React 18 + TypeScript
-- Vite build tool
-- CSS Modules
+**Tech Stack & Architecture**
+- **React 18 + TypeScript + Vite**
+- **Feature-based Architecture**: Modular design (Dock, Shelf, Spaces, Theme, etc.)
+- **UI Styling**: CSS Modules combined with native CSS variables for dynamic theming
+
+**⚡ Performance & UX Optimizations**
+- **Smart Rendering**: Fine-grained Context hooks, lazy loading for non-core components, and RAF (RequestAnimationFrame) throttling
+- **Smart Icon Engine**: Multi-level caching (Memory + IndexedDB), request deduplication, and multi-stage fetching (high-priority local strategies with API fallbacks)
+- **Native-level Optimizations**: Asynchronous Web Worker image compression, SVG filters for perfect text sticker strokes
+- **Adaptive Layout**: Zen Shelf utilizes Viewport Scaling for responsive sticker layouts
 
 **Data Storage**
-- All data automatically saved locally
-- Uses localStorage and IndexedDB
-- Supports large-capacity wallpaper storage (breaks 5MB limit)
+- Follows a strictly Local-First data strategy
+- Hybrid storage using localStorage and IndexedDB
+- Supports large-capacity storage for wallpapers and image stickers (breaks the traditional 5MB extension limit)
 
 ---
 
