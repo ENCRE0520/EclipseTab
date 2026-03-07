@@ -173,14 +173,20 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             return;
         }
 
-        // 在创意模式（Creative Mode）下，贴纸不应该是可选的（弹出窗口/轮廓），
-        // 但它们仍然应该是可拖拽的。
+        // 在创意模式下...
         if (isCreativeMode && !isEditMode) {
             onSelect();
         }
 
         // 点击/按下时置顶
         onBringToTop();
+
+        // 如果贴纸已固定，且不是在删除或调整尺寸按钮上（上面已过滤），则不允许拖拽
+        if (sticker.isPinned) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
 
         // 开始拖拽
         setIsDragging(true);
@@ -517,6 +523,8 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
         e.preventDefault();
         e.stopPropagation();
 
+        if (sticker.isPinned) return;
+
         setIsResizing(true);
         resizeStartRef.current = {
             x: e.clientX,
@@ -697,6 +705,7 @@ const arePropsEqual = (prev: StickerItemProps, next: StickerItemProps) => {
         prev.sticker.zIndex === next.sticker.zIndex &&
         prev.sticker.scale === next.sticker.scale &&
         prev.sticker.type === next.sticker.type &&
+        prev.sticker.isPinned === next.sticker.isPinned &&
         prev.sticker.style?.color === next.sticker.style?.color &&
         prev.sticker.style?.textAlign === next.sticker.style?.textAlign &&
         prev.sticker.style?.fontSize === next.sticker.style?.fontSize &&

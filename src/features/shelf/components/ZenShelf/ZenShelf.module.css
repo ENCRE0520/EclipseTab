@@ -40,9 +40,6 @@
     will-change: transform;
     /* 性能优化：限制布局和样式计算范围 */
     contain: layout style;
-    /* 性能优化：原生视口剔除，避免渲染屏幕外的复杂贴纸 (SVG Filters) */
-    content-visibility: auto;
-    contain-intrinsic-size: 200px 200px;
 }
 
 /* 文字贴纸外层容器 - 用于阴影动画 */

@@ -439,6 +439,12 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                                 onOpenSettings?.({ x: contextMenu.x, y: contextMenu.y });
                             }
                         }}
+                        isPinned={activeContextMenuSticker?.isPinned}
+                        onTogglePin={() => {
+                            if (contextMenu.stickerId && activeContextMenuSticker) {
+                                updateSticker(contextMenu.stickerId, { isPinned: !activeContextMenuSticker.isPinned });
+                            }
+                        }}
                     />
                 );
             })()}

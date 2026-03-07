@@ -285,7 +285,7 @@ function App() {
           />
         </Suspense>
       )}
-      {mountedModals.current.addEdit && (
+      {(isAddEditModalOpen || mountedModals.current.addEdit) && (
         <Suspense fallback={null}>
           <AddEditModal
             isOpen={isAddEditModalOpen}
@@ -300,7 +300,7 @@ function App() {
           />
         </Suspense>
       )}
-      {mountedModals.current.searchEngine && (
+      {(isSearchEngineModalOpen || mountedModals.current.searchEngine) && (
         <Suspense fallback={null}>
           <SearchEngineModal
             isOpen={isSearchEngineModalOpen}
@@ -312,7 +312,7 @@ function App() {
           />
         </Suspense>
       )}
-      {mountedModals.current.settings && (
+      {(isSettingsModalOpen || mountedModals.current.settings) && (
         <Suspense fallback={null}>
           <SettingsModal
             isOpen={isSettingsModalOpen}

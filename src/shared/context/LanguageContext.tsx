@@ -44,6 +44,8 @@ interface Translations {
         edit: string;
         delete: string;
         restore: string;
+        pinSticker: string;
+        unpinSticker: string;
     };
     modal: {
         edit: string;
@@ -141,6 +143,8 @@ const translations: Record<Language, Translations> = {
             edit: 'Edit',
             delete: 'Delete',
             restore: 'Restore',
+            pinSticker: 'Pin Sticker',
+            unpinSticker: 'Unpin Sticker',
         },
         modal: {
             edit: 'Edit',
@@ -236,6 +240,8 @@ const translations: Record<Language, Translations> = {
             edit: '编辑',
             delete: '删除',
             restore: '还原',
+            pinSticker: '固定贴纸',
+            unpinSticker: '解除固定',
         },
         modal: {
             edit: '编辑',

@@ -10,6 +10,7 @@ import uploadIcon from '@/assets/icons/upload.svg';
 import editIcon from '@/assets/icons/edit.svg';
 import exportIcon from '@/assets/icons/export.svg';
 import settingsIcon from '@/assets/icons/setting2.svg';
+import pinIcon from '@/assets/icons/pin.svg';
 
 // ============================================================================
 // ContextMenu Component - Right-click context menu
@@ -33,6 +34,8 @@ interface ContextMenuProps {
     onExportImage?: () => void;
     onExportImageSticker?: () => void;
     onOpenSettings?: () => void;
+    isPinned?: boolean;
+    onTogglePin?: () => void;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -52,6 +55,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     onExportImage,
     onExportImageSticker,
     onOpenSettings,
+    isPinned,
+    onTogglePin,
 }) => {
     const { t } = useLanguage();
     const menuRef = useRef<HTMLDivElement>(null);
@@ -184,6 +189,10 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                                 </button>
                             </>
                         )}
+                        <button className={styles.menuItem} onClick={() => { onTogglePin?.(); onClose(); }}>
+                            <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${pinIcon})`, maskImage: `url(${pinIcon})` }} />
+                            <span>{isPinned ? t.contextMenu.unpinSticker : t.contextMenu.pinSticker}</span>
+                        </button>
                         <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => { onDeleteSticker?.(); onClose(); }}>
                             <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${trashIcon})`, maskImage: `url(${trashIcon})` }} />
                             <span>{t.contextMenu.deleteSticker}</span>

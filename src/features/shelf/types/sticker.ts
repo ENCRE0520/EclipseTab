@@ -23,6 +23,7 @@ export interface Sticker {
     y: number;               // 屏幕 Y 坐标 (px)
     zIndex?: number;         // 层级顺序（双击置顶）
     scale?: number;          // 图片缩放比例（仅图片贴纸）
+    isPinned?: boolean;      // 是否固定在原处不可移动
     style?: TextStickerStyle; // 仅针对文字贴纸的样式
 }
 
