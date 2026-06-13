@@ -105,6 +105,25 @@ interface Translations {
         bookmarkPermissionDenied: string;
         bookmarkApiUnavailable: string;
     };
+    sync: {
+        title: string;
+        serverUrl: string;
+        username: string;
+        password: string;
+        testConnection: string;
+        uploadToCloud: string;
+        downloadFromCloud: string;
+        statusLabel: string;
+        statusUntested: string;
+        statusSuccess: string;
+        statusFailed: string;
+        autoSync: string;
+        syncWallpaper: string;
+        syncStickers: string;
+        lastSync: string;
+        autoSyncTitle: string;
+        neverSynced: string;
+    };
     dock: {
         emptyHint: string;
     };
@@ -227,6 +246,25 @@ const translations: Record<Language, Translations> = {
             bookmarkPermissionDenied: 'Bookmark permission denied',
             bookmarkApiUnavailable: 'Bookmark API not available',
         },
+        sync: {
+            title: 'Cloud Sync (WebDAV)',
+            serverUrl: 'Server URL',
+            username: 'Username',
+            password: 'Password',
+            testConnection: 'Test',
+            uploadToCloud: 'Upload to Cloud',
+            downloadFromCloud: 'Download',
+            statusLabel: 'Status',
+            statusUntested: 'Untested',
+            statusSuccess: 'Success',
+            statusFailed: 'Failed',
+            autoSync: 'Auto Sync',
+            syncWallpaper: 'Sync Wallpapers',
+            syncStickers: 'Sync Sticker Images',
+            lastSync: 'Last sync',
+            autoSyncTitle: 'Auto Sync',
+            neverSynced: 'Never',
+        },
         textInput: {
             placeholder: 'Enter text...',
             s: 'S',
@@ -343,6 +381,25 @@ const translations: Record<Language, Translations> = {
             noBookmarks: '未找到书签',
             bookmarkPermissionDenied: '书签权限被拒绝',
             bookmarkApiUnavailable: '书签 API 不可用',
+        },
+        sync: {
+            title: '云端同步 (WebDAV)',
+            serverUrl: '服务器地址',
+            username: '账号',
+            password: '密码',
+            testConnection: '测试',
+            uploadToCloud: '覆盖到云端',
+            downloadFromCloud: '从云端下载',
+            statusLabel: '状态',
+            statusUntested: '未测试',
+            statusSuccess: '连接成功',
+            statusFailed: '连接失败',
+            autoSync: '自动同步',
+            syncWallpaper: '同步自定义壁纸',
+            syncStickers: '同步贴纸图片',
+            lastSync: '上次同步',
+            autoSyncTitle: '自动同步',
+            neverSynced: '从未',
         },
         textInput: {
             placeholder: '输入文本...',

@@ -1,0 +1,298 @@
+/* ===== 同步模态框样式 ===== */
+/* 遵循 SettingsModal 的设计语言 */
+
+.cardSection {
+    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-small);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.cardSection:last-child {
+    margin-bottom: 0;
+}
+
+/* 头部 */
+.headerSection {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    margin-bottom: 8px;
+}
+
+.iconWrapper {
+    background: var(--color-bg-secondary);
+    box-shadow: var(--shadow-small);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text-primary);
+}
+
+.titleText {
+    font-family: var(--font-family);
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.headerText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.lastSyncText {
+    font-family: var(--font-family);
+    font-size: 10px;
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-tertiary);
+}
+
+/* 输入行 - 类似 layoutRow */
+.inputRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.inputLabel {
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    width: 75px;
+}
+
+.inputField {
+    flex: 1;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-bg-primary);
+    border-radius: 6px;
+    height: 28px;
+    padding: 0 8px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: all var(--transition-medium);
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+}
+
+.inputField:focus {
+    border-color: var(--blue-500);
+    background: var(--color-bg-secondary);
+}
+
+.inputField::placeholder {
+    color: var(--color-text-tertiary);
+}
+
+/* 按钮组 */
+.buttonRow {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.testRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    height: 28px;
+}
+
+.testLeft {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+}
+
+.statusDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.statusDotUntested {
+    background: var(--color-text-tertiary);
+}
+
+.statusDotSuccess {
+    background: #10b981;
+}
+
+.statusDotFailed {
+    background: #ef4444;
+}
+
+/* ===== 统一按钮系统 ===== */
+.btnBase {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    height: 28px;
+    padding: 0 12px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-medium);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.btnBase:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.btnBase:active {
+    background: var(--blue-500);
+    border-color: var(--blue-500);
+    color: var(--white);
+}
+
+.btnBase:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    animation: btnPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes btnPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.btnFull {
+    flex: 1;
+}
+
+.btnCompact {
+    flex-shrink: 0;
+}
+
+.btnPrimary {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
+}
+
+.btnPrimary:hover {
+    filter: brightness(1.1);
+}
+
+.statusLabel {
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.statusValue {
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    line-height: 1;
+}
+
+.statusSuccess {
+    color: #10b981;
+}
+
+.statusFailed {
+    color: #ef4444;
+}
+
+.statusUntested {
+    color: var(--color-text-primary);
+}
+
+.statusMsg {
+    font-family: var(--font-family);
+    font-size: 11px;
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-tertiary);
+    line-height: 1.3;
+    word-break: break-all;
+}
+
+/* ===== 选项开关 ===== */
+.optionRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+}
+
+.optionLabel {
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+}
+
+.toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all var(--transition-medium);
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.toggle:hover {
+    border-color: var(--color-text-secondary);
+}
+
+.toggleActive {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-text-tertiary);
+}
+
+.toggleKnob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-text-secondary);
+    transition: all var(--transition-medium);
+}
+
+.toggleActive .toggleKnob {
+    left: 18px;
+    background: var(--color-text-primary);
+}

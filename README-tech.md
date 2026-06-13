@@ -545,6 +545,9 @@ npm run build
 - **ResizeObserver**：Dock 宽度自适应
 - **Favicon API**：自动获取网站图标
 - **TypeScript 类型系统**：模块化类型定义，统一导出入口
+- **WebDAV Client**：基于 Fetch API 的 WebDAV 同步客户端，支持 MKCOL/PROPFIND/PUT/GET
+- **数据指纹检测**：通过哈希比较实现增量同步，有改动才上传
+- **Chrome Permissions API**：动态请求 host_permissions，实现 WebDAV 跨域请求
 
 ---
 
@@ -615,6 +618,20 @@ src/
 │   └── WallpaperGallery/  # 壁纸历史画廊
 │       ├── WallpaperGallery.tsx     # 壁纸历史管理
 │       └── WallpaperGallery.module.css  # 网格布局
+│
+├── Sync/              # 云端同步模块
+│   ├── SyncModal.tsx              # 同步设置面板（WebDAV 配置、测试连接、上传/下载）
+│   ├── SyncModal.module.css       # 同步面板样式
+│   ├── SyncButton.tsx             # 左上角云朵入口按钮
+│   ├── SyncButton.module.css      # 按钮样式
+│   ├── useAutoSync.ts             # 自动同步 hook（每秒检测 + 5s 防抖上传）
+│   ├── webdavClient.ts            # WebDAV HTTP 客户端封装
+│   ├── syncData.ts                # 数据打包/解包/指纹检测
+│   └── syncManager.ts             # 同步编排/冲突检测/权限管理
+│
+├── PopoverPanel/          # 可复用弹出面板组件
+│   ├── PopoverPanel.tsx           # 统一毛玻璃弹出壳（动画/遮罩/点击关闭）
+│   └── PopoverPanel.module.css    # 弹出面板样式
 │
 ├── constants/             # 常量配置
 │   ├── gradients.ts       # 9 种渐变色预设
@@ -821,7 +838,17 @@ src/
 - ✅ 清晰的视觉反馈
 - ✅ 合理的焦点管理
 
-### 5. 架构设计
+### 5. 云端同步
+
+- ✅ **WebDAV 协议**：支持标准 WebDAV 协议，兼容坚果云、Nextcloud 等
+- ✅ **自动同步**：打开新标签页自动检测云端更新，本地有改动 5 秒后自动上传
+- ✅ **指纹检测**：通过哈希对比判断数据是否真正变化，没改动不上传
+- ✅ **冲突处理**：时间戳对比 + 用户确认模式，避免数据覆盖
+- ✅ **新设备保护**：首次同步只下载不上传，确保云端数据安全
+- ✅ **增量资产**：壁纸和贴纸图片作为独立文件同步，不与配置数据耦合
+- ✅ **按需授权**：使用 Chrome Permissions API 动态请求 WebDAV 域名权限
+
+### 6. 架构设计
 
 - ✅ **三层 Context 架构**:精细化状态管理,减少 70% 的不必要重渲染
 - ✅ **DragPreview 组件复用**:Dock 和 Folder 共享预览逻辑,减少代码重复

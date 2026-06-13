@@ -5,8 +5,10 @@ import { useDockData, useDockUI, useDockDrag } from './features/dock/context/Doc
 import { DockLayoutContainer } from './features/dock/components/DockLayoutContainer';
 import { Editor } from './features/editor/components/Editor/Editor';
 import { Settings } from './features/settings/components/Settings/Settings';
+import { SyncButton } from './features/sync/components/SyncButton/SyncButton';
 import { Background } from './features/theme/components/Background/Background';
 import { ZenShelf } from './features/shelf/components/ZenShelf';
+import { useAutoSync } from './features/sync/hooks/useAutoSync';
 import styles from './App.module.css';
 
 // ============================================================================
@@ -16,7 +18,9 @@ const FolderView = lazy(() => import('./features/dock/components/FolderView/Fold
 const AddEditModal = lazy(() => import('./features/dock/components/Modal/AddEditModal').then(m => ({ default: m.AddEditModal })));
 const SearchEngineModal = lazy(() => import('./features/search/components/Modal/SearchEngineModal').then(m => ({ default: m.SearchEngineModal })));
 const SettingsModal = lazy(() => import('./features/settings/components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const SyncModal = lazy(() => import('./features/sync/components/Modal/SyncModal').then(m => ({ default: m.SyncModal })));
 const BatchImportView = lazy(() => import('./features/dock/components/BatchImport/BatchImportView').then(m => ({ default: m.BatchImportView })));
+
 
 function App() {
   // ============================================================================
@@ -57,8 +61,10 @@ function App() {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isSearchEngineModalOpen, setIsSearchEngineModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [searchEngineAnchor, setSearchEngineAnchor] = useState<DOMRect | null>(null);
   const [settingsAnchor, setSettingsAnchor] = useState<{ rect: DOMRect, source?: 'button' | 'contextMenu' } | null>(null);
+  const [syncAnchor, setSyncAnchor] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
   const [addIconAnchor, setAddIconAnchor] = useState<DOMRect | null>(null);
   const [editingItem, setEditingItem] = useState<DockItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -77,6 +83,7 @@ function App() {
     addEdit: false,
     searchEngine: false,
     settings: false,
+    sync: false,
     batchImport: false,
   });
 
@@ -84,8 +91,12 @@ function App() {
     if (isAddEditModalOpen) mountedModals.current.addEdit = true;
     if (isSearchEngineModalOpen) mountedModals.current.searchEngine = true;
     if (isSettingsModalOpen) mountedModals.current.settings = true;
+    if (isSyncModalOpen) mountedModals.current.sync = true;
     if (isBatchImportOpen) mountedModals.current.batchImport = true;
-  }, [isAddEditModalOpen, isSearchEngineModalOpen, isSettingsModalOpen, isBatchImportOpen]);
+  }, [isAddEditModalOpen, isSearchEngineModalOpen, isSettingsModalOpen, isSyncModalOpen, isBatchImportOpen]);
+
+  // 自动同步：每次新标签页打开时检测云端更新
+  useAutoSync();
 
   // ============================================================================
   // 性能优化: 使用 RAF 节流 + 状态变化检测，减少 mousemove 期间的重渲染
@@ -256,6 +267,16 @@ function App() {
             setIsSettingsModalOpen(true);
           }}
         />
+        <SyncButton 
+          visible={showSettings}
+          onClick={(e: React.MouseEvent<HTMLElement>) => {
+            e.stopPropagation();
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            // SyncModal is centered or offset. Since SettingsModal offsets based on rect, let's just place sync modal roughly next to button.
+            setSyncAnchor({ x: rect.left, y: rect.bottom + 12 });
+            setIsSyncModalOpen(true);
+          }}
+        />
       </div>
       {/* 右上角触发热点：悬停显示编辑按钮 */}
       <div
@@ -331,6 +352,17 @@ function App() {
           />
         </Suspense>
       )}
+
+      {(isSyncModalOpen || mountedModals.current.sync) && (
+        <Suspense fallback={null}>
+          <SyncModal
+            isOpen={isSyncModalOpen}
+            onClose={() => setIsSyncModalOpen(false)}
+            anchorPosition={syncAnchor}
+          />
+        </Suspense>
+      )}
+
       {(isBatchImportOpen || mountedModals.current.batchImport) && (
         <Suspense fallback={null}>
           <BatchImportView

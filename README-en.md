@@ -155,6 +155,20 @@ After installation, open a new tab:
 
 </td>
 </tr>
+<tr>
+<td colspan="2" valign="top">
+
+### ☁️ Cloud Sync
+
+> Sync data across devices via WebDAV, secure and under your control.
+
+- 🔄 **Auto Sync** - Detects and syncs automatically when opening a new tab
+- 📦 **Full Backup** - Config, spaces, stickers all in one sync
+- 🖼️ **Assets Optional** - Wallpapers and sticker images synced on demand (disabled by default)
+- 🆕 **New Device Ready** - Just configure WebDAV and data syncs automatically
+
+</td>
+</tr>
 </table>
 
 ---
@@ -188,6 +202,13 @@ After installation, open a new tab:
 - **Cycle Through**: Click the space switcher button on the far right of the Dock to cycle through different spaces
 - **Quick Jump**: Long-press the space switcher button (0.2s) to pop up all other spaces as selectable blocks. Hold and slide up to your target space, then release to jump directly — no need to cycle through one by one
 - **Space Management**: Right-click the space switcher button on the far right of the Dock to pin spaces, rename spaces, delete spaces, or import/export space configurations
+
+### ☁️ Cloud Sync Tips
+
+- **Configure WebDAV**: Enter server URL and credentials in the sync panel
+- **Auto Sync**: When enabled, new tabs automatically check for cloud updates and upload local changes
+- **Image Sync**: Wallpapers and sticker images are disabled by default, enable in sync settings
+- **Multi-Device**: Configure the same WebDAV on multiple devices, data stays in sync automatically
 
 ---
 
