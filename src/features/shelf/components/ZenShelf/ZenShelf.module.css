@@ -805,8 +805,8 @@
     -moz-text-size-adjust: none;
     -webkit-text-size-adjust: none;
     text-size-adjust: none;
-    /* 文字贴纸白色轮廓 - 使用 SVG filter + 浅投影 */
-    filter: url(#text-sticker-stroke) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    /* 文字贴纸白色轮廓 - 与正式贴纸保持一致 */
+    filter: url(#text-sticker-stroke);
     /* 允许在输入框中选择文字 */
     user-select: text;
     -webkit-user-select: text;
@@ -822,30 +822,11 @@
     }
 }
 
-/* 输入框为空时（显示占位符），移除 SVG 描边滤镜以避免 discrete 模式的渲染问题 */
-.stickerPreviewInput:empty {
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
-}
-
 /* 占位符样式 */
 .stickerPreviewInput:empty::before {
     content: attr(data-placeholder);
     color: #999;
     pointer-events: none;
-    /* 用更密集的 text-shadow 模拟锐利的圆角描边外发光，消除模糊感 */
-    text-shadow:
-        -3px -3px 0 white,
-        0 -3px 0 white,
-        3px -3px 0 white,
-        3px 0 0 white,
-        3px 3px 0 white,
-        0 3px 0 white,
-        -3px 3px 0 white,
-        -3px 0 0 white,
-        -2px -2px 0 white,
-        2px -2px 0 white,
-        -2px 2px 0 white,
-        2px 2px 0 white;
 }
 
 /* ===== 跟随工具栏 ===== */

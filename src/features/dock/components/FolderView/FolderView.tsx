@@ -9,10 +9,7 @@ import { scaleFadeIn, scaleFadeOut } from '@/shared/utils/animations';
 import { useFolderDragAndDrop } from '@/features/dock/hooks/useFolderDragAndDrop';
 import {
   FOLDER_COLUMNS,
-  FOLDER_ITEM_WIDTH,
-  FOLDER_ITEM_HEIGHT,
-  FOLDER_GAP,
-  FOLDER_CELL_SIZE,
+  FOLDER_PADDING,
   EASE_SPRING,
   SQUEEZE_ANIMATION_DURATION,
 } from '@/shared/constants/layout';
@@ -40,11 +37,12 @@ interface FolderViewProps {
 
 // 布局常量 (从共享常量导入)
 const COLUMNS = FOLDER_COLUMNS;
-const ITEM_WIDTH = FOLDER_ITEM_WIDTH;
-const ITEM_HEIGHT = FOLDER_ITEM_HEIGHT;
-const GAP = FOLDER_GAP;
-const CELL_WIDTH = FOLDER_CELL_SIZE;
-const CELL_HEIGHT = FOLDER_CELL_SIZE;
+
+const getIconSize = () => {
+  if (typeof window === 'undefined') return 64;
+  const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--icon-size'));
+  return Number.isFinite(size) ? size : 64;
+};
 
 export const FolderView: React.FC<FolderViewProps> = ({
   folder,
@@ -64,6 +62,10 @@ export const FolderView: React.FC<FolderViewProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const iconSize = getIconSize();
+  const gap = iconSize / 8;
+  const padding = iconSize / 8 || FOLDER_PADDING;
+  const cellSize = iconSize + gap;
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -155,14 +157,14 @@ export const FolderView: React.FC<FolderViewProps> = ({
       // Step 3: Map to Pixels
       const col = visualIndex % COLUMNS;
       const row = Math.floor(visualIndex / COLUMNS);
-      const x = col * CELL_WIDTH;
-      const y = row * CELL_HEIGHT;
+      const x = col * cellSize;
+      const y = row * cellSize;
 
       positions[item.id] = { x, y, visualIndex };
     });
 
     return positions;
-  }, [items, dragState.originalIndex, dragState.isDragging, dragState.isAnimatingReturn, placeholderIndex, externalDragItem]);
+  }, [items, dragState.originalIndex, dragState.isDragging, dragState.isAnimatingReturn, placeholderIndex, externalDragItem, cellSize]);
 
   // Calculate Container Dimensions
   // Total visible slots = Items count (internal drag: N, external: N+1)
@@ -175,7 +177,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
   const widthItemCount = externalDragItem ? items.length + 1 : items.length;
 
   const totalRows = Math.ceil(Math.max(visualCount, 1) / COLUMNS);
-  const gridHeight = totalRows * CELL_HEIGHT - GAP; // Remove last gap
+  const gridHeight = totalRows * cellSize - gap; // Remove last gap
 
 
 
@@ -226,7 +228,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
 
   // Positioning
   // We use the same formula as the container width to ensure perfectly centered positioning.
-  const displayWidth = (Math.min(items.length, COLUMNS) * CELL_WIDTH - GAP) + 18; // 16px padding + 2px border
+  const displayWidth = (Math.min(items.length, COLUMNS) * cellSize - gap) + (padding * 2) + 2;
   const halfWidth = displayWidth / 2;
 
   // ============================================================================
@@ -241,11 +243,12 @@ export const FolderView: React.FC<FolderViewProps> = ({
   }), [anchorRect?.left, anchorRect?.width, anchorRect?.top, halfWidth]);
 
   const containerStyle = useMemo(() => ({
-    width: (Math.min(widthItemCount, COLUMNS) * CELL_WIDTH - GAP) + 18, // 16px padding + 2px border
+    width: (Math.min(widthItemCount, COLUMNS) * cellSize - gap) + (padding * 2) + 2,
     height: 'auto' as const,
+    padding,
     transition: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SPRING}`,
     pointerEvents: (dragState.isAnimatingReturn ? 'none' : 'auto') as React.CSSProperties['pointerEvents'],
-  }), [widthItemCount, dragState.isAnimatingReturn]);
+  }), [widthItemCount, cellSize, gap, padding, dragState.isAnimatingReturn]);
 
   const gridStyle = useMemo(() => ({
     height: gridHeight,
@@ -282,8 +285,8 @@ export const FolderView: React.FC<FolderViewProps> = ({
                   }}
                   className={`${styles.gridItem} ${isDraggingSource ? styles.isBeingDragged : ''}`}
                   style={{
-                    width: ITEM_WIDTH,
-                    height: ITEM_HEIGHT,
+                    width: iconSize,
+                    height: iconSize,
                     transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
                   }}
                 >

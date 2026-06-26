@@ -8,6 +8,7 @@ import { db } from '@/shared/utils/db';
 
 // favicon 引用 ID 前缀
 export const FAVICON_PREFIX = 'favicon:';
+const REMOTE_ICON_PREFIX = 'remote-icon:';
 
 // ============================================================================
 // objectURL 内存缓存: domain → objectURL
@@ -37,6 +38,18 @@ export const getDomainFromRef = (icon: string): string => {
  */
 export const makeFaviconRef = (domain: string): string => {
   return `${FAVICON_PREFIX}${domain}`;
+};
+
+export const isRemoteIconUrl = (icon: string): boolean => {
+  return /^https?:\/\//.test(icon);
+};
+
+const getRemoteIconCacheKey = (iconUrl: string): string => {
+  return `${REMOTE_ICON_PREFIX}${iconUrl}`;
+};
+
+export const getCachedRemoteIconUrlSync = (iconUrl: string): string | undefined => {
+  return objectURLCache.get(getRemoteIconCacheKey(iconUrl));
 };
 
 /**
@@ -85,6 +98,47 @@ export const resolveIconUrl = async (domain: string): Promise<string> => {
   })();
 
   pendingLoads.set(domain, loadPromise);
+  return loadPromise;
+};
+
+export const resolveRemoteIconUrl = async (iconUrl: string): Promise<string> => {
+  const key = getRemoteIconCacheKey(iconUrl);
+  const cached = await resolveIconUrl(key);
+  if (cached) return cached;
+
+  const pending = pendingLoads.get(key);
+  if (pending) return pending;
+
+  const loadPromise = (async () => {
+    try {
+      const response = await fetch(iconUrl, { redirect: 'follow' });
+      if (!response.ok) return iconUrl;
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.startsWith('image/') && !contentType.includes('icon')) return iconUrl;
+
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+      bitmap.close();
+
+      await db.saveFavicon({
+        domain: key,
+        data: blob,
+        isFallback: false,
+        lastUpdated: Date.now(),
+      });
+
+      const objectUrl = URL.createObjectURL(blob);
+      objectURLCache.set(key, objectUrl);
+      return objectUrl;
+    } catch {
+      return iconUrl;
+    } finally {
+      pendingLoads.delete(key);
+    }
+  })();
+
+  pendingLoads.set(key, loadPromise);
   return loadPromise;
 };
 

@@ -438,7 +438,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
             style={{ left: position.x, top: position.y }}
         >
             {/* 实时预览贴纸 - 直接在背景上显示 */}
-            <div ref={inputWrapperRef} className={[hasCheckbox ? styles.textStickerContainer : '', linkCard ? styles.hasLinkCard : ''].filter(Boolean).join(' ')}>
+            <div ref={inputWrapperRef} className={[!linkCard ? styles.stickerText : '', hasCheckbox ? styles.textStickerContainer : '', linkCard ? styles.hasLinkCard : ''].filter(Boolean).join(' ')}>
                 {hasCheckbox && (
                     <button
                         className={styles.textStickerCheckbox}

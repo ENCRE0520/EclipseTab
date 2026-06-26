@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Space } from '@/shared/types';
 import styles from './SpaceSwitcher.module.css';
@@ -45,7 +45,6 @@ function switcherFadeOut(el: HTMLElement, duration: number, onComplete?: () => v
 
 interface SpaceSwitcherProps {
     spaces: Space[];
-    activeSpaceId: string;
     onSelect: (spaceId: string) => void;
     onClose: () => void;
     anchorRect: DOMRect | null;
@@ -69,16 +68,10 @@ const LERP_FACTOR = 0.15;
 
 export function SpaceSwitcher({
     spaces,
-    activeSpaceId,
     onSelect,
     onClose,
     anchorRect,
 }: SpaceSwitcherProps) {
-    const otherSpaces = useMemo(
-        () => spaces.filter(s => s.id !== activeSpaceId),
-        [spaces, activeSpaceId]
-    );
-
     const containerRef = useRef<HTMLDivElement>(null);
     const blockRefs = useRef<(HTMLDivElement | null)[]>([]);
     const hoveredIdRef = useRef<string | null>(null);
@@ -98,7 +91,7 @@ export function SpaceSwitcher({
     // 更新所有块的位置（弧线 + 旋转 + 悬停缩放 + 背景色）
     const updateBlockPositions = useCallback(() => {
         const blocks = blockRefs.current;
-        const n = otherSpaces.length;
+        const n = spaces.length;
         const offset = currentOffsetRef.current;
         const hId = hoveredIdRef.current;
 
@@ -119,7 +112,7 @@ export function SpaceSwitcher({
             const rotationT = BASE_ROTATION + (1 - BASE_ROTATION) * t;
             const rotation = (offset / CURVE_MAX_OFFSET) * MAX_ROTATION * rotationT;
 
-            const isHovered = otherSpaces[i].id === hId && !isClosingRef.current;
+            const isHovered = spaces[i].id === hId && !isClosingRef.current;
             const targetScale = isHovered ? HOVER_SCALE : 1;
             currentScalesRef.current[i] += (targetScale - currentScalesRef.current[i]) * 0.2;
             const scale = currentScalesRef.current[i];
@@ -132,7 +125,21 @@ export function SpaceSwitcher({
                 el.style.background = '';
             }
         }
-    }, [otherSpaces]);
+    }, [spaces]);
+
+    // 入场动画：对外层容器统一执行，从底部中心展开
+    useLayoutEffect(() => {
+        if (containerRef.current) {
+            // 测量第一个块的宽度，计算中心点（块是 right:0 绝对定位，所以中心在 -blockWidth/2）
+            const firstBlock = blockRefs.current[blockRefs.current.length - 1];
+            if (firstBlock) {
+                const blockW = firstBlock.offsetWidth;
+                // 容器宽度为 0，块从 right:0 向左延伸，中心点在 x = -blockWidth/2
+                containerRef.current.style.transformOrigin = `${-blockW / 2}px bottom`;
+            }
+            switcherFadeIn(containerRef.current, ANIMATION_DURATION);
+        }
+    }, []);
 
     // 动画循环
     useEffect(() => {
@@ -150,20 +157,6 @@ export function SpaceSwitcher({
         rafRef.current = requestAnimationFrame(loop);
         return () => { running = false; cancelAnimationFrame(rafRef.current); };
     }, [anchorCenterX, updateBlockPositions]);
-
-    // 入场动画：对外层容器统一执行，从底部中心展开
-    useLayoutEffect(() => {
-        if (containerRef.current) {
-            // 测量第一个块的宽度，计算中心点（块是 right:0 绝对定位，所以中心在 -blockWidth/2）
-            const firstBlock = blockRefs.current[blockRefs.current.length - 1];
-            if (firstBlock) {
-                const blockW = firstBlock.offsetWidth;
-                // 容器宽度为 0，块从 right:0 向左延伸，中心点在 x = -blockWidth/2
-                containerRef.current.style.transformOrigin = `${-blockW / 2}px bottom`;
-            }
-            switcherFadeIn(containerRef.current, ANIMATION_DURATION);
-        }
-    }, []);
 
     // 退场动画：对外层容器统一执行退场
     const triggerExit = useCallback(() => {
@@ -192,12 +185,12 @@ export function SpaceSwitcher({
             const rect = el.getBoundingClientRect();
             if (clientX >= rect.left && clientX <= rect.right &&
                 clientY >= rect.top && clientY <= rect.bottom) {
-                found = otherSpaces[i].id;
+                found = spaces[i].id;
                 break;
             }
         }
         hoveredIdRef.current = found;
-    }, [otherSpaces]);
+    }, [spaces]);
 
     // 松手
     const handlePointerUp = useCallback(() => {
@@ -230,7 +223,7 @@ export function SpaceSwitcher({
         }
         : { position: 'fixed', bottom: 100, right: 20, zIndex: 9999 };
 
-    if (otherSpaces.length === 0) {
+    if (spaces.length <= 1) {
         onClose();
         return null;
     }
@@ -238,7 +231,7 @@ export function SpaceSwitcher({
     return createPortal(
         <div className={styles.overlay}>
             <div ref={containerRef} className={styles.blocksWrapper} style={wrapperStyle}>
-                {otherSpaces.map((space, index) => (
+                {spaces.map((space, index) => (
                     <div
                         key={space.id}
                         ref={(el) => { blockRefs.current[index] = el; }}

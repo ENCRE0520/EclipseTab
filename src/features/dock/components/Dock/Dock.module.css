@@ -76,14 +76,13 @@
 /* 分隔线 SVG 图标 */
 .divider svg {
     position: absolute;
-    bottom: 0;
+    top: 50%;
     left: 0;
     right: 0;
     margin: 0 auto;
-    /* Center the line horizontally */
-    top: 8px;
     width: 1px;
-    height: 48px;
+    height: calc(var(--icon-size, 64px) - 16px);
+    transform: translateY(-50%);
 }
 
 /* 分隔线条样式 */
@@ -219,13 +218,18 @@
     display: flex;
     gap: var(--spacing-gap-small);
     align-items: center;
-    /* 空间切换时平滑过渡透明度 */
-    transition: opacity 0.15s ease;
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Navigator 过渡状态 - 退场/隐藏期间淡出 */
 .navigatorTransitioning {
     opacity: 0.3;
+}
+
+.navigatorHidden {
+    opacity: 0;
+    transform: translateY(calc(-50% - 24px)) scale(0.6);
+    pointer-events: none;
 }
 
 /* 空 Dock 提示 - 当没有图标时显示 */

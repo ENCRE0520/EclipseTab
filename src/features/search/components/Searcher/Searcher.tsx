@@ -51,6 +51,21 @@ export const Searcher: React.FC<SearcherProps> = ({
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    const handleSpaceFocus = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.isComposing) return;
+
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input, textarea, select, button, a, [contenteditable="true"]')) return;
+
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+
+    window.addEventListener('keydown', handleSpaceFocus);
+    return () => window.removeEventListener('keydown', handleSpaceFocus);
+  }, []);
+
   // 当建议列表变化时重置激活索引
   useEffect(() => {
     setActiveIndex(-1);
@@ -184,4 +199,3 @@ export const Searcher: React.FC<SearcherProps> = ({
     </header>
   );
 };
-

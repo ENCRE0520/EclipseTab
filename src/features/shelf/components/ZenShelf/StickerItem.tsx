@@ -281,51 +281,44 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
             let target = -moveDx * SENSITIVITY;
             target = Math.max(-MAX_ROTATION, Math.min(MAX_ROTATION, target));
             physicsRef.current.targetRotation = target;
-            // Check for collision with Recycle Bin for visual feedback
+            // Check mouse position against Recycle Bin for visual feedback
             const recycleBin = document.getElementById('sticker-recycle-bin');
             if (recycleBin && pendingPosition) {
                 const binRect = recycleBin.getBoundingClientRect();
-                const stickerRect = elementRef.current?.getBoundingClientRect();
 
-                if (stickerRect) {
-                    // We need to check overlap based on current mouse position or pending position
-                    // stickerRect might be lagging due to RAF, but good enough for visual feedback
+                const isOverBin = e.clientX >= binRect.left &&
+                    e.clientX <= binRect.right &&
+                    e.clientY >= binRect.top &&
+                    e.clientY <= binRect.bottom;
 
-                    // Simple overlap check
-                    const isOverBin = !(stickerRect.right < binRect.left ||
-                        stickerRect.left > binRect.right ||
-                        stickerRect.bottom < binRect.top ||
-                        stickerRect.top > binRect.bottom);
-
-                    if (isOverBin) {
-                        recycleBin.classList.add(styles.dragOver);
-                        if (elementRef.current) {
-                            elementRef.current.classList.add(styles.deleting);
-                            elementRef.current.classList.remove(styles.returningFromDelete);
-                            if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
-                        }
-                    } else {
-                        // 如果之前是 deleting 状态，则添加返回动画 class
-                        if (elementRef.current && elementRef.current.classList.contains(styles.deleting)) {
-                            elementRef.current.classList.remove(styles.deleting);
-                            elementRef.current.classList.add(styles.returningFromDelete);
-
-                            if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
-                            cleaningTimerRef.current = setTimeout(() => {
-                                if (elementRef.current) {
-                                    elementRef.current.classList.remove(styles.returningFromDelete);
-                                }
-                            }, 300);
-                        }
-
-                        recycleBin.classList.remove(styles.dragOver);
+                if (isOverBin) {
+                    recycleBin.classList.add(styles.dragOver);
+                    if (elementRef.current) {
+                        elementRef.current.classList.add(styles.deleting);
+                        elementRef.current.classList.remove(styles.returningFromDelete);
+                        if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
                     }
+                } else {
+                    // 如果之前是 deleting 状态，则添加返回动画 class
+                    if (elementRef.current && elementRef.current.classList.contains(styles.deleting)) {
+                        elementRef.current.classList.remove(styles.deleting);
+                        elementRef.current.classList.add(styles.returningFromDelete);
+
+                        if (cleaningTimerRef.current) clearTimeout(cleaningTimerRef.current);
+                        cleaningTimerRef.current = setTimeout(() => {
+                            if (elementRef.current) {
+                                elementRef.current.classList.remove(styles.returningFromDelete);
+                            }
+                        }, 300);
+                    }
+
+                    recycleBin.classList.remove(styles.dragOver);
                 }
             }
 
         };
 
-        const handleMouseUp = () => {
+        const handleMouseUp = (e: MouseEvent) => {
             // 确保最终位置被更新
             if (positionRafId !== null) {
                 cancelAnimationFrame(positionRafId);
@@ -341,17 +334,14 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                 return;
             }
 
-            // 检查与垃圾桶的碰撞
+            // 检查鼠标位置是否在垃圾桶内
             const recycleBin = document.getElementById('sticker-recycle-bin');
             if (recycleBin) {
                 const binRect = recycleBin.getBoundingClientRect();
-                const stickerRect = stickerEl.getBoundingClientRect();
-
-                // 简单的重叠检查
-                const isOverBin = !(stickerRect.right < binRect.left ||
-                    stickerRect.left > binRect.right ||
-                    stickerRect.bottom < binRect.top ||
-                    stickerRect.top > binRect.bottom);
+                const isOverBin = e.clientX >= binRect.left &&
+                    e.clientX <= binRect.right &&
+                    e.clientY >= binRect.top &&
+                    e.clientY <= binRect.bottom;
 
                 if (isOverBin) {
                     // Stop physics animation immediately to freeze rotation

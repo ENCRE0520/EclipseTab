@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { DockItem as DockItemType } from '@/shared/types';
 import { Tooltip } from '@/shared/components/Tooltip/Tooltip';
-import { isFaviconRef, getDomainFromRef, resolveIconUrl, getCachedIconUrlSync } from '@/features/dock/utils/iconCache';
+import { isFaviconRef, isRemoteIconUrl, getDomainFromRef, resolveIconUrl, resolveRemoteIconUrl, getCachedIconUrlSync, getCachedRemoteIconUrlSync } from '@/features/dock/utils/iconCache';
 import styles from './DockItem.module.css';
 import editIcon from '@/assets/icons/edit.svg';
 
@@ -20,6 +20,9 @@ function useResolvedIcon(icon: string | undefined): string {
       const cached = getCachedIconUrlSync(domain);
       return cached || PLACEHOLDER_ICON;
     }
+    if (isRemoteIconUrl(icon)) {
+      return getCachedRemoteIconUrlSync(icon) || PLACEHOLDER_ICON;
+    }
     return icon; // data URL 或其他直接可用的 URL
   });
 
@@ -29,6 +32,22 @@ function useResolvedIcon(icon: string | undefined): string {
       return;
     }
     if (!isFaviconRef(icon)) {
+      if (isRemoteIconUrl(icon)) {
+        const cached = getCachedRemoteIconUrlSync(icon);
+        if (cached) {
+          setResolved(cached);
+          return;
+        }
+
+        let cancelled = false;
+        resolveRemoteIconUrl(icon).then(url => {
+          if (!cancelled) {
+            setResolved(url || PLACEHOLDER_ICON);
+          }
+        });
+
+        return () => { cancelled = true; };
+      }
       setResolved(icon);
       return;
     }

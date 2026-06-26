@@ -495,7 +495,7 @@ export const Dock: React.FC<DockProps> = ({
             {/* DockNavigator - 空间切换器，使用绝对定位始终靠右 */}
             <div
                 ref={navigatorRef}
-                className={`${styles.dockNavigator} ${animationPhase === 'exiting' || animationPhase === 'hidden' ? styles.navigatorTransitioning : ''}`}
+                className={`${styles.dockNavigator} ${animationPhase === 'exiting' || animationPhase === 'hidden' ? styles.navigatorTransitioning : ''} ${showSpaceSwitcher ? styles.navigatorHidden : ''}`}
             >
                 <DockNavigator
                     currentSpace={currentSpace}
@@ -511,7 +511,6 @@ export const Dock: React.FC<DockProps> = ({
             {showSpaceSwitcher && (
                 <SpaceSwitcher
                     spaces={spaces}
-                    activeSpaceId={currentSpace.id}
                     onSelect={handleSpaceSwitcherSelect}
                     onClose={handleSpaceSwitcherClose}
                     anchorRect={navigatorRef.current?.getBoundingClientRect() ?? null}

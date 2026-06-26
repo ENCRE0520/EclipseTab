@@ -83,7 +83,7 @@
     /* 小尺寸图标 - 缩小居中显示而非撑满容器 */
     .iconSmall {
         object-fit: contain;
-        padding: 14px;
+        padding: calc(var(--icon-size, 64px) * 0.22);
     }
 
     /* 文件夹图标 - 2x2 网格布局 */
@@ -93,9 +93,9 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        gap: 4px;
+        gap: calc(var(--icon-size, 64px) * 0.0625);
         background: var(--color-bg-tertiary);
-        padding: 6px;
+        padding: calc(var(--icon-size, 64px) * 0.09375);
         border-radius: var(--icon-border-radius, var(--radius-default));
     }
 
@@ -103,7 +103,7 @@
     .folderIconTile {
         width: 100%;
         height: 100%;
-        border-radius: 8px;
+        border-radius: calc(var(--icon-size, 64px) * 0.125);
         overflow: hidden;
         background: var(--color-bg-white);
     }
@@ -199,6 +199,6 @@
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .folderIconTile {
-    border-radius: 12px;
+    border-radius: calc(var(--icon-size, 64px) * 0.1875);
   }
 }
