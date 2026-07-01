@@ -69,6 +69,7 @@ function App() {
   const [editingItem, setEditingItem] = useState<DockItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isTouchUI, setIsTouchUI] = useState(false);
   const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
 
   // 跟踪拖拽来源，用于区分内部拖拽和外部拖拽
@@ -104,6 +105,21 @@ function App() {
   const lastSettingsState = useRef(false);
   const lastEditorState = useRef(false);
   const rafId = useRef<number>(0);
+
+  useEffect(() => {
+    const media = window.matchMedia('(hover: none), (pointer: coarse)');
+    const updateTouchUI = () => {
+      setIsTouchUI(media.matches);
+      if (media.matches) {
+        setShowSettings(true);
+        setShowEditor(true);
+      }
+    };
+
+    updateTouchUI();
+    media.addEventListener('change', updateTouchUI);
+    return () => media.removeEventListener('change', updateTouchUI);
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -258,7 +274,7 @@ function App() {
         data-ui-zone="top-left"
       >
         <Settings
-          visible={showSettings}
+          visible={showSettings || isTouchUI}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
             e.stopPropagation();
             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -267,7 +283,7 @@ function App() {
           }}
         />
         <SyncButton 
-          visible={showSettings}
+          visible={showSettings || isTouchUI}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
             e.stopPropagation();
             const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -284,7 +300,7 @@ function App() {
         data-ui-zone="top-right"
       >
         <Editor
-          visible={showEditor || isEditMode}
+          visible={showEditor || isEditMode || isTouchUI}
           isEditMode={isEditMode}
           onClick={() => setIsEditMode(!isEditMode)}
         />

@@ -3,8 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#ffffff" />
   <title>Eclipse Tab</title>
+  <link rel="manifest" href="/pwa.webmanifest" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
   
   <!-- 性能优化：DNS 预解析 -->
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -18,7 +22,7 @@
   <!-- 字体加载 - 使用 swap 避免渲染阻塞 -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;900&display=swap" rel="stylesheet">
   
-  <link rel="icon" type="image/png" href="/src/assets/icons/Favicon.png" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
 </head>
 
 <body>

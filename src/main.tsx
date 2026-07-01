@@ -20,3 +20,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </SpacesProvider>
   </ThemeProvider>
 );
+
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
