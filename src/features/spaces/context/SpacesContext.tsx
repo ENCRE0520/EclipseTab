@@ -3,6 +3,55 @@ import { Space, SpacesState, DockItem, createDefaultSpace } from '@/shared/types
 import { storage } from '@/shared/utils/storage';
 import { SpaceExportData, MultiSpaceExportData, createSpaceFromImport, createSpacesFromMultiImport } from '@/features/spaces/utils/spaceExportImport';
 import { prefetchIcons } from '@/features/dock/utils/iconCache';
+import { generateFolderIcon } from '@/features/dock/utils/iconFetcher';
+
+function containsDockItem(items: DockItem[], itemId: string): boolean {
+    return items.some(item =>
+        item.id === itemId ||
+        (item.type === 'folder' && item.items ? containsDockItem(item.items, itemId) : false)
+    );
+}
+
+function extractDockItem(
+    items: DockItem[],
+    itemId: string
+): { items: DockItem[]; extractedItem: DockItem | null } {
+    for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+
+        if (item.id === itemId) {
+            return {
+                items: [...items.slice(0, index), ...items.slice(index + 1)],
+                extractedItem: item,
+            };
+        }
+
+        if (item.type === 'folder' && item.items) {
+            const nestedResult = extractDockItem(item.items, itemId);
+            if (!nestedResult.extractedItem) continue;
+
+            const nextItems = [...items];
+            if (nestedResult.items.length === 0) {
+                nextItems.splice(index, 1);
+            } else if (nestedResult.items.length === 1) {
+                nextItems[index] = nestedResult.items[0];
+            } else {
+                nextItems[index] = {
+                    ...item,
+                    items: nestedResult.items,
+                    icon: generateFolderIcon(nestedResult.items),
+                };
+            }
+
+            return {
+                items: nextItems,
+                extractedItem: nestedResult.extractedItem,
+            };
+        }
+    }
+
+    return { items, extractedItem: null };
+}
 
 // ============================================================================
 // 数据层 Context 类型定义 (低频变化)
@@ -34,6 +83,7 @@ interface SpacesActionsContextType {
     updateCurrentSpaceApps: (apps: DockItem[] | ((prev: DockItem[]) => DockItem[])) => void;
     /** 按指定空间 ID 更新 apps（异步操作安全，不受空间切换影响） */
     updateSpaceApps: (spaceId: string, apps: DockItem[] | ((prev: DockItem[]) => DockItem[])) => void;
+    moveItemToSpace: (sourceSpaceId: string, targetSpaceId: string, itemId: string) => void;
     importSpace: (data: SpaceExportData) => Promise<Space>;
     importMultipleSpaces: (data: MultiSpaceExportData) => Promise<Space[]>;
     pinSpace: (spaceId: string) => void;
@@ -290,6 +340,34 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         }));
     }, []);
 
+    const moveItemToSpace = useCallback((sourceSpaceId: string, targetSpaceId: string, itemId: string) => {
+        if (sourceSpaceId === targetSpaceId) return;
+
+        setSpacesState(prev => {
+            const sourceSpace = prev.spaces.find(space => space.id === sourceSpaceId);
+            const targetSpace = prev.spaces.find(space => space.id === targetSpaceId);
+            if (!sourceSpace || !targetSpace || containsDockItem(targetSpace.apps, itemId)) {
+                return prev;
+            }
+
+            const result = extractDockItem(sourceSpace.apps, itemId);
+            if (!result.extractedItem) return prev;
+
+            return {
+                ...prev,
+                spaces: prev.spaces.map(space => {
+                    if (space.id === sourceSpaceId) {
+                        return { ...space, apps: result.items };
+                    }
+                    if (space.id === targetSpaceId) {
+                        return { ...space, apps: [...space.apps, result.extractedItem!] };
+                    }
+                    return space;
+                }),
+            };
+        });
+    }, []);
+
     // ============================================================================
     // Context Values (分离数据和操作，减少重渲染)
     // ============================================================================
@@ -310,6 +388,7 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         renameSpace,
         updateCurrentSpaceApps,
         updateSpaceApps,
+        moveItemToSpace,
         importSpace,
         importMultipleSpaces,
         pinSpace,
@@ -322,6 +401,7 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         renameSpace,
         updateCurrentSpaceApps,
         updateSpaceApps,
+        moveItemToSpace,
         importSpace,
         importMultipleSpaces,
         pinSpace,

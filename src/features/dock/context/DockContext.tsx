@@ -305,7 +305,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setOpenFolderIdState(null);
             }
         }
-    }, []);
+    }, [setDockItems]);
 
     const handleItemSave = useCallback((data: Partial<DockItem>, editingItem: DockItem | null) => {
         if (editingItem) {
@@ -338,7 +338,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setDockItems(prev => [...prev, newItem]);
         }
-    }, []);
+    }, [setDockItems]);
 
     const handleItemsReorder = useCallback((items: DockItem[]) => {
         const updatedItems = items.map((item) => {
@@ -351,7 +351,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return item;
         });
         setDockItems(updatedItems);
-    }, []);
+    }, [setDockItems]);
 
     const handleFolderItemsReorder = useCallback((folderId: string, items: DockItem[]) => {
         setDockItems(prev => prev.map((item) => {
@@ -364,7 +364,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return item;
         }));
-    }, []);
+    }, [setDockItems]);
 
     const handleFolderItemDelete = useCallback((folderId: string, item: DockItem) => {
         setDockItems(prev => {
@@ -394,7 +394,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return prev;
         });
-    }, [checkAndDissolveFolderIfNeeded]);
+    }, [checkAndDissolveFolderIfNeeded, setDockItems]);
 
     const handleDragFromFolder = useCallback((item: DockItem, mousePosition: { x: number; y: number }) => {
         if (!openFolderId) return;
@@ -451,7 +451,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             return finalItems;
         });
-    }, [openFolderId, checkAndDissolveFolderIfNeeded]);
+    }, [openFolderId, checkAndDissolveFolderIfNeeded, setDockItems]);
 
     const handleDragToFolder = useCallback((item: DockItem) => {
         if (!openFolderId || item.type === 'folder') return;
@@ -473,7 +473,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return i;
             }).filter(i => i.id !== item.id);
         });
-    }, [openFolderId]);
+    }, [openFolderId, setDockItems]);
 
     const handleDropOnFolder = useCallback((dragItem: DockItem, targetFolder: DockItem) => {
         if (targetFolder.type !== 'folder') return;
@@ -502,7 +502,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return item;
             }).filter(item => item.id !== dragItem.id);
         });
-    }, []);
+    }, [setDockItems]);
 
     // ========================================================================
     // Context Values (使用 useMemo 避免不必要的 Re-render)
@@ -524,6 +524,7 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }), [
         dockItems,
         selectedSearchEngine,
+        setDockItems,
         handleItemSave,
         handleItemsReorder,
         handleItemDelete,

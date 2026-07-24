@@ -51,6 +51,7 @@ interface Translations {
         clearAllStickers: string;
         clearAllStickersConfirm: string;
         edit: string;
+        moveToSpace: string;
         delete: string;
         restore: string;
         pinSticker: string;
@@ -198,6 +199,7 @@ const translations: Record<Language, Translations> = {
             clearAllStickers: 'Clear All Stickers',
             clearAllStickersConfirm: 'Are you sure you want to delete all stickers?\nText and image stickers will all be moved to the recycle bin.',
             edit: 'Edit',
+            moveToSpace: 'Move to',
             delete: 'Delete',
             restore: 'Restore',
             pinSticker: 'Pin Sticker',
@@ -343,6 +345,7 @@ const translations: Record<Language, Translations> = {
             clearAllStickers: '一键清除所有贴纸',
             clearAllStickersConfirm: '确定要删除所有贴纸吗？\n文字和图片贴纸都会被移入回收站。',
             edit: '编辑',
+            moveToSpace: '移动到',
             delete: '删除',
             restore: '还原',
             pinSticker: '固定贴纸',
