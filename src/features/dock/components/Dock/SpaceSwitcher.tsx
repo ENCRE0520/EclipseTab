@@ -219,9 +219,9 @@ export function SpaceSwitcher({
             position: 'fixed',
             bottom: window.innerHeight - anchorRect.top + 8,
             right: window.innerWidth - anchorRect.right,
-            zIndex: 9999,
+            zIndex: 'var(--z-space-switcher-content)',
         }
-        : { position: 'fixed', bottom: 100, right: 20, zIndex: 9999 };
+        : { position: 'fixed', bottom: 100, right: 20, zIndex: 'var(--z-space-switcher-content)' };
 
     if (spaces.length <= 1) {
         onClose();

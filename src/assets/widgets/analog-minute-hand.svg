@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="64" viewBox="0 0 16 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Minute Hand">
+<circle id="Ellipse 1354" cx="8" cy="56" r="6" stroke="#656565" stroke-width="4"/>
+<rect id="Second Hand" x="4" y="2" width="8" height="36" rx="4" stroke="#656565" stroke-width="4"/>
+<path id="Vector 154" d="M8 38L8 50" stroke="#656565" stroke-width="4"/>
+</g>
+</svg>

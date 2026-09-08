@@ -25,7 +25,7 @@ export interface LinkCardMetadata {
  */
 export interface Sticker {
     id: string;              // UUID 唯一标识
-    type: 'text' | 'image';  // 贴纸类型
+    type: 'text' | 'image' | 'widget';  // 贴纸类型
     content: string;         // 文字内容 或 图片Base64/URL
     x: number;               // 屏幕 X 坐标 (px)
     y: number;               // 屏幕 Y 坐标 (px)
@@ -36,6 +36,14 @@ export interface Sticker {
     hasCheckbox?: boolean;   // 是否带有复选框 (仅文字贴纸)
     isChecked?: boolean;     // 复选框是否已勾选
     linkCard?: LinkCardMetadata; // 链接卡片元数据（仅文字贴纸）
+    widgetType?: 'clock' | 'analogClock' | 'roundedAnalogClock' | 'calendar' | 'focus' | 'countdown';
+    focus?: {
+        mode: 'focus' | 'break';
+        duration: number; // seconds
+        remaining: number; // paused seconds
+        endsAt: number | null; // absolute timestamp; survives reload and sleep
+    };
+    countdown?: { title: string; date: string }; // local calendar date, YYYY-MM-DD
 }
 
 /**

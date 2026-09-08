@@ -1,0 +1,571 @@
+/* ============================================================================
+   小组件通用样式
+   设计规则：
+   - 1:1 正方形（240×240，8px 网格）
+   - 最多 2 种字体家族：正文 SF / 系统字，数字 SF PRO（降级 Google Sans / 等宽压缩体）
+   - 最多 3 种字重：400 / 500 / 600
+   - 白边描边由外层 .frame 承载（不会被内层 transform: scale 影响 → 缩放时宽度恒定）
+   ============================================================================ */
+
+:root {
+    --widget-radius: 32px;
+    --widget-stroke: 6px;
+    /* 数字字体：与时钟小组件保持一致，SF PRO → Google Sans Flex → 系统压缩体 */
+    --widget-number-font:
+        'SF Pro', 'SF Pro Condensed', 'SF Pro Display', 'SF Pro Text',
+        'Google Sans Flex', 'Avenir Next Condensed',
+        'Helvetica Neue Condensed', 'Arial Narrow', sans-serif;
+    --widget-text-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* ===== 外框：白边描边（不缩放）===== */
+
+.frame {
+    position: relative;
+    isolation: isolate;
+    border-radius: calc(var(--widget-radius) * var(--widget-scale, 1));
+    corner-shape: squircle;
+}
+
+/* 用真实外扩层承载描边，避免 outline 在缩放后的右侧 / 底侧出现透明缝 */
+.frame::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: calc(var(--widget-stroke) * -1);
+    border-radius: calc(var(--widget-radius) * var(--widget-scale, 1) + var(--widget-stroke));
+    corner-shape: squircle;
+    background: var(--color-sticker-stroke);
+    pointer-events: none;
+}
+
+/* ===== 贴纸内容（白边之内）===== */
+
+.surface {
+    --widget-accent: #d34738;
+    --widget-surface: var(--color-bg-primary);
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    margin: 0;
+    padding: 20px;            /* 8px 网格：5 × 4 = 20 */
+    border: 0;
+    border-radius: var(--widget-radius);
+    corner-shape: squircle;
+    background: var(--widget-surface);
+    color: var(--color-text-primary);
+    overflow: hidden;
+    transform-origin: top left;
+    font-family: var(--widget-text-font);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.25;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+:global([data-theme='default']) .surface { --widget-surface: var(--color-bg-tertiary); }
+:global([data-theme='light']) .surface { --widget-surface: var(--gray-200); }
+:global([data-theme='dark']) .surface { --widget-surface: var(--gray-800); }
+
+.calendar { --widget-accent: #d34738; }
+.focus { --widget-accent: #ae5b2a; }
+.countdown { --widget-accent: #6562c5; }
+:global([data-theme='dark']) .calendar { --widget-accent: #ff8074; }
+:global([data-theme='dark']) .focus { --widget-accent: #eeb37e; }
+:global([data-theme='dark']) .countdown { --widget-accent: #b6afff; }
+
+.surface button {
+    display: flex;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: transform var(--transition-instant), opacity var(--transition-fast);
+}
+.surface button:active { transform: scale(0.94); }
+.surface button:disabled { cursor: default; }
+.surface:disabled { pointer-events: none; }
+
+.icon {
+    display: block;
+    flex: none;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+/* ============================================================================
+   日期小组件：纯展示月历
+   ============================================================================ */
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    height: 22px;
+    margin-top: 0;
+    align-items: center;
+    font-family: var(--widget-text-font);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 22px;
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 1fr;
+    flex: 1;
+    min-height: 0;
+    margin-top: 6px;
+}
+
+.day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 28px;
+    height: 100%;
+    margin: 0 auto;
+    border-radius: 8px;
+    font-family: var(--widget-text-font);
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+}
+
+.day.currentDay {
+    border-radius: 999px;
+    background: #1c1c1e;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   计时器小组件
+   ============================================================================ */
+
+.timerBody {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    gap: 8px;            /* 8px 网格：1 × 8 */
+}
+
+.timerDisplay {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+/* 数字：SF PRO → Google Sans → 压缩体；高瘦 + 收紧字距；
+   与左右箭头水平基线一致：所有数字在同一基线上（容器 40px 高度 + line-height 1 + flex center） */
+.timerDigits {
+    height: 104px;
+    line-height: 104px;
+    font-family: var(--widget-number-font);
+    font-size: 104px;
+    font-weight: 410;            /* 时钟小组件同源字重，高瘦数字字面 */
+    font-stretch: condensed;
+    font-variation-settings: 'wdth' 25;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-synthesis: none;
+    transition: transform 240ms cubic-bezier(.32, .72, 0, 1);
+}
+
+.timerRunning .timerDigits {
+    transform: scale(1.15);
+    will-change: transform;
+}
+
+/* Start / Pause / Again 按钮：
+   - 占满小组件宽度（除 20px padding 外）；
+   - 文字与图标左右内边距对称，整体加宽；
+   - 字号与滚轮基础字号统一，保持一个控件语言 */
+.surface .timerAction {
+    --timer-action-offset: 0px;
+    box-sizing: border-box;
+    align-self: stretch;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 18px;
+    background: var(--color-bg-secondary);
+    font-family: var(--widget-text-font);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: transform 240ms cubic-bezier(.32, .72, 0, 1), background var(--transition-fast);
+}
+
+.timerRunning .timerAction {
+    --timer-action-offset: 18px;
+    transform: translateY(var(--timer-action-offset)) scale(0.98);
+}
+
+.surface .timerActionPressed,
+.surface .timerRunning .timerActionPressed {
+    transform: translateY(var(--timer-action-offset, 0px)) scale(0.95);
+}
+
+.surface .timerActionReleased {
+    animation: timerActionRelease 280ms cubic-bezier(.32, .72, 0, 1);
+    will-change: transform;
+}
+
+.timerReleaseMotion .timerDisplay {
+    animation: timerDisplayRise 280ms cubic-bezier(.32, .72, 0, 1);
+    will-change: transform;
+}
+
+@keyframes timerActionRelease {
+    0% { transform: translateY(var(--timer-action-offset, 0px)) scale(0.95); }
+    48% { transform: translateY(var(--timer-action-offset, 0px)) scale(1.04); }
+    100% { transform: translateY(var(--timer-action-offset, 0px)) scale(1); }
+}
+
+@keyframes timerDisplayRise {
+    from { transform: translateY(8px); }
+    to { transform: translateY(0); }
+}
+
+/* 时间间隔滚轮 + 左右箭头：
+   - 三者 40px 同高，数字垂直居中（与箭头图标视觉中心对齐）；
+   - 箭头到组件左右内边距对称 */
+.picker {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    align-items: center;
+    justify-content: stretch;
+    gap: 0;
+    height: 40px;
+    width: 100%;
+    transform-origin: center bottom;
+    transition: transform 240ms cubic-bezier(.32, .72, 0, 1), opacity 180ms ease-in;
+}
+
+.timerRunning .picker {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px) scale(.72);
+}
+
+.pickerArrow {
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 32px;
+    height: 40px;
+    border-radius: 12px;
+    color: var(--color-text-secondary);
+}
+
+.pickerArrow:disabled { opacity: var(--opacity-subtle); }
+
+.wheel {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    touch-action: pan-x;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    padding-inline: calc(50% - 24px);
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+}
+
+.wheel::-webkit-scrollbar { display: none; }
+
+.wheelTrack {
+    display: flex;
+    align-items: center;
+}
+
+/* 给最后一个刻度留出与首个刻度相同的滚动余量，避免被最大 scrollLeft 截断 */
+.wheelTrack::after {
+    content: '';
+    flex: 0 0 48px;
+    width: 48px;
+    height: 1px;
+    pointer-events: none;
+}
+
+.surface .wheelItem {
+    flex: none;
+    align-items: center;                  /* 数字垂直居中 → 与左右箭头中心在同一基线 */
+    justify-content: center;
+    gap: 2px;
+    width: 48px;
+    height: 40px;
+    scroll-snap-align: center;
+    font-family: var(--widget-text-font);
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+    transition: color 100ms ease-out, font-weight 100ms ease-out,
+        opacity 100ms ease-out, transform 80ms linear;
+    will-change: color, font-weight, opacity, transform;
+}
+
+.wheelItem[aria-selected='true'] {
+    color: var(--color-text-primary);
+}
+
+.wheelUnit {
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    opacity: 0.8;
+}
+
+.wheelLocked {
+    pointer-events: none;
+    opacity: var(--opacity-subtle);
+}
+
+.wheelDragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+    scroll-snap-type: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .timerAction:hover { background: var(--color-bg-tertiary); }
+    .pickerArrow:hover:not(:disabled) { background: var(--color-bg-secondary); }
+}
+
+/* ============================================================================
+   倒数日小组件
+   信息层级：
+     1. 天数与单位（视觉焦点）
+     2. 事件说明（辅助识别）
+     3. 目标日期（最低强调）
+   ============================================================================ */
+
+.countdownBody {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;             /* 整体左对齐 */
+    justify-content: center;             /* 垂直方向居中，减少上下空白 */
+    min-height: 0;
+    row-gap: 4px;
+}
+
+.countdownCountRow {
+    align-self: stretch;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 108px;
+    margin: 0;
+    padding: 0;
+    color: var(--color-text-primary);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+.countdownCountRow:hover { opacity: 0.7; }
+.countdownCountRow:active { transform: scale(0.98); }
+
+.countdownCount {
+    font-family: var(--widget-number-font);
+    font-size: 104px;
+    font-weight: 410;
+    font-stretch: condensed;
+    font-variation-settings: 'wdth' 25;
+    line-height: 108px;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-synthesis: none;
+}
+
+.countdownUnit {
+    padding-bottom: 7px;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+.countdownSentence {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--color-text-primary);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 28px;
+    letter-spacing: 0;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.countdownTargetDate {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    font-family: var(--widget-text-font);
+    font-variant-numeric: tabular-nums;
+}
+
+.countdownEmpty {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.countdownEmptyPlus {
+    font-family: var(--widget-number-font);
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1;
+}
+
+/* ============================================================================
+   倒数日编辑表单
+   ============================================================================ */
+
+.countdownForm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    cursor: default;
+    animation: reveal 180ms ease-out;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.fieldLabel {
+    height: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 16px;
+    color: var(--color-text-secondary);
+}
+
+.field input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 12px;
+    color: var(--color-text-primary);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-small);
+    outline: none;
+    font-family: var(--widget-text-font);
+    font-size: 14px;
+    font-weight: 500;
+    user-select: text;
+    color-scheme: light dark;
+    transition: background var(--transition-medium), border-color var(--transition-medium);
+}
+
+.field input:focus {
+    background: var(--color-bg-tertiary);
+    border-color: var(--blue-focus);
+}
+
+.field input::placeholder { color: var(--color-text-secondary); }
+
+:global([data-theme='light']) .field input { color-scheme: light; }
+:global([data-theme='dark']) .field input { color-scheme: dark; }
+
+.formError {
+    height: 14px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 14px;
+    color: var(--widget-accent);
+}
+
+.formActions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.formActions button {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--color-bg-secondary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.formActions button[type='submit'] {
+    background: var(--widget-accent);
+    color: var(--white);
+    font-weight: 600;
+}
+
+:global([data-theme='dark']) .formActions button[type='submit'] { color: #201e30; }
+
+@keyframes reveal {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .surface button { transition: none; }
+    .countdownForm { animation: none; }
+    .timerDigits,
+    .timerRunning .timerDigits,
+    .timerAction,
+    .timerActionReleased,
+    .picker,
+    .wheelItem,
+    .timerReleaseMotion .timerDisplay {
+        animation: none;
+        transition: none;
+    }
+}

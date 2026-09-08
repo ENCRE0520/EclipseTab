@@ -3,15 +3,15 @@
 
 /* 模态框容器 */
 .container {
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(var(--backdrop-blur-large));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
   background: var(--color-bg-primary) !important;
-  border-radius: 16px;
+  border-radius: var(--radius-default);
   box-shadow: var(--shadow-combined);
-  padding: 12px 16px;
+  padding: var(--spacing-padding-medium) var(--spacing-padding-large);
   display: flex;
   flex-direction: column;
-  gap: 0px;
+  gap: var(--spacing-none);
   width: 320px;
   min-width: 320px !important;
   max-width: 320px !important;
@@ -23,7 +23,7 @@
 
 /* 覆盖 Modal 内部 .content 的默认 gap */
 .container > div {
-  gap: 0 !important;
+  gap: var(--spacing-none) !important;
   font-family: var(--font-family);
 }
 
@@ -37,10 +37,10 @@
 .header {
   font-family: var(--font-family);
   font-weight: var(--font-weight-medium);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   line-height: var(--line-height-none);
   color: var(--color-text-primary);
-  opacity: 0.6;
+  opacity: var(--opacity-muted);
   white-space: nowrap;
   margin: 0;
 }
@@ -50,7 +50,7 @@
   width: 100%;
   height: 0;
   position: relative;
-  margin: 0 0 16px 0;
+  margin: 0 0 var(--spacing-padding-large) 0;
 }
 
 .divider::after {
@@ -67,25 +67,25 @@
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: var(--spacing-gap-tight);
+  margin-bottom: var(--spacing-padding-medium);
 }
 
 /* 表单标签 */
 .label {
-  font-size: 14px;
+  font-size: var(--font-size-body);
   color: var(--color-text-primary);
-  font-weight: 500;
+  font-weight: var(--font-weight-medium);
 }
 
 /* 输入框 */
 .input {
   background: var(--color-bg-secondary);
   border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: var(--radius-small);
+  padding: var(--spacing-padding-small) var(--spacing-padding-medium);
   color: var(--color-text-primary);
-  font-size: 14px;
+  font-size: var(--font-size-body);
   outline: none;
   transition: background var(--transition-medium);
 }
@@ -103,15 +103,15 @@
 /* 图标区域 */
 .iconSection {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-gap-large);
 }
 
 /* 图标预览容器 */
 .iconPreview {
-  width: 64px;
-  height: 64px;
+  width: var(--icon-size);
+  height: var(--icon-size);
   background: var(--color-bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-default-in);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,8 +129,8 @@
 
 /* 图标占位符 */
 .iconPlaceholder {
-  width: 24px;
-  height: 24px;
+  width: var(--icon-size-md);
+  height: var(--icon-size-md);
   background: var(--color-bg-tertiary);
   border-radius: 50%;
 }
@@ -139,7 +139,7 @@
 .iconActions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--spacing-gap-small);
   flex: 1;
 }
 
@@ -147,17 +147,17 @@
 .actionButton {
   background: var(--color-bg-secondary);
   border: none;
-  border-radius: 8px;
-  padding: 0 12px;
-  height: 28px;
+  border-radius: var(--radius-small);
+  padding: 0 var(--spacing-padding-medium);
+  height: var(--control-height-sm);
   color: var(--color-text-primary);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   cursor: pointer;
   transition: background var(--transition-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--spacing-gap-tight);
 }
 
 /* 操作按钮悬停效果 */
@@ -174,30 +174,30 @@
 
 /* 操作按钮禁用状态 */
 .actionButton:disabled {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
 /* 底部按钮区域 */
 .footer {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: var(--spacing-gap-small);
+  margin-top: var(--spacing-padding-medium);
 }
 
 /* 底部按钮通用样式 */
 .footerButton {
   flex: 1;
-  height: 32px;
-  border-radius: 8px;
+  height: var(--control-height-md);
+  border-radius: var(--radius-small);
   border: none;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--spacing-gap-tight);
   /* 只过渡需要的属性，避免 transition:all 引发意外 */
   transition: background var(--transition-medium),
               filter var(--transition-medium),
@@ -243,7 +243,7 @@
 
 /* 禁用状态 */
 .addButton:disabled {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -253,7 +253,7 @@
   width: 100%;
   height: 0;
   position: relative;
-  margin: 10px 0;
+  margin: var(--spacing-gap-medium) 0;
 }
 
 .footerDivider::after {
@@ -270,16 +270,16 @@
 .batchCard {
   width: 100%;
   background: var(--color-bg-secondary);
-  border-radius: 8px;
-  padding: 10px 0;
+  border-radius: var(--radius-small);
+  padding: var(--spacing-gap-medium) 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--spacing-gap-small);
   cursor: pointer;
   color: var(--color-text-primary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--font-size-ui);
+  font-weight: var(--font-weight-medium);
   white-space: nowrap;
   transition: background var(--transition-medium);
   margin-top: 0;
@@ -292,27 +292,27 @@
 
 .batchCard svg {
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: var(--opacity-hover);
 }
 
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .container {
-    border-radius: 24px;
+    border-radius: var(--radius-default);
   }
   .input {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .iconPreview {
-    border-radius: 18px;
+    border-radius: var(--radius-default-in);
   }
   .actionButton {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .footerButton {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .batchCard {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
 }

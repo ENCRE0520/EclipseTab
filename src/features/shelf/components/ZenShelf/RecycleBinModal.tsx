@@ -13,6 +13,9 @@ interface RecycleBinModalProps {
     onClose: () => void;
 }
 import { useThemeData } from '@/features/theme/context/ThemeContext';
+import { ClockWidget } from './ClockWidget';
+import { AnalogClockWidget } from './AnalogClockWidget';
+import { ProductivityWidget } from './widgets/ProductivityWidget';
 
 // ============================================================================
 // 文字贴纸的主题感知颜色反转
@@ -297,7 +300,15 @@ const RecycleBinItem: React.FC<{
                 onTouchEnd={onTouchEnd}
                 onDoubleClick={(e) => { e.stopPropagation(); onRestore(sticker); }}
             >
-                {sticker.type === 'text' ? (
+                {sticker.type === 'widget' && ['calendar', 'focus', 'countdown'].includes(sticker.widgetType || '') ? (
+                    <ProductivityWidget sticker={sticker} preview scale={0.25} />
+                ) : sticker.type === 'widget' && sticker.widgetType === 'roundedAnalogClock' ? (
+                    <AnalogClockWidget scale={0.35} shape="roundedSquare" />
+                ) : sticker.type === 'widget' && sticker.widgetType === 'analogClock' ? (
+                    <AnalogClockWidget scale={0.35} />
+                ) : sticker.type === 'widget' && sticker.widgetType === 'clock' ? (
+                    <ClockWidget scale={0.35} />
+                ) : sticker.type === 'text' ? (
                     <div className={styles.stickerText}>
                         <div
                             className={styles.textSticker}

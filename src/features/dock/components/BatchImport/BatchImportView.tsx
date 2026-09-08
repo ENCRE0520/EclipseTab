@@ -79,8 +79,11 @@ export const BatchImportView: React.FC<BatchImportViewProps> = ({ isOpen, onClos
     const cardsAreaRef = useRef<HTMLDivElement>(null);
     // 用于追踪关闭状态，防止异步图标获取在关闭后仍更新状态
     const closedRef = useRef(false);
+    const isClosingRef = useRef(false);
 
     const handleClose = useCallback(() => {
+        if (isClosingRef.current) return;
+        isClosingRef.current = true;
         closedRef.current = true;
         setIsClosing(true);
         setTimeout(() => {
@@ -88,6 +91,7 @@ export const BatchImportView: React.FC<BatchImportViewProps> = ({ isOpen, onClos
             setCards([createEmptyCard()]);
             setCopied(false);
             closedRef.current = false;
+            isClosingRef.current = false;
             onClose();
         }, 250);
     }, [onClose]);

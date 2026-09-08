@@ -3,18 +3,18 @@
 
 /* Dock 外层容器 - 玻璃态效果 */
 .dock {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
-    border-radius: 25px;
-    padding: var(--spacing-border-default);
+    border-radius: var(--radius-default);
+    padding: var(--spacing-padding-extrasmall);
     box-shadow: var(--shadow-small);
     display: inline-block;
     position: relative;
-    z-index: 2000;
+    z-index: var(--z-dock);
     /* 空间切换时宽度平滑过渡 */
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width var(--transition-smooth), padding var(--transition-smooth);
     /* 强制 GPU 加速 - 修复 Firefox 生产环境动画问题 */
     transform: translateZ(0);
     will-change: width;
@@ -26,15 +26,15 @@
     border-radius: var(--radius-large);
     padding: var(--spacing-gap-small);
     /* 右边留出空间给 Navigator (约 136px = 128px Navigator + 8px gap) */
-    padding-right: 144px;
+    padding-right: var(--dock-navigator-reserve);
     box-shadow: var(--shadow-small);
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
     /* Fixed gap - items slide using transform for smooth animation */
     /* 空间切换时平滑过渡宽度 */
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width var(--transition-smooth);
     /* 强制 GPU 加速 - 修复 Firefox 生产环境动画问题 */
     transform: translateZ(0);
     will-change: width;
@@ -42,7 +42,7 @@
 
 /* 宽度过渡状态类 - 用于 Space 切换动画 (Firefox 兼容) */
 .dockContent.widthTransition {
-    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: width var(--transition-return) !important;
 }
 
 /* Dock 项目包装器 - 控制间距和动画 */
@@ -65,12 +65,12 @@
     flex-direction: row;
     align-items: center;
     align-self: stretch;
-    height: var(--icon-size, 64px);
+    height: var(--icon-size);
     flex-shrink: 0;
     width: 8px;
     position: relative;
     /* Smooth size transition */
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height var(--transition-smooth);
 }
 
 /* 分隔线 SVG 图标 */
@@ -81,7 +81,7 @@
     right: 0;
     margin: 0 auto;
     width: 1px;
-    height: calc(var(--icon-size, 64px) - 16px);
+    height: calc(var(--icon-size) - var(--spacing-padding-large));
     transform: translateY(-50%);
 }
 
@@ -96,33 +96,33 @@
     gap: var(--spacing-gap-small);
     align-items: center;
     flex: 0 0 auto;
-    width: 128px;
+    width: var(--dock-navigator-width);
 }
 
 /* 导航器图标 */
 .navigatorIcon {
     flex: 1 0 0;
     background: var(--color-text-tertiary);
-    height: var(--icon-size, 64px);
+    height: var(--icon-size);
     min-height: 0;
     min-width: 0;
     border-radius: var(--radius-default);
     flex-shrink: 0;
     /* Smooth size transition */
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height var(--transition-smooth);
 }
 
 /* 拖拽占位符 - 显示放置目标位置 */
 .placeholder {
-    width: var(--icon-size, 64px);
-    height: var(--icon-size, 64px);
+    width: var(--icon-size);
+    height: var(--icon-size);
     flex-shrink: 0;
     border-radius: var(--radius-default);
     background: var(--color-bg-secondary);
     border: 2px dashed var(--color-border);
     transition: all var(--transition-medium),
-        width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width var(--transition-smooth),
+        height var(--transition-smooth);
 }
 
 /* ===== 编辑模式动画 ===== */
@@ -132,7 +132,7 @@
     align-items: center;
     width: 0;
     opacity: 0;
-    margin-right: -8px;
+    margin-right: calc(-1 * var(--spacing-padding-small));
     /* Counteract the flex gap when hidden */
     gap: var(--spacing-gap-small);
     transition: width var(--transition-normal),
@@ -143,7 +143,7 @@
 
 /* 编辑工具可见状态 */
 .editTools.visible {
-    width: calc(var(--icon-size, 64px) + 8px + var(--spacing-gap-small));
+    width: calc(var(--icon-size) + var(--spacing-padding-small) + var(--spacing-gap-small));
     /* icon size + 8px 间距，或根据内容调整 */
     opacity: 1;
     margin-right: 0;
@@ -212,7 +212,7 @@
 /* Navigator 容器样式 - 使用绝对定位始终靠右 */
 .dockNavigator {
     position: absolute;
-    right: calc(var(--spacing-border-default) + 8px);
+    right: calc(var(--spacing-padding-extrasmall) + var(--spacing-padding-small));
     top: 50%;
     transform: translateY(-50%);
     display: flex;
@@ -240,13 +240,13 @@
     min-width: 200px;
     max-width: 280px;
     padding: 0 var(--spacing-padding-small);
-    height: var(--icon-size, 64px);
+    height: var(--icon-size);
     font-family: var(--font-family);
     font-size: var(--font-size-medium);
     font-weight: var(--font-weight-medium);
     color: var(--color-text-tertiary);
     text-align: left;
-    line-height: 1.4;
+    line-height: var(--line-height-body);
     user-select: none;
 }
 

@@ -8,16 +8,16 @@
     justify-content: space-between;
 
     /* 尺寸 */
-    height: var(--icon-size, 64px);
-    min-width: 128px;
+    height: var(--icon-size);
+    min-width: var(--dock-navigator-width);
     padding: var(--spacing-padding-small);
 
     /* 背景色 */
     background: var(--color-bg-primary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     border: 1px solid var(--color-border);
-    border-radius: var(--icon-border-radius, 24px);
+    border-radius: var(--icon-border-radius, var(--radius-default));
 
     /* 交互 */
     cursor: pointer;
@@ -36,7 +36,7 @@
 }
 
 .navigator.disabled {
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
     cursor: not-allowed;
     pointer-events: none;
 }

@@ -2,16 +2,16 @@
 /* 工具提示容器 - 固定定位 */
 .tooltipContainer {
     position: fixed;
-    z-index: 10000;
+    z-index: var(--z-tooltip);
     pointer-events: none;
     background-color: var(--color-bg-secondary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     color: var(--color-text-primary);
-    padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
+    padding: var(--spacing-gap-tight) var(--spacing-gap-medium);
+    border-radius: var(--radius-small);
+    font-size: var(--font-size-ui);
+    font-weight: var(--font-weight-medium);
     font-family: var(--font-family);
     white-space: nowrap;
     box-shadow: var(--shadow-small);
@@ -54,6 +54,6 @@
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .tooltipContainer {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
 }

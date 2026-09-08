@@ -14,7 +14,7 @@ interface RecycleBinProps {
 export const RecycleBin: React.FC<RecycleBinProps> = ({ isVisible, onClick }) => {
     const [isPeek, setIsPeek] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
-    const { deletedStickers } = useZenShelf();
+    const { deletedStickers, clearRecycleBin } = useZenShelf();
 
     // Check if mouse is near bottom-right corner to show bin partially
     useEffect(() => {
@@ -56,6 +56,11 @@ export const RecycleBin: React.FC<RecycleBinProps> = ({ isVisible, onClick }) =>
             id="sticker-recycle-bin"
             className={getClassName()}
             onClick={onClick}
+            onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                clearRecycleBin();
+            }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

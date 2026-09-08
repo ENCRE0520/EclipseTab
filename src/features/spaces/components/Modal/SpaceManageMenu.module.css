@@ -5,18 +5,18 @@
     flex-direction: column;
     min-width: 160px;
     padding: var(--spacing-padding-small);
-    gap: 0px;
+    gap: var(--spacing-none);
 }
 
 /* 标签文本 */
 .label {
     font-family: var(--font-family);
     font-weight: var(--font-weight-medium);
-    font-size: 12px;
+    font-size: var(--font-size-small);
     padding: var(--spacing-padding-extrasmall);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
     white-space: nowrap;
     margin: 0;
 }
@@ -44,8 +44,8 @@
 .optionsContainer {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
+    gap: var(--spacing-padding-extrasmall);
+    margin-top: var(--spacing-padding-extrasmall);
 }
 
 /* 菜单项 */
@@ -67,7 +67,7 @@
     transition: opacity var(--transition-medium);
     opacity: 1;
     margin: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-small);
 }
 
 .menuItem:hover {
@@ -82,24 +82,24 @@
 
 /* 危险操作 (删除) */
 .menuItem.danger {
-    color: #ff6b6b;
+    color: var(--color-danger-soft);
 }
 
 .menuItem.danger:hover {
-    background: rgba(255, 107, 107, 0.1);
+    background: var(--color-danger-bg);
 }
 
 /* 禁用状态 */
 .menuItem.disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     cursor: not-allowed;
     pointer-events: none;
 }
 
 /* 图标 - 使用 mask-image 让 SVG 继承颜色变量 */
 .icon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     flex-shrink: 0;
     /* 使用 mask-image 技术，让 background-color 决定图标颜色 */
     background-color: var(--color-text-primary);
@@ -113,18 +113,18 @@
 
 /* 危险操作图标 - 红色 */
 .danger .icon {
-    background-color: #ff6b6b;
+    background-color: var(--color-danger-soft);
 }
 
 /* Emoji 图标样式 */
 .iconEmoji {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 14px;
+    font-size: var(--font-size-body);
     line-height: 1;
 }
 
@@ -143,7 +143,7 @@
     font-size: var(--font-size-small);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
 }
 
 /* 重命名输入区域包装 */
@@ -204,13 +204,13 @@
 }
 
 .confirmButton:disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     cursor: not-allowed;
 }
 
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .menuItem {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
 }

@@ -1,11 +1,11 @@
 .gridContainer {
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
-    border-radius: 8px;
-    padding: 4px;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-padding-extrasmall);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
     width: 100%;
 }
 
@@ -13,7 +13,7 @@
     width: 100%;
     height: 48px;
     background: var(--color-bg-secondary);
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -33,7 +33,7 @@
 }
 
 .uploading {
-    opacity: 0.7;
+    opacity: var(--opacity-hover);
     pointer-events: none;
     animation: pulse 1.5s infinite;
 }
@@ -41,7 +41,7 @@
 .thumbnail {
     width: 100%;
     height: 48px;
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     overflow: hidden;
     cursor: pointer;
     position: relative;
@@ -75,10 +75,10 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--color-overlay);
     border: none;
     display: flex;
     align-items: center;
@@ -100,7 +100,7 @@
 }
 
 .deleteBtn:hover {
-    background: rgba(220, 38, 38, 0.8);
+    background: var(--color-danger-strong);
     transform: scale(1.1);
 }
 
@@ -111,27 +111,27 @@
 
 @keyframes pulse {
     0% {
-        opacity: 0.7;
+        opacity: var(--opacity-hover);
     }
 
     50% {
-        opacity: 0.4;
+        opacity: var(--opacity-subtle);
     }
 
     100% {
-        opacity: 0.7;
+        opacity: var(--opacity-hover);
     }
 }
 
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .gridContainer {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .uploadBtn {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .thumbnail {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
 }

@@ -102,7 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
             left: `${Math.min(Math.max(Math.round(anchorRect.left + anchorRect.width / 2), 160), window.innerWidth - 160)}px`,
             top: `${Math.round(anchorRect.top - 24)}px`,
             transform: 'translate(-50%, -100%)',
-            zIndex: 2001, // 高于遮罩层
+            zIndex: 'var(--z-dock-content)', // 高于遮罩层
             pointerEvents: 'auto',
           }}
           onClick={(e) => e.stopPropagation()}
@@ -128,7 +128,7 @@ export const Modal: React.FC<ModalProps> = ({
         <div
           className={styles.clickAway}
           onClick={handleClose}
-          style={{ zIndex: 2000 }}
+          style={{ zIndex: 'var(--z-dock)' }}
         />
       </>,
       document.body
@@ -156,4 +156,3 @@ export const Modal: React.FC<ModalProps> = ({
     </div>
   );
 };
-

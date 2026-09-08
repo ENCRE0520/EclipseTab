@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { Sticker, StickerInput, DEFAULT_TEXT_STYLE } from '@/shared/types';
 import { storage } from '@/shared/utils/storage';
 import { db } from '@/shared/utils/db';
@@ -51,24 +51,23 @@ export const ZenShelfProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [selectedStickerId, setSelectedStickerId] = useState<string | null>(null);
 
     // 防抖保存 refs
-    const stickersSaveTimeoutRef = useRef<number>();
     const deletedStickersSaveTimeoutRef = useRef<number>();
 
-    // 持久化：stickers 变化时防抖保存到 localStorage
-    useEffect(() => {
-        if (stickersSaveTimeoutRef.current) {
-            clearTimeout(stickersSaveTimeoutRef.current);
-        }
-        stickersSaveTimeoutRef.current = window.setTimeout(() => {
-            storage.saveStickers(stickers);
-        }, SAVE_DEBOUNCE_MS);
+    // Commit before the user can close/reload the tab after starting a timer.
+    // Dragging is already committed on release; ticking never writes sticker state.
+    useLayoutEffect(() => {
+        storage.saveStickers(stickers);
+    }, [stickers]);
 
-        return () => {
-            if (stickersSaveTimeoutRef.current) {
-                clearTimeout(stickersSaveTimeoutRef.current);
+    useEffect(() => {
+        const receiveStickers = (event: StorageEvent) => {
+            if (event.storageArea === localStorage && event.key === 'EclipseTab_stickers') {
+                setStickers(storage.getStickers());
             }
         };
-    }, [stickers]);
+        window.addEventListener('storage', receiveStickers);
+        return () => window.removeEventListener('storage', receiveStickers);
+    }, []);
 
     // 持久化：deletedStickers 变化时防抖保存到 localStorage
     useEffect(() => {

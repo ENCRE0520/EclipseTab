@@ -6,6 +6,9 @@ import { db } from '@/shared/utils/db';
 import { hasMarkdownLinks, splitTextWithLinks } from '@/shared/utils/markdownLinks';
 import checkIcon from '@/assets/icons/for-checkbox.svg';
 import styles from './ZenShelf.module.css';
+import { ClockWidget } from './ClockWidget';
+import { AnalogClockWidget } from './AnalogClockWidget';
+import { ProductivityWidget } from './widgets/ProductivityWidget';
 
 // ============================================================================
 // 文字贴纸的主题感知颜色反转
@@ -663,7 +666,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                     left: sticker.x * viewportScale,
                     top: sticker.y * viewportScale,
                     // 拖拽期间提升 z-index 以保持在 UI 元素之上
-                    zIndex: isDragging ? 3000 : (sticker.zIndex || 1),
+                    zIndex: isDragging ? 'var(--z-modal)' : (sticker.zIndex || 'var(--z-canvas)'),
                 }}
                 data-sticker-id={sticker.id}
                 onMouseDown={handleMouseDown}
@@ -687,7 +690,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                                 {sticker.isChecked && (
                                     <span
                                         className={styles.toolbarIcon}
-                                        style={{ WebkitMaskImage: `url(${checkIcon})`, maskImage: `url(${checkIcon})`, backgroundColor: '#000000', width: '20px', height: '20px', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+                                        style={{ WebkitMaskImage: `url(${checkIcon})`, maskImage: `url(${checkIcon})`, backgroundColor: 'var(--black)', width: 'var(--icon-size-sm)', height: 'var(--icon-size-sm)', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
                                     />
                                 )}
                             </button>
@@ -745,6 +748,35 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                             )}
                             </div>
                         )}
+                    </div>
+                ) : sticker.type === 'widget' && ['calendar', 'focus', 'countdown'].includes(sticker.widgetType || '') ? (
+                    <div className={[styles.widgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
+                        <ProductivityWidget sticker={sticker} />
+                        <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
+                    </div>
+                ) : sticker.type === 'widget' && sticker.widgetType === 'roundedAnalogClock' ? (
+                    <div className={[styles.widgetContainer, styles.analogWidgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
+                        <AnalogClockWidget scale={sticker.scale || 1} shape="roundedSquare" />
+                        <div
+                            className={styles.resizeHandle}
+                            onMouseDown={handleResizeStart}
+                        />
+                    </div>
+                ) : sticker.type === 'widget' && sticker.widgetType === 'analogClock' ? (
+                    <div className={[styles.widgetContainer, styles.analogWidgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
+                        <AnalogClockWidget scale={sticker.scale || 1} />
+                        <div
+                            className={styles.resizeHandle}
+                            onMouseDown={handleResizeStart}
+                        />
+                    </div>
+                ) : sticker.type === 'widget' && sticker.widgetType === 'clock' ? (
+                    <div className={[styles.widgetContainer, styles.digitalWidgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
+                        <ClockWidget scale={sticker.scale || 1} />
+                        <div
+                            className={styles.resizeHandle}
+                            onMouseDown={handleResizeStart}
+                        />
                     </div>
                 ) : (
                     <div className={[
@@ -813,6 +845,9 @@ const arePropsEqual = (prev: StickerItemProps, next: StickerItemProps) => {
         prev.sticker.zIndex === next.sticker.zIndex &&
         prev.sticker.scale === next.sticker.scale &&
         prev.sticker.type === next.sticker.type &&
+        prev.sticker.widgetType === next.sticker.widgetType &&
+        prev.sticker.focus === next.sticker.focus &&
+        prev.sticker.countdown === next.sticker.countdown &&
         prev.sticker.isPinned === next.sticker.isPinned &&
         prev.sticker.hasCheckbox === next.sticker.hasCheckbox &&
         prev.sticker.isChecked === next.sticker.isChecked &&

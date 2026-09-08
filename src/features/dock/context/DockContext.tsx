@@ -74,8 +74,9 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 从 SpacesContext 获取当前空间的 apps
     const { currentSpace, updateSpaceApps } = useSpaces();
 
-    // 数据状态: dockItems 来自当前 Space
-    const [dockItems, setDockItemsInternal] = useState<DockItem[]>(currentSpace.apps);
+    // 快捷方式只以 Space 中的 apps 为准。此前这里维护了一个镜像 state，再通过 effect
+    // 与 Space 同步；当连续编辑/删除时，较晚到达的旧镜像可能把新结果覆盖掉。
+    const dockItems = currentSpace.apps;
     const [selectedSearchEngine, setSelectedSearchEngineState] = useState<SearchEngine>(DEFAULT_SEARCH_ENGINE);
 
     // UI 状态 (中频变化)
@@ -84,24 +85,11 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [folderAnchor, setFolderAnchor] = useState<DOMRect | null>(null);
     const [draggingItem, setDraggingItem] = useState<DockItem | null>(null);
     const [folderPlaceholderActive, setFolderPlaceholderActive] = useState(false);
-    const activeSpaceIdRef = React.useRef(currentSpace.id);
-
-    // 当 currentSpace 变化时同步 dockItems
-    useEffect(() => {
-        activeSpaceIdRef.current = currentSpace.id;
-        setDockItemsInternal(currentSpace.apps);
-    }, [currentSpace.id, currentSpace.apps]);
-
-    // 包装 setDockItems: 同时更新本地状态和 SpacesContext
+    // 所有写入直接更新发起操作时所在的 Space。这样异步图标获取完成或切换 Space
+    // 时，也不会把过期列表同步回当前界面。
     const setDockItems: React.Dispatch<React.SetStateAction<DockItem[]>> = useCallback(
         (action) => {
             const targetSpaceId = currentSpace.id;
-
-            if (activeSpaceIdRef.current === targetSpaceId) {
-                setDockItemsInternal(action);
-            }
-
-            // 按发起操作时的空间 ID 写回，避免异步图标获取完成后覆盖当前已切换到的空间。
             updateSpaceApps(targetSpaceId, action);
         },
         [currentSpace.id, updateSpaceApps]

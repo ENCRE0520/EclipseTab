@@ -6,17 +6,17 @@
     position: absolute;
     top: 24px;
     left: 24px;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
-    padding: var(--spacing-border-default);
+    padding: var(--spacing-padding-extrasmall);
     cursor: pointer;
     transition: opacity var(--transition-medium), transform var(--transition-normal);
     opacity: 0;
     pointer-events: none;
-    z-index: 3000;
+    z-index: var(--z-modal);
 }
 
 /* 设置按钮悬停放大效果 */
@@ -33,8 +33,8 @@
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-small);
-    width: 40px;
-    height: 40px;
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
 }
 
 /* 设置按钮图标 */

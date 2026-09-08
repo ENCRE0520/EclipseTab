@@ -36,6 +36,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // 保留旧哈希资源，避免扩展的新标签页仍运行旧入口时无法加载懒加载 CSS。
+    emptyOutDir: false,
     minify: 'esbuild',
     target: 'esnext',
     // CSS 代码分割
@@ -69,4 +71,3 @@ export default defineConfig({
     },
   },
 });
-

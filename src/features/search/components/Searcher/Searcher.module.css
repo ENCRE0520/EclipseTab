@@ -2,13 +2,13 @@
 /* 外层容器 - 玻璃态效果 */
 .searcher {
   position: relative;
-  z-index: 2000;
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  z-index: var(--z-dock);
+  backdrop-filter: blur(var(--backdrop-blur-large));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-default);
-  padding: var(--spacing-border-default);
+  padding: var(--spacing-padding-extrasmall);
   width: 100%;
   /* 最小宽度约束 */
   min-width: 520px;
@@ -33,10 +33,10 @@
 /* 分隔线 */
 .divider {
   position: absolute;
-  left: 4px;
-  top: 4px;
+  left: var(--spacing-padding-extrasmall);
+  top: var(--spacing-padding-extrasmall);
   width: 0;
-  height: 44px;
+  height: var(--control-height-xl);
 }
 
 /* 悬停状态 - 轻微上移 + 阴影增强 */
@@ -77,7 +77,7 @@
 /* 搜索工具区域 */
 .searchTool {
   display: flex;
-  gap: 10px;
+  gap: var(--spacing-gap-medium);
   align-items: center;
   justify-content: center;
 }
@@ -111,7 +111,7 @@
 .iconContainer {
   background: var(--color-bg-secondary);
   border-radius: var(--radius-small);
-  padding: var(--spacing-padding-small) 8px;
+  padding: var(--spacing-padding-small) var(--spacing-padding-small);
   display: flex;
   gap: var(--spacing-padding-extrasmall);
   align-items: center;
@@ -128,8 +128,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: var(--search-icon-size);
+  height: var(--search-icon-size);
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -162,9 +162,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  opacity: 0.6;
+  width: var(--search-icon-size);
+  height: var(--search-icon-size);
+  opacity: var(--opacity-muted);
 }
 
 /* 搜索按钮文本 */

@@ -9,14 +9,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: var(--z-dock);
   background: var(--black-alpha-30);
 }
 
 /* 模态框容器 - 玻璃态效果 */
 .container {
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(var(--backdrop-blur-large));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-default);
@@ -48,10 +48,10 @@
   background: none;
   border: none;
   color: var(--color-text-primary);
-  font-size: 25px;
+  font-size: var(--editor-icon-size);
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: var(--control-height-md);
+  height: var(--control-height-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -76,7 +76,7 @@
 .popoverRoot {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: var(--z-dock);
   pointer-events: none;
 }
 
@@ -86,7 +86,7 @@
   box-shadow: var(--shadow-combined);
   min-width: auto;
   padding: 0;
-  z-index: 1;
+  z-index: var(--z-canvas);
 }
 
 /* 点击外部关闭区域 */
@@ -95,5 +95,5 @@
   inset: 0;
   pointer-events: auto;
   background: transparent;
-  z-index: 0;
+  z-index: var(--z-base);
 }

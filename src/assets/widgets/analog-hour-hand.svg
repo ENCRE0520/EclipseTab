@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="70" height="12" viewBox="0 0 70 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Hour Hand">
+<rect id="Clock Background" x="68" y="2" width="8" height="56" rx="4" transform="rotate(90 68 2)" stroke="#656565" stroke-width="4"/>
+<path id="Vector 155" d="M12 6L0 6" stroke="#656565" stroke-width="4"/>
+</g>
+</svg>

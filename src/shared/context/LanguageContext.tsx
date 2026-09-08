@@ -4,6 +4,35 @@ type Language = 'en' | 'zh';
 
 interface Translations {
     settings: {
+        title: string;
+        appearance: string;
+        appearanceDescription: string;
+        behavior: string;
+        behaviorDescription: string;
+        data: string;
+        dataDescription: string;
+        widgets: string;
+        widgetsDescription: string;
+        calendarWidget: string;
+        calendarWidgetDescription: string;
+        addCalendarWidget: string;
+        focusWidget: string;
+        focusWidgetDescription: string;
+        addFocusWidget: string;
+        countdownWidget: string;
+        countdownWidgetDescription: string;
+        addCountdownWidget: string;
+        widgetTypeDigital: string;
+        widgetTypeAnalog: string;
+        clockWidget: string;
+        clockWidgetDescription: string;
+        addClockWidget: string;
+        analogClockWidget: string;
+        analogClockWidgetDescription: string;
+        addAnalogClockWidget: string;
+        roundedAnalogClockWidget: string;
+        roundedAnalogClockWidgetDescription: string;
+        addRoundedAnalogClockWidget: string;
         position: string;
         center: string;
         bottom: string;
@@ -152,6 +181,35 @@ interface Translations {
 const translations: Record<Language, Translations> = {
     en: {
         settings: {
+            title: 'Settings',
+            appearance: 'Appearance',
+            appearanceDescription: 'Theme, colors, textures and wallpaper',
+            behavior: 'Behavior',
+            behaviorDescription: 'Dock, language and browsing preferences',
+            data: 'Data & Sync',
+            dataDescription: 'Cloud sync and local backup',
+            widgets: 'Widgets',
+            widgetsDescription: 'Add and arrange widgets on your new tab page',
+            calendarWidget: 'Calendar',
+            calendarWidgetDescription: 'Your day, at a glance',
+            addCalendarWidget: 'Add calendar',
+            focusWidget: 'Focus timer',
+            focusWidgetDescription: 'One thing at a time',
+            addFocusWidget: 'Add focus timer',
+            countdownWidget: 'Countdown',
+            countdownWidgetDescription: 'Something to look forward to',
+            addCountdownWidget: 'Add countdown',
+            widgetTypeDigital: 'Digital clock',
+            widgetTypeAnalog: 'Analog clock',
+            clockWidget: 'Live clock',
+            clockWidgetDescription: 'A real-time clock that supports sticker-style movement and effects.',
+            addClockWidget: 'Add live clock',
+            analogClockWidget: 'Analog clock',
+            analogClockWidgetDescription: 'A real-time analog clock with code-rendered tick marks.',
+            addAnalogClockWidget: 'Add analog clock',
+            roundedAnalogClockWidget: 'Rounded analog clock',
+            roundedAnalogClockWidgetDescription: 'The rounded-square analog clock from the daily widget design.',
+            addRoundedAnalogClockWidget: 'Add rounded clock',
             position: 'Position',
             center: 'Center',
             bottom: 'Bottom',
@@ -298,6 +356,35 @@ const translations: Record<Language, Translations> = {
     },
     zh: {
         settings: {
+            title: '设置',
+            appearance: '外观',
+            appearanceDescription: '主题、颜色、纹理和壁纸',
+            behavior: '操作',
+            behaviorDescription: 'Dock、语言和浏览偏好',
+            data: '数据与同步',
+            dataDescription: '云端同步与本地备份',
+            widgets: '小组件',
+            widgetsDescription: '添加并排列新标签页中的小组件',
+            calendarWidget: '日期与日历',
+            calendarWidgetDescription: '今天，一目了然',
+            addCalendarWidget: '添加日期与日历',
+            focusWidget: '专注计时器',
+            focusWidgetDescription: '此刻，只做一件事',
+            addFocusWidget: '添加专注计时器',
+            countdownWidget: '倒计时',
+            countdownWidgetDescription: '给期待留个位置',
+            addCountdownWidget: '添加倒计时',
+            widgetTypeDigital: '数字时钟',
+            widgetTypeAnalog: '模拟时钟',
+            clockWidget: '实时时间',
+            clockWidgetDescription: '支持贴纸式移动与效果的实时时间小组件。',
+            addClockWidget: '添加实时时间',
+            analogClockWidget: '模拟时钟',
+            analogClockWidgetDescription: '带有代码绘制刻度的实时时钟小组件。',
+            addAnalogClockWidget: '添加模拟时钟',
+            roundedAnalogClockWidget: '圆角模拟时钟',
+            roundedAnalogClockWidgetDescription: 'Daily Widget 设计中的圆角方形实时模拟时钟。',
+            addRoundedAnalogClockWidget: '添加圆角时钟',
             position: '布局位置',
             center: '居中',
             bottom: '底部',

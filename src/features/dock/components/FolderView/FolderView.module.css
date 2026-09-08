@@ -16,7 +16,7 @@
 .popupWrapper {
   position: fixed;
   transform: translate(-50%, -100%);
-  z-index: 1998;
+  z-index: var(--z-folder);
   pointer-events: auto;
   display: flex;
   flex-direction: column;
@@ -27,7 +27,7 @@
 /* 文件夹弹窗内容 */
 .popover {
   box-shadow: var(--shadow-medium);
-  z-index: 1;
+  z-index: var(--z-canvas);
   pointer-events: auto;
 }
 
@@ -35,7 +35,7 @@
 .clickAway {
   position: fixed;
   inset: 0;
-  z-index: 1997;
+  z-index: var(--z-folder-backdrop);
   pointer-events: none;
 }
 
@@ -52,10 +52,10 @@
 /* 文件夹容器 - 玻璃态效果 (匹配 Dock 的 inline-block 模式) */
 .container {
   background: var(--color-bg-primary);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(var(--backdrop-blur-small));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
   border-radius: var(--radius-large);
-  padding: 8px;
+  padding: var(--spacing-padding-small);
   border: 1px solid var(--color-border);
   user-select: none;
   -webkit-user-select: none;

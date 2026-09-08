@@ -14,7 +14,6 @@ import {
     RETURN_ANIMATION_DURATION,
     FADE_DURATION,
     DRAG_SCALE,
-    DRAG_Z_INDEX,
 } from '@/shared/constants/layout';
 
 interface DragPreviewProps {
@@ -53,9 +52,6 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
         return null;
     }
 
-    // 超椭圆圆角：支持 corner-shape 的浏览器放大 1.5 倍，不支持则使用原始值
-    const borderRadius = CSS.supports('corner-shape: superellipse(1.5)') ? '24px' : '16px';
-
     // 计算 scale 变换
     const getScale = (): string => {
         if (isPreMerge) return 'scale(0.6)';
@@ -68,7 +64,7 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
     // 计算 shadow
     const getShadow = (): string => {
         if (isPreMerge) return 'none'; // 合并时不显示阴影
-        if (!isAnimatingReturn) return '0 16px 32px rgba(0,0,0,0.3)'; // 拖拽时阴影加深
+        if (!isAnimatingReturn) return 'var(--shadow-drag-preview)'; // 拖拽时阴影加深
         return 'none'; // 归位时阴影消失，平滑过渡到静止状态
     };
 
@@ -114,13 +110,13 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
                 position: 'fixed',
                 left: position.x,
                 top: position.y,
-                width: 64,
-                height: 64,
+                width: 'var(--icon-size)',
+                height: 'var(--icon-size)',
                 pointerEvents: 'none',
-                zIndex: DRAG_Z_INDEX,
+                zIndex: 'var(--z-drag-preview)',
                 transform: getScale(),
                 boxShadow: getShadow(),
-                borderRadius,
+                borderRadius: 'var(--radius-default)',
                 transition: getTransition(),
             }}
             onTransitionEnd={handleTransitionEnd}

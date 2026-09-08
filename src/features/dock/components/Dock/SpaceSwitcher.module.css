@@ -6,7 +6,7 @@
 .overlay {
     position: fixed;
     inset: 0;
-    z-index: 9998;
+    z-index: var(--z-space-switcher);
     background: transparent;
 }
 
@@ -27,16 +27,16 @@
     justify-content: flex-start;
 
     /* 尺寸 */
-    height: 64px;
-    min-width: 128px;
-    padding: 10px var(--spacing-padding-small);
+    height: var(--icon-size);
+    min-width: var(--dock-navigator-width);
+    padding: var(--spacing-gap-medium) var(--spacing-padding-small);
 
     /* 玻璃态外观 - 与 Navigator 一致 */
     background: var(--color-bg-primary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     border: 1px solid var(--color-border);
-    border-radius: var(--icon-border-radius, 24px);
+    border-radius: var(--icon-border-radius, var(--radius-default));
     box-shadow: var(--shadow-small);
 
     /* 文字样式 - 与 Navigator .spaceName 一致 */

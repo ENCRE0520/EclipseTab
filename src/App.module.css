@@ -20,19 +20,19 @@
   transform: translate(-50%, -100%);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--spacing-gap-extralarge);
   /* 使用全局变量 var(--spacing-gap-extralarge) */
   align-items: center;
   /* 宽度适应内容 */
   width: auto;
   max-width: var(--container-max-width);
   /* 移除 min-width 以支持响应式缩放 */
-  z-index: 100;
+  z-index: var(--z-content);
   /* Above stickers (canvas z-index: 1) */
   /* 统一使用 top 和 transform 进行过渡，实现平滑动画 */
-  transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
-    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
-    width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: top var(--transition-layout),
+    transform var(--transition-layout),
+    width var(--transition-layout);
 }
 
 /* 内容容器 - 屏幕中央定位 */
@@ -44,17 +44,17 @@
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--spacing-gap-extralarge);
   align-items: center;
   /* 宽度适应内容 */
   width: auto;
   max-width: var(--container-max-width);
   /* 移除 min-width 以支持响应式缩放 */
-  z-index: 100;
+  z-index: var(--z-content);
   /* 使用相同的过渡参数确保两个状态间平滑切换 */
-  transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1),
-    transform 0.4s cubic-bezier(0.25, 1, 0.5, 1),
-    width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: top var(--transition-layout),
+    transform var(--transition-layout),
+    width var(--transition-layout);
 }
 
 /* 设置按钮区域 - 左上角 */
@@ -62,11 +62,11 @@
   position: absolute;
   top: env(safe-area-inset-top, 0);
   left: env(safe-area-inset-left, 0);
-  width: 140px;
-  height: 140px;
+  width: var(--corner-action-area);
+  height: var(--corner-action-area);
   /* 让鼠标穿透到贴纸，悬停检测由 JS 处理 */
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-content);
   /* Above stickers */
 }
 
@@ -75,10 +75,10 @@
   position: absolute;
   top: env(safe-area-inset-top, 0);
   right: env(safe-area-inset-right, 0);
-  width: 140px;
-  height: 140px;
+  width: var(--corner-action-area);
+  height: var(--corner-action-area);
   /* 让鼠标穿透到贴纸，悬停检测由 JS 处理 */
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-content);
   /* Above stickers */
 }

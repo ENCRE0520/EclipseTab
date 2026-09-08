@@ -114,9 +114,6 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     });
     const [isSwitching, setIsSwitching] = useState(false);
 
-    // 跟踪是否已完成首次渲染
-    const isFirstRenderRef = useRef(true);
-
     // 解构状态
     const { spaces, activeSpaceId } = spacesState;
 
@@ -158,28 +155,11 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
         }
     }, []); // 仅首次运行
 
-    // 持久化到 localStorage (防抖保存)
-    // 跳过首次渲染，因为 storage.getSpaces() 已经处理了保存
-    const saveTimeoutRef = useRef<number>();
-
+    // 快捷方式的编辑和删除是低频、用户明确触发的操作，应在状态提交后立即落盘。
+    // 原先的 500ms 防抖在新标签页快速关闭/刷新时会被 effect cleanup 取消，导致
+    // 修改看似成功却在下次打开时恢复为旧数据。
     useEffect(() => {
-        if (isFirstRenderRef.current) {
-            isFirstRenderRef.current = false;
-            return;
-        }
-
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-        saveTimeoutRef.current = window.setTimeout(() => {
-            storage.saveSpaces(spacesState);
-        }, 500);
-
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
+        storage.saveSpaces(spacesState);
     }, [spacesState]);
 
     // ============================================================================

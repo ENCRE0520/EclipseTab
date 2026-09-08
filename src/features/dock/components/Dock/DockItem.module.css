@@ -4,8 +4,8 @@
 /* Dock 项目容器 - 基本布局 */
 .dockItem {
     position: relative;
-    width: var(--icon-size, 64px);
-    height: var(--icon-size, 64px);
+    width: var(--icon-size);
+    height: var(--icon-size);
     cursor: pointer;
     /* Smooth size transition */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -30,13 +30,13 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--color-bg-white);
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 5;
+        z-index: var(--z-local-overlay);
         opacity: 0;
-        transition: opacity 0.2s ease-out;
+        transition: opacity var(--transition-medium);
         pointer-events: none;
     }
 
@@ -50,15 +50,15 @@
     .editIcon {
         width: 36px;
         height: 36px;
-        opacity: 0.6;
+        opacity: var(--opacity-muted);
         transform: scale(0.8);
-        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        transition: transform var(--transition-medium), opacity var(--transition-medium);
     }
 
     /* 编辑图标可见状态 */
     .editOverlayVisible .editIcon {
         transform: scale(1);
-        opacity: 0.6;
+        opacity: var(--opacity-muted);
     }
 
     /* 非文件夹图标的背景色 */
@@ -83,7 +83,7 @@
     /* 小尺寸图标 - 缩小居中显示而非撑满容器 */
     .iconSmall {
         object-fit: contain;
-        padding: calc(var(--icon-size, 64px) * 0.22);
+        padding: calc(var(--icon-size) * 0.22);
     }
 
     /* 文件夹图标 - 2x2 网格布局 */
@@ -93,9 +93,9 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        gap: calc(var(--icon-size, 64px) * 0.0625);
+        gap: calc(var(--icon-size) * 0.0625);
         background: var(--color-bg-tertiary);
-        padding: calc(var(--icon-size, 64px) * 0.09375);
+        padding: calc(var(--icon-size) * 0.09375);
         border-radius: var(--icon-border-radius, var(--radius-default));
     }
 
@@ -103,7 +103,7 @@
     .folderIconTile {
         width: 100%;
         height: 100%;
-        border-radius: calc(var(--icon-size, 64px) * 0.125);
+        border-radius: calc(var(--icon-size) * 0.125);
         overflow: hidden;
         background: var(--color-bg-white);
     }
@@ -127,13 +127,13 @@
         position: absolute;
         top: -8px;
         right: -8px;
-        width: 20px;
-        height: 20px;
+        width: var(--icon-size-sm);
+        height: var(--icon-size-sm);
         border-radius: 50%;
         background: var(--gray-200);
-        color: var(--red-400);
+        color: var(--color-danger);
         border: none;
-        font-size: 16px;
+        font-size: var(--font-size-medium);
         line-height: 1;
         cursor: pointer;
         display: flex;
@@ -199,6 +199,6 @@
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .folderIconTile {
-    border-radius: calc(var(--icon-size, 64px) * 0.1875);
+    border-radius: calc(var(--icon-size) * 0.1875);
   }
 }

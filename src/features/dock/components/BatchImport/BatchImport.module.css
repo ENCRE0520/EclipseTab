@@ -7,7 +7,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 4000;
+    z-index: var(--z-feature-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -33,18 +33,18 @@
 
 .overlay.closing {
     opacity: 1;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
     pointer-events: none;
     animation: batchFadeOut 0.25s ease forwards;
 }
 
 @keyframes batchFadeIn {
     from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
-    to { opacity: 1; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    to { opacity: 1; backdrop-filter: blur(var(--backdrop-blur-small)); -webkit-backdrop-filter: blur(var(--backdrop-blur-small)); }
 }
 
 @keyframes batchFadeOut {
-    from { opacity: 1; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    from { opacity: 1; backdrop-filter: blur(var(--backdrop-blur-small)); -webkit-backdrop-filter: blur(var(--backdrop-blur-small)); }
     to { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
 }
 
@@ -55,7 +55,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: var(--spacing-gap-large);
     position: relative;
     animation: batchContentPopIn 0.3s ease-out forwards;
 }
@@ -79,15 +79,15 @@
     position: fixed;
     top: 24px;
     right: 24px;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
-    padding: var(--spacing-border-default);
+    padding: var(--spacing-padding-extrasmall);
     cursor: pointer;
     transition: transform var(--transition-normal);
-    z-index: 4001;
+    z-index: var(--z-feature-content);
     appearance: none;
     -webkit-appearance: none;
 }
@@ -109,13 +109,13 @@
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-small);
-    width: 40px;
-    height: 40px;
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
 }
 
 .closeIcon {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
     color: var(--color-text-primary);
 }
 
@@ -123,26 +123,26 @@
 .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-gap-large);
     flex-shrink: 0;
-    margin-right: 0px;
+    margin-right: var(--spacing-none);
     transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .sideCard {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: var(--radius-default);
+    padding: var(--spacing-padding-large);
     width: 280px;
     cursor: pointer;
     transition: transform var(--transition-normal), box-shadow var(--transition-normal);
     color: var(--color-text-primary);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
 }
 
 .sideCard:hover {
@@ -151,8 +151,8 @@
 }
 
 .sideCardIcon {
-    width: 32px;
-    height: 32px;
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
     background: var(--color-bg-secondary);
     border-radius: 10px;
     display: flex;
@@ -168,15 +168,15 @@
 }
 
 .sideCardTitle {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
 }
 
 .sideCardDesc {
-    font-size: 12px;
+    font-size: var(--font-size-small);
     color: var(--color-text-secondary);
-    line-height: 1.4;
+    line-height: var(--line-height-body);
 }
 
 /* ===== 中心卡片区域 ===== */
@@ -184,11 +184,11 @@
     display: flex;
     align-items: center;
     align-self: center;
-    gap: 20px;
+    gap: var(--spacing-gap-large);
     max-width: calc(100vw - 360px);
     overflow-x: auto;
     overflow-y: visible;
-    padding: 20px 16px;
+    padding: 20px var(--spacing-padding-large);
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
     mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
@@ -225,16 +225,16 @@
 
 /* ===== 单个卡片 ===== */
 .card {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: var(--radius-default);
     box-shadow: var(--shadow-combined);
-    padding: 12px 16px;
+    padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     display: flex;
     flex-direction: column;
-    gap: 0px;
+    gap: var(--spacing-none);
     width: 320px;
     box-sizing: border-box;
     color: var(--color-text-primary);
@@ -253,7 +253,7 @@
     justify-content: space-between;
     font-family: var(--font-family);
     font-weight: var(--font-weight-medium);
-    font-size: 12px;
+    font-size: var(--font-size-small);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
     opacity: 0.6;
@@ -266,8 +266,8 @@
     border: none;
     cursor: pointer;
     color: var(--color-text-secondary);
-    padding: 2px;
-    border-radius: 4px;
+    padding: var(--spacing-gap-tiny);
+    border-radius: var(--radius-extrasmall);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -283,7 +283,7 @@
     width: 100%;
     height: 0;
     position: relative;
-    margin: 0 0 12px 0;
+    margin: 0 0 var(--spacing-gap-large) 0;
 }
 
 .cardDivider::after {
@@ -300,23 +300,23 @@
 .formGroup {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: var(--spacing-gap-tight);
+    margin-bottom: var(--spacing-gap-medium);
 }
 
 .label {
-    font-size: 14px;
+    font-size: var(--font-size-body);
     color: var(--color-text-primary);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
 }
 
 .input {
     background: var(--color-bg-secondary);
     border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-padding-small) var(--spacing-padding-medium);
     color: var(--color-text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-body);
     outline: none;
     transition: background var(--transition-medium);
     width: 100%;
@@ -333,7 +333,7 @@
 
 .iconSection {
     display: flex;
-    gap: 12px;
+    gap: var(--spacing-gap-large);
 }
 
 .iconPreview {
@@ -355,8 +355,8 @@
 }
 
 .iconPlaceholder {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
     background: var(--color-bg-tertiary);
     border-radius: 50%;
 }
@@ -364,24 +364,24 @@
 .iconActions {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--spacing-gap-tight);
     flex: 1;
 }
 
 .actionButton {
     background: var(--color-bg-secondary);
     border: none;
-    border-radius: 8px;
-    padding: 0 10px;
-    height: 24px;
+    border-radius: var(--radius-small);
+    padding: 0 var(--spacing-gap-medium);
+    height: var(--icon-size-md);
     color: var(--color-text-primary);
-    font-size: 11px;
+    font-size: var(--font-size-label);
     cursor: pointer;
     transition: background var(--transition-medium);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
 }
 
 .actionButton:hover {
@@ -395,7 +395,7 @@
 }
 
 .actionButton:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
@@ -403,13 +403,13 @@
 .addCardButton {
     position: sticky;
     right: 0;
-    width: 40px;
-    height: 40px;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: var(--radius-small);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -430,8 +430,8 @@
 }
 
 .addCardButton svg {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
 }
 
 /* ===== 底部确认栏 ===== */
@@ -441,18 +441,22 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 12px;
-    z-index: 4001;
+    gap: var(--spacing-gap-large);
+    z-index: var(--z-feature-content);
+}
+
+.overlay.closing .bottomBar {
+    animation: batchContentPopOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
 .bottomButton {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 10px 24px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-gap-medium) 24px;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-medium);
     cursor: pointer;
     /* 加入 filter 支持 confirmBtn 的 brightness 动效 */
     transition: transform var(--transition-normal),
@@ -460,7 +464,7 @@
                 filter var(--transition-medium);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
 }
 
 .bottomButton:hover {
@@ -493,7 +497,7 @@
 }
 
 .confirmBtn:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
@@ -504,22 +508,22 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 4100;
+    z-index: var(--z-feature-hover);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--black-alpha-30);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     animation: batchFadeIn 0.2s ease forwards;
 }
 
 .bookmarkPanel {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
-    border-radius: 16px;
+    border-radius: var(--radius-default);
     box-shadow: var(--shadow-combined);
     width: 480px;
     max-height: 70vh;
@@ -530,7 +534,7 @@
 }
 
 .bookmarkHeader {
-    padding: 16px 20px;
+    padding: var(--spacing-padding-large) 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -539,16 +543,16 @@
 }
 
 .bookmarkTitle {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
 }
 
 .bookmarkCloseBtn {
     background: var(--color-bg-secondary);
     border: none;
-    border-radius: 8px;
-    padding: 6px;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-gap-tight);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -564,7 +568,7 @@
 .bookmarkTree {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 16px;
+    padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     scrollbar-width: thin;
 }
 
@@ -576,12 +580,12 @@
 .bookmarkItem {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 8px;
+    gap: var(--spacing-gap-small);
+    padding: var(--spacing-gap-tight) var(--spacing-padding-small);
+    border-radius: var(--radius-small);
     cursor: pointer;
     transition: background var(--transition-medium);
-    font-size: 13px;
+    font-size: var(--font-size-ui);
     color: var(--color-text-primary);
     user-select: none;
 }
@@ -591,10 +595,10 @@
 }
 
 .bookmarkCheckbox {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     border: 2px solid var(--color-border);
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -609,12 +613,12 @@
 }
 
 .bookmarkCheckbox.checked svg {
-    color: white;
+    color: var(--white);
 }
 
 .bookmarkToggle {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -644,7 +648,7 @@
 }
 
 .bookmarkUrl {
-    font-size: 11px;
+    font-size: var(--font-size-label);
     color: var(--color-text-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -653,7 +657,7 @@
 }
 
 .bookmarkFooter {
-    padding: 12px 20px;
+    padding: var(--spacing-padding-medium) 20px;
     border-top: 1px solid var(--color-border);
     display: flex;
     align-items: center;
@@ -662,21 +666,21 @@
 }
 
 .bookmarkCount {
-    font-size: 13px;
+    font-size: var(--font-size-ui);
     color: var(--color-text-secondary);
 }
 
 .bookmarkActions {
     display: flex;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
 }
 
 .bookmarkBtn {
     border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 500;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-padding-small) var(--spacing-padding-large);
+    font-size: var(--font-size-ui);
+    font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: all var(--transition-medium);
 }
@@ -715,28 +719,28 @@
 }
 
 .bookmarkImportBtn:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
 .bookmarkEmpty {
     text-align: center;
-    padding: 40px 20px;
+    padding: var(--control-height-lg) 20px;
     color: var(--color-text-secondary);
-    font-size: 14px;
+    font-size: var(--font-size-body);
 }
 
 /* ===== AI 生成空间卡片 ===== */
 .aiCardContent {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-gap-large);
 }
 
 .aiSteps {
-    font-size: 12px;
+    font-size: var(--font-size-small);
     color: var(--color-text-secondary);
-    line-height: 1.6;
+    line-height: var(--line-height-relaxed);
 }
 
 .aiSteps ol {
@@ -745,28 +749,28 @@
 }
 
 .aiSteps li {
-    margin-bottom: 4px;
+    margin-bottom: var(--spacing-padding-extrasmall);
 }
 
 .aiButtons {
     display: flex;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
 }
 
 .aiBtn {
     flex: 1;
     background: var(--color-bg-secondary);
     border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
-    font-weight: 500;
+    border-radius: var(--radius-small);
+    padding: var(--spacing-padding-small) var(--spacing-padding-medium);
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: all var(--transition-medium);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--spacing-gap-tight);
     color: var(--color-text-primary);
 }
 
@@ -804,58 +808,58 @@
 
 /* ===== 无书签 API 提示 ===== */
 .noApiHint {
-    font-size: 12px;
+    font-size: var(--font-size-small);
     color: var(--color-text-secondary);
     opacity: 0.7;
     text-align: center;
-    padding: 4px 0;
+    padding: var(--spacing-padding-extrasmall) 0;
 }
 
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
 @supports (corner-shape: superellipse(1.5)) {
   .sideCard {
-    border-radius: 24px;
+    border-radius: var(--radius-default);
   }
   .sideCardIcon {
     border-radius: 15px;
   }
   .card {
-    border-radius: 24px;
+    border-radius: var(--radius-default);
   }
   .cardRemove {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .input {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .iconPreview {
     border-radius: 15px;
   }
   .actionButton {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .addCardButton {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .bottomButton {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .bookmarkPanel {
-    border-radius: 24px;
+    border-radius: var(--radius-default);
   }
   .bookmarkCloseBtn {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .bookmarkItem {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .bookmarkCheckbox {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .bookmarkBtn {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
   .aiBtn {
-    border-radius: 12px;
+    border-radius: var(--radius-small);
   }
 }

@@ -5,7 +5,6 @@ import { useDockData, useDockUI, useDockDrag } from './features/dock/context/Doc
 import { DockLayoutContainer } from './features/dock/components/DockLayoutContainer';
 import { Editor } from './features/editor/components/Editor/Editor';
 import { Settings } from './features/settings/components/Settings/Settings';
-import { SyncButton } from './features/sync/components/SyncButton/SyncButton';
 import { Background } from './features/theme/components/Background/Background';
 import { ZenShelf } from './features/shelf/components/ZenShelf';
 import { useAutoSync } from './features/sync/hooks/useAutoSync';
@@ -18,7 +17,6 @@ const FolderView = lazy(() => import('./features/dock/components/FolderView/Fold
 const AddEditModal = lazy(() => import('./features/dock/components/Modal/AddEditModal').then(m => ({ default: m.AddEditModal })));
 const SearchEngineModal = lazy(() => import('./features/search/components/Modal/SearchEngineModal').then(m => ({ default: m.SearchEngineModal })));
 const SettingsModal = lazy(() => import('./features/settings/components/Modal/SettingsModal').then(m => ({ default: m.SettingsModal })));
-const SyncModal = lazy(() => import('./features/sync/components/Modal/SyncModal').then(m => ({ default: m.SyncModal })));
 const BatchImportView = lazy(() => import('./features/dock/components/BatchImport/BatchImportView').then(m => ({ default: m.BatchImportView })));
 
 
@@ -61,10 +59,8 @@ function App() {
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [isSearchEngineModalOpen, setIsSearchEngineModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [settingsInitialSection, setSettingsInitialSection] = useState<'appearance' | 'behavior' | 'data'>('appearance');
   const [searchEngineAnchor, setSearchEngineAnchor] = useState<DOMRect | null>(null);
-  const [settingsAnchor, setSettingsAnchor] = useState<{ rect: DOMRect, source?: 'button' | 'contextMenu' } | null>(null);
-  const [syncAnchor, setSyncAnchor] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
   const [addIconAnchor, setAddIconAnchor] = useState<DOMRect | null>(null);
   const [editingItem, setEditingItem] = useState<DockItem | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -84,7 +80,6 @@ function App() {
     addEdit: false,
     searchEngine: false,
     settings: false,
-    sync: false,
     batchImport: false,
   });
 
@@ -92,9 +87,8 @@ function App() {
     if (isAddEditModalOpen) mountedModals.current.addEdit = true;
     if (isSearchEngineModalOpen) mountedModals.current.searchEngine = true;
     if (isSettingsModalOpen) mountedModals.current.settings = true;
-    if (isSyncModalOpen) mountedModals.current.sync = true;
     if (isBatchImportOpen) mountedModals.current.batchImport = true;
-  }, [isAddEditModalOpen, isSearchEngineModalOpen, isSettingsModalOpen, isSyncModalOpen, isBatchImportOpen]);
+  }, [isAddEditModalOpen, isSearchEngineModalOpen, isSettingsModalOpen, isBatchImportOpen]);
 
   // 自动同步：每次新标签页打开时检测云端更新
   useAutoSync();
@@ -250,10 +244,8 @@ function App() {
         </defs>
       </svg>
       <Background />
-      <ZenShelf onOpenSettings={(pos) => {
-        // 直接使用传入的位置，不需要为了抵消 SettingsModal 的内部偏移而做运算
-        const pseudoRect = { left: pos.x, top: pos.y, right: pos.x, bottom: pos.y, width: 0, height: 0, x: pos.x, y: pos.y, toJSON: () => ({}) } as DOMRect;
-        setSettingsAnchor({ rect: pseudoRect, source: 'contextMenu' });
+      <ZenShelf onOpenSettings={() => {
+        setSettingsInitialSection('appearance');
         setIsSettingsModalOpen(true);
       }} />
       <DockLayoutContainer
@@ -277,19 +269,8 @@ function App() {
           visible={showSettings || isTouchUI}
           onClick={(e: React.MouseEvent<HTMLElement>) => {
             e.stopPropagation();
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setSettingsAnchor({ rect, source: 'button' });
+            setSettingsInitialSection('appearance');
             setIsSettingsModalOpen(true);
-          }}
-        />
-        <SyncButton 
-          visible={showSettings || isTouchUI}
-          onClick={(e: React.MouseEvent<HTMLElement>) => {
-            e.stopPropagation();
-            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            // SyncModal is centered or offset. Since SettingsModal offsets based on rect, let's just place sync modal roughly next to button.
-            setSyncAnchor({ x: rect.left, y: rect.bottom + 12 });
-            setIsSyncModalOpen(true);
           }}
         />
       </div>
@@ -357,22 +338,7 @@ function App() {
           <SettingsModal
             isOpen={isSettingsModalOpen}
             onClose={() => setIsSettingsModalOpen(false)}
-            // 显式添加偏移量：ZenShelf 右键菜单不需要偏移（anchorPosition 已经是鼠标位置），
-            // 从左上角按钮触发时，需要加上偏移量避开按钮。
-            anchorPosition={settingsAnchor ? {
-              x: settingsAnchor.rect.left,
-              y: settingsAnchor.source === 'button' ? settingsAnchor.rect.top + 60 : settingsAnchor.rect.top
-            } : { x: 0, y: 0 }}
-          />
-        </Suspense>
-      )}
-
-      {(isSyncModalOpen || mountedModals.current.sync) && (
-        <Suspense fallback={null}>
-          <SyncModal
-            isOpen={isSyncModalOpen}
-            onClose={() => setIsSyncModalOpen(false)}
-            anchorPosition={syncAnchor}
+            initialSection={settingsInitialSection}
           />
         </Suspense>
       )}

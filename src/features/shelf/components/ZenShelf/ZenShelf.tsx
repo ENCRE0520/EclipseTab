@@ -539,6 +539,7 @@ export const ZenShelf: React.FC<ZenShelfProps> = ({ onOpenSettings }) => {
                         type={contextMenu.type}
                         stickerId={contextMenu.stickerId}
                         isImageSticker={activeContextMenuSticker?.type === 'image'}
+                        isWidgetSticker={activeContextMenuSticker?.type === 'widget'}
                         onClose={() => setContextMenu(null)}
                         onAddSticker={() => {
                             setTextInputPos({ x: contextMenu.x, y: contextMenu.y });

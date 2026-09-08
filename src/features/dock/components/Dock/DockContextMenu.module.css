@@ -3,9 +3,9 @@
 
 .contextMenu {
     position: fixed;
-    z-index: 3000;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    z-index: var(--z-modal);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
@@ -13,7 +13,7 @@
     display: flex;
     flex-direction: column;
     min-width: 210px;
-    gap: 0;
+    gap: var(--spacing-none);
     pointer-events: auto;
     box-shadow: var(--shadow-combined);
     max-height: calc(100vh - 20px);
@@ -30,7 +30,7 @@
     padding: var(--spacing-padding-extrasmall);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
     white-space: nowrap;
     margin: 0;
 }
@@ -58,8 +58,8 @@
 .menuOptions {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
+    gap: var(--spacing-padding-extrasmall);
+    margin-top: var(--spacing-padding-extrasmall);
 }
 
 /* 菜单项 */
@@ -96,17 +96,17 @@
 
 /* 危险操作 (删除) */
 .menuItem.danger {
-    color: var(--red-400);
+    color: var(--color-danger);
 }
 
 .menuItem.danger:hover {
-    background: rgba(255, 107, 107, 0.1);
+    background: var(--color-danger-bg);
 }
 
 /* 菜单图标 */
 .menuIcon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     flex-shrink: 0;
     background-color: var(--color-text-primary);
     -webkit-mask-size: contain;
@@ -118,8 +118,8 @@
 }
 
 .moveMenuIcon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     flex-shrink: 0;
     color: var(--color-text-primary);
 }
@@ -129,7 +129,7 @@
 }
 
 .menuItem.danger .menuIcon {
-    background-color: var(--red-400);
+    background-color: var(--color-danger);
 }
 
 .moveMenuItem {
@@ -142,15 +142,15 @@
 
 .chevron {
     margin-left: auto;
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     flex-shrink: 0;
     opacity: 0.55;
 }
 
 .spaceSubmenu {
     position: fixed;
-    z-index: 3001;
+    z-index: var(--z-modal-content);
     min-width: 210px;
     max-height: calc(100vh - 20px);
     overflow-y: auto;
@@ -159,8 +159,8 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
     background: var(--color-bg-primary);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     box-shadow: var(--shadow-combined);
     will-change: transform, opacity;
 }
@@ -168,7 +168,7 @@
 .spaceSubmenuList {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--spacing-gap-tiny);
 }
 
 .spaceItem {
@@ -180,7 +180,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: 8px;
+    padding: var(--spacing-padding-small);
     text-align: left;
     font-family: var(--font-family);
     font-size: var(--font-size-medium);

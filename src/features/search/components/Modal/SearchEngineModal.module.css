@@ -3,22 +3,21 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--spacing-none);
   transform-origin: bottom center;
-  padding: 12px 16px;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding: var(--spacing-padding-small);
 }
 
 /* 标签文本 */
 .label {
   font-family: var(--font-family);
   font-weight: var(--font-weight-medium);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   line-height: var(--line-height-none);
   color: var(--color-text-primary);
-  opacity: 0.6;
+  opacity: var(--opacity-muted);
   white-space: nowrap;
+  padding: var(--spacing-padding-extrasmall);
   margin: 0;
 }
 
@@ -26,6 +25,7 @@
 .divider {
   width: 100%;
   height: 0;
+  padding: var(--spacing-padding-extrasmall);
   position: relative;
   margin: 0;
 }
@@ -45,15 +45,15 @@
 .optionsContainer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
+  gap: var(--spacing-padding-extrasmall);
+  margin-top: var(--spacing-padding-extrasmall);
 }
 
 /* 单个搜索引擎选项 */
 .option {
   background: none;
   border: none;
-  padding: var(--spacing-padding-extrasmall);
+  padding: var(--spacing-padding-small);
   font-family: var(--font-family);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-medium);
@@ -64,21 +64,20 @@
   align-items: center;
   text-align: left;
   white-space: nowrap;
-  transition: opacity var(--duration-instant) var(--ease-out-quint);
+  transition: background var(--transition-medium), transform var(--transition-instant);
   opacity: 1;
   margin: 0;
+  border-radius: var(--radius-small);
 }
 
 /* 选项悬停状态 */
 .option:hover {
   background: var(--color-bg-secondary);
-  border-radius: var(--radius-small);
 }
 
 /* 选项按下状态 */
 .option:active {
   background: var(--color-bg-tertiary);
-  border-radius: var(--radius-small);
   transform: scale(0.99);
   transition: background var(--transition-instant), transform var(--transition-instant);
 }

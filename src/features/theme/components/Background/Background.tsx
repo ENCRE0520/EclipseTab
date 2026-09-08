@@ -133,7 +133,7 @@ export const Background: React.FC = () => {
         <div className={styles.container}>
             {/* 基础背景图层 */}
             {baseLayers.map((layer) => (
-                <div key={`base-${layer.id}`} className={styles.layerWrapper} style={{ zIndex: 0 }}>
+                <div key={`base-${layer.id}`} className={styles.layerWrapper} style={{ zIndex: 'var(--z-base)' }}>
                     {layer.wallpaperUrl ? (
                         layer.isVideo ? (
                             <video
@@ -180,7 +180,7 @@ export const Background: React.FC = () => {
                 <div
                     key={`tex-${layer.id}`}
                     className={styles.layerWrapper}
-                    style={{ zIndex: 1, mixBlendMode: backgroundBlendMode as any }}
+                    style={{ zIndex: 'var(--z-canvas)', mixBlendMode: backgroundBlendMode as any }}
                 >
                     <div
                         className={styles.layer}

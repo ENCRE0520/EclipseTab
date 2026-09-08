@@ -36,9 +36,15 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   const [textIconHue, setTextIconHue] = useState<number | null>(null);
   const [isFetchingIcon, setIsFetchingIcon] = useState(false);
+  const [isProcessingIconUpload, setIsProcessingIconUpload] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const iconUploadRequestId = useRef(0);
 
   useEffect(() => {
+    // 关闭弹窗或切换编辑对象时，忽略仍在执行的旧上传，避免其完成后覆盖新表单。
+    iconUploadRequestId.current += 1;
+    setIsProcessingIconUpload(false);
+
     // 只有在打开状态下才更新 state
     // 避免在关闭动画播放期间（isOpen=false 但组件尚未卸载）清空表单，导致视觉上的闪烁
     if (!isOpen) return;
@@ -131,14 +137,28 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const requestId = ++iconUploadRequestId.current;
+      setIsProcessingIconUpload(true);
       const reader = new FileReader();
       reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
-        // 压缩图标到 500x500 减少存储占用
-        const compressed = await compressIcon(dataUrl);
-        setIcon(compressed);
-        setIsUsingFallback(false); // 用户手动上传了图标
-        setIconSmall(false);
+        try {
+          const dataUrl = event.target?.result as string;
+          // 压缩图标以减少存储占用
+          const compressed = await compressIcon(dataUrl);
+          if (iconUploadRequestId.current !== requestId) return;
+          setIcon(compressed);
+          setIsUsingFallback(false); // 用户手动上传了图标
+          setIconSmall(false);
+        } finally {
+          if (iconUploadRequestId.current === requestId) {
+            setIsProcessingIconUpload(false);
+          }
+        }
+      };
+      reader.onerror = () => {
+        if (iconUploadRequestId.current === requestId) {
+          setIsProcessingIconUpload(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -294,7 +314,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
           type="button"
           className={`${styles.footerButton} ${styles.addButton}`}
           onClick={handleSave}
-          disabled={!name.trim()}
+          disabled={!name.trim() || isFetchingIcon || isProcessingIconUpload}
         >
           {item ? (
             <>

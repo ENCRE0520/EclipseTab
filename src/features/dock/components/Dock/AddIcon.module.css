@@ -3,8 +3,8 @@
 
 /* 添加图标按钮 */
 .addIcon {
-    width: var(--icon-size, 64px);
-    height: var(--icon-size, 64px);
+    width: var(--icon-size);
+    height: var(--icon-size);
     background: var(--color-bg-tertiary);
     border-radius: var(--radius-default);
     display: flex;
@@ -33,7 +33,7 @@
 
 /* 加号图标 */
 .icon {
-    width: 32px;
-    height: 32px;
+    width: var(--icon-size-medium);
+    height: var(--icon-size-medium);
     color: var(--color-text-primary);
 }

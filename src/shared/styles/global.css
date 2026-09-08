@@ -42,7 +42,7 @@ body {
     --radius-default: 24px;
     --radius-default-in: 18px;
     --radius-large: 30px;
-    --radius-medium: 18px;
+    --radius-medium: var(--radius-default-in);
     --radius-small: 12px;
     --radius-extrasmall: 6px;
   }

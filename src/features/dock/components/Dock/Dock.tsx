@@ -345,8 +345,8 @@ export const Dock: React.FC<DockProps> = ({
                 // 折叠状态 - 光标远离 Dock
                 return {
                     '--stagger-index': index,
-                    width: 0,
-                    minWidth: 0,
+                    width: 'var(--spacing-none)',
+                    minWidth: 'var(--spacing-none)',
                     overflow: 'hidden',
                     opacity: 0,
                     visibility: 'hidden',
@@ -357,8 +357,8 @@ export const Dock: React.FC<DockProps> = ({
                 // 有占位符状态 - 光标在 Dock 上方
                 return {
                     '--stagger-index': index,
-                    width: 64,
-                    minWidth: 64,
+                    width: 'var(--icon-size)',
+                    minWidth: 'var(--icon-size)',
                     opacity: 0,
                     visibility: 'hidden',
                     pointerEvents: 'none',

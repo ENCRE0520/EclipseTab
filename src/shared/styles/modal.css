@@ -5,7 +5,7 @@
 .modalBackdrop {
     position: fixed;
     inset: 0;
-    z-index: 2999;
+    z-index: var(--z-modal-backdrop);
     pointer-events: auto;
 }
 
@@ -13,7 +13,7 @@
 .modalBackdropDark {
     position: fixed;
     inset: 0;
-    z-index: 2999;
+    z-index: var(--z-modal-backdrop);
     pointer-events: auto;
     background: var(--black-alpha-30);
     display: flex;
@@ -23,8 +23,8 @@
 
 /* 模态框容器 - 玻璃态效果 */
 .modalContainer {
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
@@ -45,7 +45,7 @@
 .optionButton {
     background: var(--color-bg-secondary);
     border: 2px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
     cursor: pointer;
     transition: all var(--transition-medium);
 }
@@ -108,16 +108,16 @@
 }
 
 .menuItem.danger {
-    color: var(--red-400);
+    color: var(--color-danger);
 }
 
 .menuItem.danger:hover {
-    background: rgba(255, 107, 107, 0.1);
+    background: var(--color-danger-bg);
 }
 
 .menuItem:disabled,
 .menuItem.disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     cursor: not-allowed;
     pointer-events: none;
 }
@@ -133,7 +133,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--spacing-gap-tight);
     font-family: var(--font-family);
     font-weight: var(--font-weight-medium);
     transition: background var(--transition-medium), transform var(--transition-instant);
@@ -149,7 +149,7 @@
 }
 
 .actionBtn:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
@@ -209,7 +209,7 @@
 }
 
 .primaryBtn:disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     cursor: not-allowed;
 }
 
@@ -240,8 +240,8 @@
 /* --- 7. Globe 图标按钮 --- */
 /* 用于 addIcon、closeButton、syncBtn 等独立功能触发按钮 */
 .globeBtn {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
@@ -266,9 +266,9 @@
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
     border-radius: var(--radius-small);
-    padding: 4px;
+    padding: var(--spacing-padding-extrasmall);
     display: grid;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
 }
 
 /* 5列网格 */
@@ -276,9 +276,9 @@
     background: var(--color-bg-secondary);
     box-shadow: var(--shadow-small);
     border-radius: var(--radius-small);
-    padding: 4px;
+    padding: var(--spacing-padding-extrasmall);
     display: grid;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
     grid-template-columns: repeat(5, 1fr);
 }
 
@@ -286,7 +286,7 @@
 
 /* 禁用状态 */
 .disabled {
-    opacity: 0.5;
+    opacity: var(--opacity-disabled);
     pointer-events: none;
     filter: grayscale(100%);
 }

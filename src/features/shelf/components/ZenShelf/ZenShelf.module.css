@@ -7,7 +7,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
+    z-index: var(--z-canvas);
     isolation: isolate;
     /* Ensure stickers stay within this stacking context */
     pointer-events: none;
@@ -17,7 +17,7 @@
 
 .canvas.dragging {
     /* Lift canvas above Recycle Bin (2500) during drag */
-    z-index: 2501;
+    z-index: var(--z-dragging-canvas);
 }
 
 /* 创作模式下的画布 - 不阻挡 UI 层 */
@@ -42,28 +42,373 @@
     contain: layout style;
 }
 
+/* ===== 实时时间小组件 ===== */
+
+.widgetContainer {
+    position: relative;
+    display: block;
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
+}
+
+.widgetContainer.dragging {
+    cursor: grabbing;
+    filter: drop-shadow(var(--shadow-sticker-drag));
+}
+
+.widgetContainer.creativeHover:hover {
+    filter: drop-shadow(var(--shadow-sticker-hover));
+}
+
+/* An ancestor filter creates a backdrop root and prevents the glass clock from
+   sampling the wallpaper. Analog widgets carry their own shape-aware shadow. */
+.widgetContainer.analogWidgetContainer {
+    filter: none;
+}
+
+.analogWidgetContainer .analogClockWidget {
+    box-shadow: var(--shadow-sticker-rest);
+    transition: box-shadow var(--transition-smooth);
+}
+
+.analogWidgetContainer.dragging .analogClockWidget {
+    box-shadow: var(--shadow-sticker-drag);
+}
+
+.analogWidgetContainer.creativeHover:hover .analogClockWidget {
+    box-shadow: var(--shadow-sticker-hover);
+}
+
+.widgetContainer.digitalWidgetContainer {
+    filter: none;
+}
+
+.digitalWidgetContainer .clockWidget {
+    box-shadow: var(--shadow-sticker-rest);
+    transition: box-shadow var(--transition-smooth);
+}
+
+.digitalWidgetContainer.dragging .clockWidget {
+    box-shadow: var(--shadow-sticker-drag);
+}
+
+.digitalWidgetContainer.creativeHover:hover .clockWidget {
+    box-shadow: var(--shadow-sticker-hover);
+}
+
+.clockWidget {
+    --clock-scale: 1;
+    --clock-horizontal-scale: 0.66;
+    --widget-corner-radius: 32px;
+    --clock-face-surface: var(--gray-200);
+    --widget-surface: var(--gray-200);
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    border-radius: calc(var(--widget-corner-radius) * var(--clock-scale));
+    corner-shape: squircle;
+    background: transparent;
+    isolation: isolate;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.clockFace {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: inherit;
+    corner-shape: inherit;
+    background: var(--clock-face-surface);
+}
+
+.clockWidget::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: -6px;
+    border-radius: calc(var(--widget-corner-radius) * var(--clock-scale) + 6px);
+    corner-shape: inherit;
+    background: var(--color-sticker-stroke);
+    pointer-events: none;
+}
+
+[data-theme='default'] .clockWidget {
+    --clock-face-surface: var(--color-bg-tertiary);
+    backdrop-filter: blur(var(--backdrop-blur-medium)) saturate(1.15);
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium)) saturate(1.15);
+}
+
+[data-theme='light'] .clockWidget {
+    --clock-face-surface: var(--gray-200);
+}
+
+[data-theme='dark'] .clockWidget {
+    --clock-face-surface: var(--gray-800);
+    --clock-time-color: var(--gray-100);
+}
+
+.clockFace {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clockTime {
+    display: block;
+    color: var(--clock-time-color, #000);
+    font-family: 'SF Pro', 'SF Pro Condensed', 'SF Pro Display', 'SF Pro Text', 'Google Sans Flex', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+    font-size: calc(164px * var(--clock-scale));
+    font-weight: 410;
+    font-stretch: condensed;
+    font-synthesis: none;
+    line-height: 1;
+    letter-spacing: 0;
+    font-variation-settings: 'wdth' 30;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: 'lnum' 1, 'tnum' 1;
+    white-space: nowrap;
+    transform: scaleX(var(--clock-horizontal-scale));
+    transform-origin: center;
+}
+
+/* ===== 代码绘制刻度的模拟时钟小组件 ===== */
+
+.analogClockWidget {
+    --analog-scale: 1;
+    --widget-corner-radius: 32px;
+    --analog-face-surface: var(--gray-200);
+    --analog-tick-minor: #9a9a9a;
+    --analog-tick-major: #111;
+    --analog-hand-color: #656565;
+    --analog-second-hand-color: #ff4000;
+    position: relative;
+    box-sizing: border-box;
+    overflow: visible;
+    border-radius: 50%;
+    corner-shape: round;
+    background: transparent;
+    isolation: isolate;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.analogClockRoundedSquare {
+    border-radius: calc(var(--widget-corner-radius) * var(--analog-scale));
+    corner-shape: squircle;
+}
+
+[data-theme='default'] .clockWidget {
+    --widget-surface: var(--color-bg-tertiary);
+}
+
+.analogClockWidget::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: -6px;
+    border-radius: 50%;
+    corner-shape: inherit;
+    background: var(--color-sticker-stroke);
+    pointer-events: none;
+}
+
+.analogClockRoundedSquare::before {
+    border-radius: calc(var(--widget-corner-radius) * var(--analog-scale) + 6px);
+}
+
+.analogClockFace {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    corner-shape: inherit;
+    background: var(--analog-face-surface);
+    pointer-events: none;
+}
+
+[data-theme='default'] .analogClockWidget {
+    --analog-face-surface: rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(var(--backdrop-blur-medium)) saturate(1.15);
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium)) saturate(1.15);
+}
+
+[data-theme='default'][data-background-brightness='dark'] .analogClockWidget {
+    --analog-face-surface: rgba(28, 28, 30, 0.24);
+    --analog-tick-minor: rgba(255, 255, 255, 0.58);
+    --analog-tick-major: var(--gray-100);
+    --analog-hand-color: var(--gray-300);
+}
+
+[data-theme='light'] .analogClockWidget {
+    --analog-face-surface: var(--gray-200);
+    --analog-tick-minor: var(--gray-500);
+    --analog-tick-major: var(--gray-950);
+    --analog-hand-color: var(--gray-600);
+}
+
+[data-theme='dark'] .analogClockWidget {
+    --analog-face-surface: var(--gray-800);
+    --analog-tick-minor: var(--gray-400);
+    --analog-tick-major: var(--gray-100);
+    --analog-hand-color: var(--gray-300);
+}
+
+.analogClockTicks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.analogClockTick {
+    fill: var(--analog-tick-minor);
+}
+
+.analogClockMajorTick {
+    fill: var(--analog-tick-major);
+}
+
+.analogClockHands {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    --analog-hand-body-width: calc(10px * var(--analog-scale));
+    --analog-hand-stroke-width: calc(4px * var(--analog-scale));
+    --analog-hand-connector-length: calc(16px * var(--analog-scale));
+    pointer-events: none;
+}
+
+.analogClockHand {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+    transform: rotate(var(--hand-angle));
+    transform-origin: 50% 50%;
+}
+
+.analogClockHourHand {
+    --hand-color: var(--analog-hand-color);
+}
+
+.analogClockHourHand::before {
+    content: '';
+    position: absolute;
+    top: calc(50% - 5px * var(--analog-scale));
+    left: calc(50% + 12px * var(--analog-scale));
+    width: calc(56px * var(--analog-scale));
+    height: var(--analog-hand-body-width);
+    box-sizing: border-box;
+    border: var(--analog-hand-stroke-width) solid var(--hand-color);
+    border-radius: 999px;
+    background: var(--analog-face-surface);
+    corner-shape: round;
+}
+
+.analogClockHourHand::after {
+    content: '';
+    position: absolute;
+    top: calc(50% - 2px * var(--analog-scale));
+    left: 50%;
+    width: var(--analog-hand-connector-length);
+    height: var(--analog-hand-stroke-width);
+    border-radius: 0;
+    background: var(--hand-color);
+}
+
+.analogClockMinuteHand {
+    --hand-color: var(--analog-hand-color);
+}
+
+.analogClockMinuteHand::before {
+    content: '';
+    position: absolute;
+    top: calc(50% - 76px * var(--analog-scale));
+    left: calc(50% - 5px * var(--analog-scale));
+    width: var(--analog-hand-body-width);
+    height: calc(64px * var(--analog-scale));
+    box-sizing: border-box;
+    border: var(--analog-hand-stroke-width) solid var(--hand-color);
+    border-radius: 999px;
+    background: var(--analog-face-surface);
+    corner-shape: round;
+}
+
+.analogClockMinuteHand::after {
+    content: '';
+    position: absolute;
+    top: calc(50% - var(--analog-hand-connector-length));
+    left: calc(50% - 2px * var(--analog-scale));
+    width: var(--analog-hand-stroke-width);
+    height: var(--analog-hand-connector-length);
+    border-radius: 0;
+    background: var(--hand-color);
+}
+
+.analogClockSecondHand {
+    z-index: 3;
+}
+
+.analogClockSecondHand::before {
+    content: '';
+    position: absolute;
+    top: calc(50% - 70px * var(--analog-scale));
+    left: calc(50% - 2px * var(--analog-scale));
+    width: calc(4px * var(--analog-scale));
+    height: calc(70px * var(--analog-scale));
+    border-radius: 999px;
+    background: var(--analog-second-hand-color);
+}
+
+.analogClockCenterHub {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    left: 50%;
+    width: calc(10px * var(--analog-scale));
+    height: calc(10px * var(--analog-scale));
+    box-sizing: border-box;
+    border: calc(4px * var(--analog-scale)) solid var(--analog-second-hand-color);
+    border-radius: 50%;
+    corner-shape: round;
+    background: var(--analog-face-surface);
+    transform: translate(-50%, -50%);
+}
+
 /* 文字贴纸外层容器 - 用于阴影动画 */
 /* 阴影放在外层是因为 CSS filter 的 url() 无法与 drop-shadow() 一起动画 */
 .stickerText {
     /* 默认投影 - 较浅 */
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(var(--shadow-sticker-rest));
     /* 阴影平滑过渡 */
     transition: filter var(--transition-smooth);
 }
 
 /* 文字贴纸外层 - 拖拽/按下中的阴影 */
 .stickerText.dragging {
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(var(--shadow-sticker-drag));
 }
 
 /* Shift 多选中的文字贴纸使用按下态投影 */
 .stickerText.batchSelected {
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(var(--shadow-sticker-drag));
 }
 
 /* 创作模式下悬停效果 - 文字贴纸外层 */
 .stickerText.creativeHover:hover {
-    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12));
+    filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
 /* 文字贴纸的白色轮廓 - 使用 SVG filter 实现平滑描边 */
@@ -74,7 +419,7 @@
     outline: 6px solid var(--color-sticker-stroke);
     outline-offset: 0;
     /* 默认投影 - 较浅 */
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(var(--shadow-sticker-rest));
     /* 阴影平滑过渡 */
     transition: filter var(--transition-smooth), outline-color var(--transition-smooth);
 }
@@ -88,7 +433,7 @@
 /* SVG 贴纸的外层容器（和文字贴纸的 .stickerText 原理一样，专门处理投影和投影动画） */
 .imageContainer.svgStickerWrapper {
     /* 默认投影 - 较浅 */
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(var(--shadow-sticker-rest));
     /*阴影平滑过渡*/
     transition: filter var(--transition-smooth);
 }
@@ -103,7 +448,7 @@
 .imageSticker.dragging {
     cursor: grabbing;
     /* 加深阴影，增大模糊值 */
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(var(--shadow-sticker-drag));
     /* 保持阴影过渡动画 */
     transition: filter var(--transition-smooth);
     will-change: transform, left, top, filter;
@@ -112,7 +457,7 @@
 /* 拖拽/按下中的样式 - SVG 图片贴纸（由于包裹层分离，这里也只需要改外层） */
 .imageContainer.svgStickerWrapper.dragging {
     cursor: grabbing;
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.2));
+    filter: drop-shadow(var(--shadow-sticker-drag));
 }
 
 /* 回弹动画 - 贴纸从UI区域弹回安全区域 */
@@ -126,18 +471,18 @@
 
 /* 创作模式下悬停效果 - 图片贴纸 */
 .imageSticker.creativeHover:hover {
-    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12));
+    filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
 /* 创作模式下悬停效果 - SVG 图片贴纸（由于包裹层分离，这里也只需要改外层） */
 .imageContainer.svgStickerWrapper.creativeHover:hover {
-    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.12));
+    filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
 /* 选中态 */
 .sticker.selected {
     outline: 2px dashed var(--blue-500);
-    outline-offset: 8px;
+    outline-offset: var(--spacing-padding-small);
 }
 
 /* ===== 文字贴纸 ===== */
@@ -146,12 +491,12 @@
     padding: var(--spacing-padding-medium) var(--spacing-padding-large);
     background: transparent;
     font-family: var(--font-family);
-    font-size: 40px;
-    font-weight: 900;
+    font-size: var(--font-size-sticker);
+    font-weight: var(--font-weight-black);
     /* 紧凑行间距 */
-    line-height: 0.95;
+    line-height: var(--line-height-tight);
     /* 紧凑字间距 (0.9 效果) */
-    letter-spacing: -0.05em;
+    letter-spacing: var(--letter-spacing-tight);
     white-space: pre;
     min-width: 60px;
     /* Firefox 文本渲染优化 */
@@ -167,7 +512,7 @@
 @supports (-moz-appearance: none) {
     .textSticker {
         -webkit-text-stroke: 0.3px currentColor;
-        line-height: 0.95;
+        line-height: var(--line-height-tight);
     }
 }
 
@@ -175,13 +520,13 @@
     color: inherit;
     text-decoration: underline;
     text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
+    text-underline-offset: var(--spacing-padding-extrasmall);
     cursor: pointer;
     transition: opacity var(--transition-fast), text-decoration-thickness var(--transition-fast);
 }
 
 .textSticker .stickerLink:hover {
-    opacity: 0.7;
+    opacity: var(--opacity-hover);
     text-decoration-thickness: 3px;
 }
 
@@ -190,7 +535,7 @@
     height: 170px;
     overflow: hidden;
     border-radius: 14px;
-    background: #FFFFFF;
+    background: var(--white);
     border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
     cursor: grab;
     user-select: none;
@@ -210,7 +555,7 @@
     height: 92px;
     display: block;
     object-fit: cover;
-    background: #FFFFFF;
+    background: var(--white);
 }
 
 .linkCardContent {
@@ -239,8 +584,8 @@
 
 .linkCardTitle {
     color: var(--color-text-primary);
-    font-size: 15px;
-    font-weight: 700;
+    font-size: var(--font-size-title);
+    font-weight: var(--font-weight-bold);
     line-height: 1.28;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -248,8 +593,8 @@
 
 .linkCardSubtitle {
     color: var(--color-text-secondary);
-    font-size: 11px;
-    font-weight: 500;
+    font-size: var(--font-size-label);
+    font-weight: var(--font-weight-medium);
     line-height: 1.35;
     -webkit-line-clamp: 1;
     line-clamp: 1;
@@ -276,8 +621,8 @@
     position: absolute;
     bottom: -4px;
     right: -4px;
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     background: var(--white);
     border: 2px solid var(--gray-400);
     border-radius: var(--radius-extrasmall);
@@ -294,7 +639,7 @@
 
 .resizeHandle:hover {
     border-color: var(--blue-500);
-    background: var(--blue-100, #E3F2FD);
+    background: var(--blue-100);
 }
 
 
@@ -304,18 +649,18 @@
     position: absolute;
     top: -8px;
     right: -8px;
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
     border-radius: 50%;
     background: var(--red-500);
-    color: white;
+    color: var(--white);
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
+    font-size: var(--font-size-small);
+    font-weight: var(--font-weight-bold);
     opacity: 0;
     transform: scale(0.8);
     transition: opacity var(--transition-fast), transform var(--transition-fast);
@@ -330,16 +675,16 @@
 }
 
 .deleteButton:hover {
-    background: var(--red-400);
+    background: var(--color-danger);
 }
 
 /* ===== 文字输入弹窗 ===== */
 
 .textInputPopup {
     position: fixed;
-    z-index: 3000;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    z-index: var(--z-modal);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
@@ -347,7 +692,7 @@
     padding: var(--spacing-padding-extrasmall);
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
     pointer-events: auto;
 }
 
@@ -359,7 +704,7 @@
     padding: var(--spacing-padding-small);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
     width: 320px;
 }
 
@@ -370,7 +715,7 @@
     font-size: var(--font-size-small);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
 }
 
 /* 输入区域 */
@@ -405,7 +750,7 @@
 .styleOptionsSection {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
 }
 
 /* 对齐按钮组 */
@@ -414,42 +759,39 @@
     box-shadow: var(--shadow-small);
     border-radius: var(--radius-small);
     padding: var(--spacing-padding-extrasmall);
-    padding: 4px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0;
+    gap: var(--spacing-none);
     position: relative;
     isolation: isolate;
 }
 
 .highlightBackground {
     position: absolute;
-    left: 4px;
-    top: 4px;
-    bottom: 4px;
-    width: calc((100% - 8px) / 3);
+    left: var(--spacing-padding-extrasmall);
+    top: var(--spacing-padding-extrasmall);
+    bottom: var(--spacing-padding-extrasmall);
+    width: calc((100% - 2 * var(--spacing-padding-extrasmall)) / 3);
     background: var(--color-bg-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     transition: transform var(--transition-smooth);
-    z-index: 0;
+    z-index: var(--z-base);
     box-shadow: var(--shadow-small);
 }
 
 .alignmentButton {
     flex: 1;
-    height: 32px;
+    height: var(--control-height-md);
     display: flex;
     align-items: center;
     justify-content: center;
     background: transparent;
     border: none;
-    border-radius: 4px;
-    /* Local specific overrides allowed but variable preferred */
-    border-radius: var(--radius-small);
+    border-radius: var(--radius-extrasmall);
     cursor: pointer;
     color: var(--color-text-primary);
     transition: color var(--transition-fast);
-    z-index: 1;
+    z-index: var(--z-canvas);
 }
 
 /* Active state handled by sliding background */
@@ -462,12 +804,12 @@
     border-radius: var(--radius-small);
     padding: var(--spacing-padding-extrasmall);
     display: flex;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
 }
 
 .colorOptionBtn {
     flex: 1;
-    height: 32px;
+    height: var(--control-height-md);
     border-radius: var(--radius-small);
     border: 1px solid transparent;
     cursor: pointer;
@@ -486,8 +828,8 @@
 /* 底部操作按钮 */
 .textInputActions {
     display: flex;
-    gap: 8px;
-    margin-top: 4px;
+    gap: var(--spacing-gap-small);
+    margin-top: var(--spacing-padding-extrasmall);
 }
 
 .textInputCancel {
@@ -520,7 +862,7 @@
     background: var(--blue-500);
     border: none;
     border-radius: var(--radius-small);
-    color: white;
+    color: var(--white);
     font-family: var(--font-family);
     font-size: var(--font-size-medium);
     font-weight: var(--font-weight-medium);
@@ -542,7 +884,7 @@
 }
 
 .textInputConfirm:disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     cursor: not-allowed;
 }
 
@@ -552,32 +894,32 @@
     position: absolute;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
+    gap: var(--spacing-gap-small);
+    padding: var(--spacing-gap-tight) var(--spacing-gap-medium);
     background: var(--color-bg-secondary);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     border: 1px solid var(--color-border);
     border-radius: 24px;
     box-shadow: var(--shadow-combined);
-    z-index: 200;
+    z-index: var(--z-local-overlay);
     pointer-events: auto;
 }
 
 /* 工具栏分隔线 */
 .toolbarDivider {
     width: 1px;
-    height: 16px;
+    height: var(--icon-size-xs);
     background: var(--color-border);
 }
 
 /* 对齐按钮 */
 .alignButton {
-    width: 28px;
-    height: 28px;
+    width: var(--control-height-sm);
+    height: var(--control-height-sm);
     border: none;
     background: transparent;
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -598,13 +940,13 @@
 
 .alignButton.active {
     background: var(--blue-500);
-    color: white;
+    color: var(--white);
 }
 
 /* 颜色选择器 */
 .colorButton {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
     border-radius: 50%;
     border: 2px solid transparent;
     cursor: pointer;
@@ -629,9 +971,9 @@
 
 .contextMenu {
     position: fixed;
-    z-index: 3000;
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    z-index: var(--z-modal);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
@@ -639,7 +981,7 @@
     display: flex;
     flex-direction: column;
     min-width: 180px;
-    gap: 0;
+    gap: var(--spacing-none);
     pointer-events: auto;
     box-shadow: var(--shadow-combined);
 }
@@ -647,7 +989,7 @@
 .contextMenuClickAway {
     position: fixed;
     inset: 0;
-    z-index: 2999;
+    z-index: var(--z-modal-backdrop);
     background: transparent;
     pointer-events: auto;
 }
@@ -660,7 +1002,7 @@
     padding: var(--spacing-padding-extrasmall);
     line-height: var(--line-height-none);
     color: var(--color-text-primary);
-    opacity: 0.6;
+    opacity: var(--opacity-muted);
     white-space: nowrap;
     margin: 0;
 }
@@ -688,8 +1030,8 @@
 .menuOptions {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
+    gap: var(--spacing-padding-extrasmall);
+    margin-top: var(--spacing-padding-extrasmall);
 }
 
 /* 菜单项 */
@@ -726,17 +1068,17 @@
 
 /* 危险操作 (删除) */
 .menuItem.danger {
-    color: var(--red-400);
+    color: var(--color-danger);
 }
 
 .menuItem.danger:hover {
-    background: rgba(255, 107, 107, 0.1);
+    background: var(--color-danger-bg);
 }
 
 /* 菜单图标 */
 .menuIcon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     flex-shrink: 0;
     background-color: var(--color-text-primary);
     -webkit-mask-size: contain;
@@ -748,7 +1090,7 @@
 }
 
 .menuItem.danger .menuIcon {
-    background-color: var(--red-400);
+    background-color: var(--color-danger);
 }
 
 .sticker.deleting {
@@ -776,7 +1118,7 @@
 /* 预览容器 - 包含输入框和工具栏 */
 .stickerPreviewContainer {
     position: fixed;
-    z-index: 2000;
+    z-index: var(--z-dock);
     display: flex;
     flex-direction: column;
     gap: var(--spacing-gap-small);
@@ -791,11 +1133,11 @@
     font-family: var(--font-family);
     font-size: inherit;
     /* Allow inline style to control font size */
-    font-weight: 900;
+    font-weight: var(--font-weight-black);
     /* 紧凑行间距 */
-    line-height: 0.95;
+    line-height: var(--line-height-tight);
     /* 紧凑字间距 (0.9 效果) */
-    letter-spacing: -0.05em;
+    letter-spacing: var(--letter-spacing-tight);
     white-space: pre;
     outline: none;
     border: none;
@@ -818,14 +1160,14 @@
 @supports (-moz-appearance: none) {
     .stickerPreviewInput {
         -webkit-text-stroke: 0.3px currentColor;
-        line-height: 0.95;
+        line-height: var(--line-height-tight);
     }
 }
 
 /* 占位符样式 */
 .stickerPreviewInput:empty::before {
     content: attr(data-placeholder);
-    color: #999;
+    color: var(--color-text-tertiary);
     pointer-events: none;
 }
 
@@ -834,7 +1176,7 @@
 .stickerToolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--spacing-gap-small);
     width: fit-content;
     max-width: calc(100vw - 40px);
     pointer-events: auto;
@@ -845,14 +1187,14 @@
     box-sizing: border-box;
     display: flex;
     align-items: flex-start;
-    gap: 4px;
-    padding: var(--spacing-border-default);
+    gap: var(--spacing-padding-extrasmall);
+    padding: var(--spacing-padding-extrasmall);
     background: var(--color-bg-primary);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(var(--backdrop-blur-medium));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-medium));
     border: none;
     border-radius: var(--radius-default);
-    box-shadow: inset 0 0 0 1px var(--color-border), 0 4px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-toolbar);
 }
 
 .toolbarSettings {
@@ -871,8 +1213,8 @@
     flex: 0 0 336px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
+    gap: var(--spacing-gap-small);
+    padding: var(--spacing-padding-small);
     box-sizing: border-box;
     overflow: hidden;
     background: var(--color-bg-secondary);
@@ -893,20 +1235,20 @@
 
 .toolbarHighlight {
     position: absolute;
-    left: 4px;
-    top: 4px;
-    bottom: 4px;
-    width: calc((100% - 8px) / 3);
+    left: var(--spacing-padding-extrasmall);
+    top: var(--spacing-padding-extrasmall);
+    bottom: var(--spacing-padding-extrasmall);
+    width: calc((100% - 2 * var(--spacing-padding-extrasmall)) / 3);
     background: var(--color-bg-primary);
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     transition: transform var(--transition-smooth);
-    z-index: 0;
+    z-index: var(--z-base);
     box-shadow: var(--shadow-small);
 }
 
 .toolbarIcon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
     background-color: currentColor;
     -webkit-mask-size: contain;
     mask-size: contain;
@@ -917,8 +1259,8 @@
 }
 
 .toolbarAlignBtn {
-    width: 32px;
-    height: 28px;
+    width: var(--icon-size-medium);
+    height: var(--control-height-sm);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -928,8 +1270,8 @@
     cursor: pointer;
     color: var(--color-text-primary);
     transition: color var(--transition-fast);
-    z-index: 1;
-    font-size: 14px;
+    z-index: var(--z-canvas);
+    font-size: var(--font-size-body);
 }
 
 .toolbarAlignBtn:hover {
@@ -940,7 +1282,7 @@
 .toolbarFontSizeControl {
     display: flex;
     align-items: flex-start;
-    gap: 0;
+    gap: var(--spacing-none);
     height: 27px;
     padding: 0;
     box-sizing: border-box;
@@ -949,10 +1291,10 @@
 }
 
 .toolbarFontSizeBtn {
-    width: 28px;
+    width: var(--control-height-sm);
     height: 27px;
-    flex: 0 0 28px;
-    padding: 4px 6px;
+    flex: 0 0 var(--control-height-sm);
+    padding: var(--spacing-padding-extrasmall) 6px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -962,22 +1304,22 @@
     border-radius: 0;
     cursor: pointer;
     color: var(--color-text-primary);
-    font-size: 16px;
-    font-weight: 500;
+    font-size: var(--font-size-medium);
+    font-weight: var(--font-weight-medium);
     transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .toolbarFontSizeBtn:first-child {
-    border-radius: 8px 0 0 8px;
+    border-radius: var(--radius-small) 0 0 var(--radius-small);
 }
 
 .toolbarFontSizeBtn:last-child {
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
 }
 
 .toolbarFontSizeBtn .toolbarIcon {
-    width: 16px;
-    height: 16px;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
 }
 
 .toolbarFontSizeBtn:hover {
@@ -997,11 +1339,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: var(--font-size-medium);
     font-family: var(--font-family);
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
-    padding: 4px 6px;
+    padding: var(--spacing-padding-extrasmall) 6px;
     background: transparent;
     border: none;
     outline: none;
@@ -1019,7 +1361,7 @@
 
 .toolbarControlDivider {
     width: 1px;
-    height: 20px;
+    height: var(--icon-size-sm);
     flex: 0 0 1px;
     background: var(--color-border);
 }
@@ -1028,23 +1370,23 @@
 .toolbarColorGroup {
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 24px;
+    gap: var(--spacing-gap-small);
+    height: var(--icon-size-md);
     padding: 0;
     margin: 0;
 }
 
 .toolbarColorBtn {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
-    min-width: 24px;
-    min-height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
+    flex: 0 0 var(--icon-size-md);
+    min-width: var(--icon-size-md);
+    min-height: var(--icon-size-md);
     box-sizing: border-box;
     display: block;
     padding: 0;
     margin: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-extrasmall);
     border: 0.5px solid var(--color-border);
     cursor: pointer;
     transition: border-color var(--transition-fast);
@@ -1066,15 +1408,15 @@
 }
 
 .toolbarCancelBtn {
-    height: 44px;
-    padding: 0 12px;
+    height: var(--control-height-xl);
+    padding: 0 var(--spacing-padding-medium);
     background: var(--color-bg-secondary);
     border: none;
     border-radius: var(--radius-default-in);
     box-shadow: var(--shadow-small);
     color: var(--color-text-primary);
     font-family: var(--font-family);
-    font-size: 16px;
+    font-size: var(--font-size-medium);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: background var(--transition-medium);
@@ -1085,15 +1427,15 @@
 }
 
 .toolbarConfirmBtn {
-    height: 44px;
-    padding: 0 12px;
+    height: var(--control-height-xl);
+    padding: 0 var(--spacing-padding-medium);
     background: var(--blue-500);
     border: none;
     border-radius: var(--radius-default-in);
     box-shadow: var(--shadow-small);
-    color: white;
+    color: var(--white);
     font-family: var(--font-family);
-    font-size: 16px;
+    font-size: var(--font-size-medium);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: background var(--transition-medium), opacity var(--transition-medium);
@@ -1104,7 +1446,7 @@
 }
 
 .toolbarConfirmBtn:disabled {
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     cursor: not-allowed;
 }
 
@@ -1121,7 +1463,7 @@
     align-items: center;
     justify-content: center;
     transition: bottom 0.4s cubic-bezier(0.34, 1.25, 0.64, 1), transform 0.2s ease;
-    z-index: 2500;
+    z-index: var(--z-recycle-bin);
     /* Below dragging sticker (3000) but above other UI */
     pointer-events: none;
     /* Let events pass through to document for drag logic */
@@ -1178,7 +1520,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: var(--spacing-padding-large);
     padding-top: 10vh;
     box-sizing: border-box;
     /* 使用文件夹弹出动画风格 - smoother ease out */
@@ -1198,8 +1540,8 @@
 }
 
 .recycleBinTitle {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-bold);
     margin: 0;
 }
 
@@ -1208,24 +1550,24 @@
 .headerTextWrapper {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
     align-items: flex-start;
 }
 
 .recycleBinSubtitle {
-    font-size: 14px;
+    font-size: var(--font-size-body);
     color: var(--color-text-secondary);
-    font-weight: 400;
+    font-weight: var(--font-weight-regular);
     opacity: 0.8;
 }
 
 .recycleBinCloseWrapper {
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
-    padding: var(--spacing-border-default);
+    padding: var(--spacing-padding-extrasmall);
     cursor: pointer;
     transition: transform var(--transition-normal);
     opacity: 1;
@@ -1249,14 +1591,14 @@
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-small);
-    width: 40px;
-    height: 40px;
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
 }
 
 /* Close button icon */
 .recycleBinCloseIcon {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
     color: var(--color-text-primary);
 }
 
@@ -1301,7 +1643,7 @@
     outline: 6px solid var(--color-sticker-stroke);
     outline-offset: 0;
     border-radius: var(--radius-medium);
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(var(--shadow-sticker-rest));
 }
 
 /* 回收站中的 SVG 贴纸内层：移除方框，使用 SVG 滤镜描边 */
@@ -1312,7 +1654,7 @@
 
 /* 回收站中的 SVG 贴纸外层包裹：负责阴影（由于回收站不涉及拖拽交互阴影动画，直接给固定阴影即可） */
 .recycleItemImageContainer.svgStickerWrapper {
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.08));
+    filter: drop-shadow(var(--shadow-sticker-rest));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1327,27 +1669,27 @@
     width: 100%;
     /* Adjust for grid padding */
     color: var(--color-text-secondary);
-    gap: 6px;
+    gap: var(--spacing-gap-tight);
     padding: 60px 0;
 }
 
 .emptyStateIcon {
     width: 80px;
     height: 80px;
-    opacity: 0.4;
+    opacity: var(--opacity-subtle);
     color: var(--color-text-secondary);
-    margin-bottom: 8px;
+    margin-bottom: var(--spacing-padding-small);
 }
 
 .emptyStateText {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: var(--font-size-heading);
+    font-weight: var(--font-weight-semibold);
     text-align: center;
     opacity: 0.8;
 }
 
 .emptyStateHint {
-    font-size: 15px;
+    font-size: var(--font-size-title);
     opacity: 0.45;
     text-align: center;
     line-height: 1.5;
@@ -1408,7 +1750,7 @@
     width: 100%;
     /* Max width constraint is now on the wrapper */
     max-width: 100%;
-    z-index: 2;
+    z-index: var(--z-content);
     /* Above background */
     touch-action: pan-y;
     /* Allow vertical scroll, handle horizontal in JS */
@@ -1431,12 +1773,12 @@
     justify-content: space-between;
     padding: 0 24px;
     border-radius: var(--radius-medium);
-    z-index: 1;
+    z-index: var(--z-canvas);
     transition: opacity 0.15s ease;
 }
 
 .swipeBackground.delete {
-    background: linear-gradient(90deg, rgba(255, 59, 48, 0.9) 0%, rgba(255, 59, 48, 0.6) 50%, transparent 100%);
+    background: linear-gradient(90deg, var(--red-error) 0%, rgba(255, 59, 48, 0.6) 50%, transparent 100%);
 }
 
 .swipeBackground.restore {
@@ -1450,7 +1792,7 @@
 }
 
 .swipeBackground.delete.threshold {
-    background: linear-gradient(90deg, rgba(255, 59, 48, 1) 0%, rgba(255, 59, 48, 0.9) 60%, transparent 100%);
+    background: linear-gradient(90deg, var(--red-500) 0%, var(--red-error) 60%, transparent 100%);
     box-shadow: inset 0 0 40px rgba(255, 59, 48, 0.2);
 }
 
@@ -1458,22 +1800,22 @@
 .swipeActionContent {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
+    gap: var(--spacing-gap-small);
+    color: var(--white);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-body);
     transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .swipeActionContent svg {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
     transition: transform 0.2s ease;
 }
 
 .swipeActionIcon {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
     filter: brightness(0) invert(1);
     /* Make icon white */
     transition: transform 0.2s ease;
@@ -1573,16 +1915,16 @@
 
     to {
         opacity: 1;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(var(--backdrop-blur-small));
+        -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     }
 }
 
 @keyframes modalFadeOut {
     from {
         opacity: 1;
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(var(--backdrop-blur-small));
+        -webkit-backdrop-filter: blur(var(--backdrop-blur-small));
     }
 
     to {
@@ -1599,7 +1941,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 4000;
+    z-index: var(--z-feature-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1625,7 +1967,7 @@
 .recycleBinModal.closing {
     /* Ensure opacity fades out when closing */
     opacity: 1;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--backdrop-blur-small));
     pointer-events: none;
     animation: modalFadeOut 0.25s ease forwards;
 }
@@ -1656,7 +1998,7 @@
 
 /* Ensure text stickers have vertical padding for better height/swipe feel while keeping left alignment */
 .recycleBinItem .textSticker {
-    padding: 12px 0;
+    padding: var(--spacing-padding-medium) 0;
 }
 
 /* ===== 文本贴纸复选框样式 ===== */
@@ -1671,19 +2013,19 @@
     top: 50%;
     right: calc(100% - 10px);
     transform: translateY(-50%);
-    z-index: 1;
-    width: 28px;
-    height: 28px;
+    z-index: var(--z-canvas);
+    width: var(--control-height-sm);
+    height: var(--control-height-sm);
     box-sizing: border-box;
     border-radius: 50%;
-    border: 8px solid var(--color-sticker-stroke, #FFFFFF);
+    border: 8px solid var(--color-sticker-stroke, var(--white));
     background: transparent;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background var(--transition-fast), border-color var(--transition-fast);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sticker-rest);
     pointer-events: auto;
     margin: 0;
 }
@@ -1695,8 +2037,8 @@
 
 /* 区分选中状态的复选框 */
 .textStickerCheckboxChecked {
-    background: #FFFFFF;
-    border-color: #FFFFFF;
+    background: var(--white);
+    border-color: var(--white);
 }
 
 /* 划除线的样式 - 目前设置为无划线 */
@@ -1707,9 +2049,9 @@
 
 /* 工具栏复选框按钮 */
 .toolbarCheckboxBtn {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
+    width: var(--control-height-xl);
+    height: var(--control-height-xl);
+    flex: 0 0 var(--control-height-xl);
     border-radius: var(--radius-default-in);
     border: none;
     background: var(--color-bg-secondary);
@@ -1728,18 +2070,18 @@
 
 .toolbarCheckboxBtn.active {
     background: var(--blue-500);
-    color: white;
+    color: var(--white);
 }
 
 .toolbarCheckboxBtn .toolbarTodoIcon {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size-md);
+    height: var(--icon-size-md);
 }
 
 .toolbarLinkCardBtn {
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
+    width: var(--control-height-xl);
+    height: var(--control-height-xl);
+    flex: 0 0 var(--control-height-xl);
     border-radius: var(--radius-default-in);
     border: none;
     background: var(--color-bg-secondary);
@@ -1771,7 +2113,7 @@
 
 .toolbarLinkCardBtn.active {
     background: var(--blue-500);
-    color: white;
+    color: var(--white);
 }
 
 .toolbarLinkCardBtn:disabled {
@@ -1780,8 +2122,8 @@
 }
 
 .toolbarLinkCardBtn .toolbarIcon {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
 }
 
 /* @supports: superellipse(1.5) 浏览器使用放大圆角 */
@@ -1790,27 +2132,27 @@
     border-radius: 21px;
   }
   .highlightBackground {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .alignmentButton {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .floatingToolbar {
     border-radius: 36px;
   }
   .alignButton {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .toolbarHighlight {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
   .toolbarFontSizeBtn:first-child {
-    border-radius: 12px 0 0 12px;
+    border-radius: var(--radius-small) 0 0 var(--radius-small);
   }
   .toolbarFontSizeBtn:last-child {
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 var(--radius-small) var(--radius-small) 0;
   }
   .toolbarColorBtn {
-    border-radius: 6px;
+    border-radius: var(--radius-extrasmall);
   }
 }

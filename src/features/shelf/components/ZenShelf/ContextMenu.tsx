@@ -22,6 +22,7 @@ interface ContextMenuProps {
     type: 'background' | 'sticker';
     stickerId?: string;
     isImageSticker?: boolean;
+    isWidgetSticker?: boolean;
     onClose: () => void;
     onAddSticker: () => void;
     onUploadImage: () => void;
@@ -44,6 +45,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     y,
     type,
     isImageSticker,
+    isWidgetSticker,
     onClose,
     onAddSticker,
     onUploadImage,
@@ -181,7 +183,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
                         </>
                     ) : (
                         <>
-                            {isImageSticker ? (
+                            {isWidgetSticker ? null : isImageSticker ? (
                                 <>
                                     <button className={styles.menuItem} onClick={() => { onCopyImage?.(); onClose(); }}>
                                         <span className={styles.menuIcon} style={{ WebkitMaskImage: `url(${copyIcon})`, maskImage: `url(${copyIcon})` }} />

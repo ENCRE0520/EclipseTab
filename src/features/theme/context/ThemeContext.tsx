@@ -70,82 +70,104 @@ const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB 视频限制
 
 const lightnessCache = new Map<string, boolean>();
 
-/**
- * 判断背景颜色/渐变是浅色还是深色
- * 如果背景是浅色（需要深色文字），返回 true
- */
-const isBackgroundLight = (backgroundValue: string): boolean => {
-    // 检查缓存
-    if (lightnessCache.has(backgroundValue)) {
-        return lightnessCache.get(backgroundValue)!;
-    }
+const getLuminance = (r: number, g: number, b: number): number =>
+    (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
-    // 提取实际的底色层（跳过可能存在的纹理层）
-    // 背景值可能是 "url(data:...), #ffffff" 或 "url(blob:...), #ffffff"
-    const layers = backgroundValue.split(',').map(l => l.trim());
-    const baseLayer = layers[layers.length - 1];
-
-    // 如果最后层是 blob URL (壁纸)，由于无法分析图像，默认返回浅色以使用深色文字
-    if (baseLayer.startsWith('url(blob:')) {
-        return true;
-    }
-
-    // 提取字符串中的所有颜色
-    const colors: string[] = [];
-    const hexRegex = /#[0-9A-Fa-f]{6}/g;
-    const rgbRegex = /rgba?\([^)]+\)/g;
-
-    const hexMatches = backgroundValue.match(hexRegex);
-    if (hexMatches) colors.push(...hexMatches);
-
-    const rgbMatches = backgroundValue.match(rgbRegex);
-    if (rgbMatches) colors.push(...rgbMatches);
-
-    if (colors.length === 0) return false;
-
-    // 计算每种颜色的亮度
-    let totalLuminance = 0;
-    let maxLuminance = 0;
-
-    colors.forEach(color => {
-        let r = 0, g = 0, b = 0;
-
-        if (color.startsWith('#')) {
-            const hex = color.substring(1);
-            r = parseInt(hex.substring(0, 2), 16);
-            g = parseInt(hex.substring(2, 4), 16);
-            b = parseInt(hex.substring(4, 6), 16);
-        } else if (color.startsWith('rgb')) {
-            const match = color.match(/\d+/g);
-            if (match && match.length >= 3) {
-                r = parseInt(match[0]);
-                g = parseInt(match[1]);
-                b = parseInt(match[2]);
-            }
+const getImageLuminance = (url: string, type: 'image' | 'video'): Promise<number> =>
+    new Promise(resolve => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) {
+            resolve(0);
+            return;
         }
 
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        totalLuminance += luminance;
-        if (luminance > maxLuminance) {
-            maxLuminance = luminance;
+        const sample = (source: CanvasImageSource) => {
+            try {
+                context.drawImage(source, 0, 0, canvas.width, canvas.height);
+                const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+                let total = 0;
+                let max = 0;
+                let count = 0;
+
+                for (let index = 0; index < pixels.length; index += 4) {
+                    const alpha = pixels[index + 3] / 255;
+                    if (alpha === 0) continue;
+                    const luminance = getLuminance(pixels[index], pixels[index + 1], pixels[index + 2]);
+                    total += luminance * alpha + (1 - alpha);
+                    max = Math.max(max, luminance);
+                    count += 1;
+                }
+
+                resolve(count ? (total / count + max) / 2 : 0);
+            } catch {
+                // A failed read (for example a browser security restriction) uses the dark-text-safe fallback.
+                resolve(1);
+            }
+        };
+
+        if (type === 'video') {
+            const video = document.createElement('video');
+            video.muted = true;
+            video.playsInline = true;
+            video.src = url;
+            video.addEventListener('loadeddata', () => sample(video), { once: true });
+            video.addEventListener('error', () => resolve(1), { once: true });
+            video.load();
+        } else {
+            const image = new Image();
+            image.addEventListener('load', () => sample(image), { once: true });
+            image.addEventListener('error', () => resolve(1), { once: true });
+            image.src = url;
         }
     });
 
-    const averageLuminance = totalLuminance / colors.length;
+/**
+ * 判断背景是浅色还是深色。图片和视频使用实际画面采样，避免 blob 壁纸被固定判定为浅色。
+ * 返回 true 表示需要深色文字。
+ */
+const isBackgroundLight = async (backgroundValue: string, wallpaperType: 'image' | 'video'): Promise<boolean> => {
+    const cacheKey = `${wallpaperType}:${backgroundValue}`;
+    if (lightnessCache.has(cacheKey)) return lightnessCache.get(cacheKey)!;
 
-    // 使用组合评分：平均值 (整体亮度) + 最大值 (最亮点)
-    // 这有助于检测淡入浅色的渐变，确保在浅色部分的可读性
-    const score = (averageLuminance + maxLuminance) / 2;
+    const wallpaperMatch = backgroundValue.match(/^url\((['"]?)(.*?)\1\)$/);
+    let score: number;
 
-    const result = score > 0.4;
+    if (wallpaperMatch) {
+        score = await getImageLuminance(wallpaperMatch[2], wallpaperType);
+    } else {
+        const colors = backgroundValue.match(/#[0-9A-Fa-f]{3,8}|rgba?\([^)]+\)/g) ?? [];
+        if (colors.length === 0) return false;
 
-    // 防止缓存过大
+        const luminances = colors.map(color => {
+            if (color.startsWith('#')) {
+                const hex = color.slice(1);
+                const normalized = hex.length <= 4
+                    ? hex.slice(0, 3).split('').map(value => value + value).join('')
+                    : hex.slice(0, 6);
+                return getLuminance(
+                    parseInt(normalized.slice(0, 2), 16),
+                    parseInt(normalized.slice(2, 4), 16),
+                    parseInt(normalized.slice(4, 6), 16),
+                );
+            }
+
+            const values = color.match(/[\d.]+/g);
+            return values && values.length >= 3
+                ? getLuminance(Number(values[0]), Number(values[1]), Number(values[2]))
+                : 0;
+        });
+        score = (luminances.reduce((sum, value) => sum + value, 0) / luminances.length + Math.max(...luminances)) / 2;
+    }
+
+    const result = score > 0.45;
     if (lightnessCache.size > 50) {
         const firstKey = lightnessCache.keys().next().value;
         if (firstKey) lightnessCache.delete(firstKey);
     }
-    lightnessCache.set(backgroundValue, result);
-
+    lightnessCache.set(cacheKey, result);
     return result;
 };
 
@@ -407,10 +429,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // 移除 data-texture 属性
         root.removeAttribute('data-texture');
 
+        let cancelled = false;
+
         // 仅对默认主题检测背景亮度
         if (isDefaultTheme && backgroundBaseValue) {
-            const isLight = isBackgroundLight(backgroundBaseValue);
-            root.setAttribute('data-background-brightness', isLight ? 'light' : 'dark');
+            isBackgroundLight(backgroundBaseValue, wallpaperType).then(isLight => {
+                if (!cancelled) {
+                    root.setAttribute('data-background-brightness', isLight ? 'light' : 'dark');
+                }
+            });
         } else {
             root.removeAttribute('data-background-brightness');
         }
@@ -439,18 +466,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             root.style.removeProperty('--background-blend-mode');
         }
 
-        // 设置图标大小 CSS 变量
+        // 设置图标大小和圆角 CSS 变量
         root.style.setProperty('--icon-size', iconSize === 'small' ? '52px' : '64px');
-        // 动态调整图标圆角：支持超椭圆曲线的浏览器放大 1.5 倍
-        // 不支持 corner-shape 的浏览器（Firefox/Safari）使用原始值回退
-        const supportsSuperellipse = CSS.supports('corner-shape: superellipse(1.5)');
         root.style.setProperty(
             '--icon-border-radius',
             iconSize === 'small'
-                ? (supportsSuperellipse ? '18px' : '12px')
-                : (supportsSuperellipse ? '24px' : '16px')
+                ? 'var(--radius-default-in)'
+                : 'var(--radius-default)'
         );
-    }, [backgroundValue, backgroundBaseValue, backgroundBlendMode, isDefaultTheme, iconSize, texture, wallpaper]);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [backgroundValue, backgroundBaseValue, backgroundBlendMode, isDefaultTheme, iconSize, texture, wallpaper, wallpaperType]);
 
     // ========================================================================
     // 性能优化: 分离 data 和 actions context values

@@ -8,14 +8,14 @@
 /* 动画由 JS scaleFadeIn/scaleFadeOut 处理 */
 .modal {
     position: fixed;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-default);
-    padding: var(--spacing-border-default);
+    padding: var(--spacing-padding-extrasmall);
     box-shadow: var(--shadow-combined);
-    z-index: 4000;
+    z-index: var(--z-feature-overlay);
     width: 280px;
 }
 
@@ -37,7 +37,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px;
+    padding: var(--spacing-padding-medium);
     border-radius: var(--radius-small);
     cursor: pointer;
     transition:
@@ -88,7 +88,7 @@
 .themeInfo {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--spacing-padding-extrasmall);
 }
 
 /* ===== 主题名称 ===== */
@@ -116,8 +116,8 @@
     align-items: center;
     justify-content: center;
     color: var(--color-text-primary);
-    width: 20px;
-    height: 20px;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
     animation: checkmarkAppear var(--transition-medium);
 }
 
