@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { DockItem } from '@/shared/types';
+import { useDockDrag } from '@/features/dock/context/DockContext';
 import { useDragBase, createDockDragState, resetDockDragState, DockDragState, DockActionData } from './useDragBase';
 import { useDragMerge } from './useDragMerge';
 import {
@@ -10,13 +11,12 @@ import {
     calculateDraggedCenter,
     calculateHorizontalReorderIndex,
     createMouseDownHandler,
-    getFolderViewRect,
+    getOpenFolderDropTarget,
     createHorizontalStrategy,
 } from '@/shared/utils/dragMath';
 import { onReturnAnimationComplete } from '@/features/dock/utils/animationUtils';
 import {
     DOCK_DRAG_BUFFER,
-    DOCK_CELL_SIZE,
     DOCK_PADDING,
     DRAG_THRESHOLD,
     MERGE_DISTANCE_THRESHOLD,
@@ -29,13 +29,11 @@ interface UseDragAndDropOptions {
     onReorder: (items: DockItem[]) => void;
     onDropToFolder?: (dragItem: DockItem, targetFolder: DockItem) => void;
     onMergeFolder?: (dragItem: DockItem, targetItem: DockItem) => void;
-    onDragToOpenFolder?: (dragItem: DockItem) => void;
+    onDragToOpenFolder?: (dragItem: DockItem, index?: number) => void;
     onHoverOpenFolder?: (dragItem: DockItem, targetFolder: DockItem) => void;
     onDragStart?: (item: DockItem) => void;
     onDragEnd?: () => void;
     externalDragItem?: DockItem | null;
-    /** 检查文件夹是否有活动占位符 - 从 Context 读取 */
-    hasFolderPlaceholderActive?: () => boolean;
 }
 
 // 模块级拖拽策略常量
@@ -52,9 +50,9 @@ export const useDragAndDrop = ({
     onDragStart,
     onDragEnd,
     externalDragItem,
-    hasFolderPlaceholderActive,
 }: UseDragAndDropOptions) => {
     const dockRef = useRef<HTMLElement | null>(null);
+    const { dragTarget, updateDragTarget } = useDockDrag();
 
     // 使用基础 Hook
     const {
@@ -217,6 +215,21 @@ export const useDragAndDrop = ({
 
         if (!activeItem) return;
 
+        if (externalDragItem) {
+            // External insertion can resize/scale the Dock. Remove preview transforms
+            // from live rectangles so hit testing uses the current, stable slot geometry.
+            layoutSnapshotRef.current = itemsRef.current.flatMap((item, index) => {
+                const el = itemRefs.current[index];
+                if (!el) return [];
+                const bounds = el.getBoundingClientRect();
+                const transform = getComputedStyle(el).transform;
+                const translation = transform === 'none' ? 0 : new DOMMatrix(transform).m41;
+                const scale = bounds.width / el.offsetWidth;
+                const rect = new DOMRect(bounds.left - translation * scale, bounds.top, bounds.width, bounds.height);
+                return [{ id: item.id, index, rect, centerX: rect.left + rect.width / 2, centerY: rect.top + rect.height / 2 }];
+            });
+        }
+
         // 第二阶段: 确保布局快照存在
         if ((!layoutSnapshotRef.current || layoutSnapshotRef.current.length === 0) && itemsRef.current.length > 0) {
             captureLayoutSnapshot();
@@ -236,9 +249,13 @@ export const useDragAndDrop = ({
         lastMousePositionRef.current = { x: mouseX, y: mouseY };
 
         // 第五阶段: 区域检测与状态更新
+        const target = updateDragTarget(mouseX, mouseY);
         const region = detectDragRegion(mouseX, mouseY, activeItem);
 
-        if (region.type === 'folder' || region.type === 'outside') {
+        // A drag only owns a placeholder while the pointer is inside its
+        // destination surface. Keep both checks so the Dock hit buffer and
+        // the shared target state agree before any slot is rendered.
+        if (target !== 'dock' || region.type !== 'dock') {
             resetDockDragStates();
             return;
         }
@@ -252,6 +269,7 @@ export const useDragAndDrop = ({
             const shouldReturn = handleMergeTargetHover(mergeTarget, activeItem);
             if (shouldReturn) return;
         } else {
+            resetMergeStates();
             // 无合并目标，处理重排序
             if (snapshot.length > 0) {
                 const targetIndex = calculateReorderIndex(mouseX, snapshot);
@@ -266,6 +284,7 @@ export const useDragAndDrop = ({
         captureLayoutSnapshot,
         cacheDockRect,
         detectDragRegion,
+        updateDragTarget,
         detectMergeTarget,
         calculateReorderIndex,
         handleMergeTargetHover,
@@ -306,6 +325,9 @@ export const useDragAndDrop = ({
 
             return () => {
                 window.removeEventListener('mousemove', handleMouseMove);
+                if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+                pendingMouseEventRef.current = null;
             };
         } else if (wasActive) {
             // 外部拖拽刚刚结束，立即清理所有状态
@@ -325,7 +347,12 @@ export const useDragAndDrop = ({
     }, [items, setPlaceholderIndex]);
 
     // Handle mouse up with animation delay logic
-    const handleMouseUp = useCallback(() => {
+    const handleMouseUp = useCallback((event: MouseEvent) => {
+        if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+        const pending = event;
+        pendingMouseEventRef.current = null;
+        if (pending) processMouseMove(pending);
         const state = dragRef.current;
 
         // If we never started dragging and just clicked, cleanup
@@ -351,19 +378,13 @@ export const useDragAndDrop = ({
         let action: DockDragState['targetAction'] = null;
         let actionData: DockActionData = null;
 
-        // 判断是否应该放入文件夹：以文件夹的占位符状态为准
-        const shouldDropToFolder = state.item.type !== 'folder' && hasFolderPlaceholderActive?.();
-
-        if (shouldDropToFolder && onDragToOpenFolder && state.item.type !== 'folder') {
-            const folderRect = getFolderViewRect();
-            if (folderRect) {
-                targetPos = {
-                    x: folderRect.left + folderRect.width / 2 - 32,
-                    y: folderRect.top + folderRect.height / 2 - 32,
-                };
-                action = 'dragToOpenFolder';
-                actionData = { type: 'dragToOpenFolder', item: state.item };
-            }
+        const folderTarget = updateDragTarget(event.clientX, event.clientY) === 'folder'
+            ? getOpenFolderDropTarget(event.clientX, event.clientY, false)
+            : null;
+        if (folderTarget && onDragToOpenFolder) {
+            targetPos = folderTarget.position;
+            action = 'dragToOpenFolder';
+            actionData = { type: 'dragToOpenFolder', item: state.item, index: folderTarget.index };
         } else if (isPreMergeState) {
             // ... (相同的合并逻辑) ...
             if (currentHoveredFolder && onDropToFolder) {
@@ -403,7 +424,7 @@ export const useDragAndDrop = ({
             const dockRect = dockContainer?.getBoundingClientRect();
 
             if (dockRect) {
-                const CELL_SIZE = DOCK_CELL_SIZE;
+                const CELL_SIZE = (layoutSnapshotRef.current[0]?.rect.width ?? 64) * 1.125;
 
                 // 1. 计算视觉目标索引
                 // 对于向右拖动：占位符在 currentPlaceholder，动画目标应该是该位置
@@ -444,8 +465,8 @@ export const useDragAndDrop = ({
                     startX += 80;
                 }
 
-                const targetX = startX + visualTargetIndex * CELL_SIZE;
-                const targetY = startY; // 水平布局，Y轴固定
+                const targetX = (snapshot[0]?.rect.left ?? startX) + visualTargetIndex * CELL_SIZE;
+                const targetY = snapshot[0]?.rect.top ?? startY; // 水平布局，Y轴固定
 
                 targetPos = { x: targetX, y: targetY };
             } else {
@@ -503,11 +524,12 @@ export const useDragAndDrop = ({
         }
     }, [
         strategy, onDropToFolder, onMergeFolder, onDragToOpenFolder, onDragEnd, onReorder,
-        handleMouseMove,
+        handleMouseMove, processMouseMove,
         setDragState, setPlaceholderIndex,
         cleanupDragListeners,
-        hasFolderPlaceholderActive,
-    ]); // Optimized dependencies
+        resetMergeStates,
+        updateDragTarget,
+        ]); // Optimized dependencies
 
 
     const handleMouseDown = (e: React.MouseEvent, item: DockItem, index: number) => {
@@ -519,6 +541,10 @@ export const useDragAndDrop = ({
             setDragState,
             handleMouseMove,
             handleMouseUp,
+            onDragStart: (activeItem) => {
+                cacheDockRect();
+                startDragging(activeItem);
+            },
             createDragState: (item, index, rect, startX, startY, offset) => {
                 const initial = createDockDragState();
                 return {
@@ -571,7 +597,7 @@ export const useDragAndDrop = ({
                     break;
                 case 'dragToOpenFolder':
                     if (onDragToOpenFolder) {
-                        onDragToOpenFolder(data.item);
+                        onDragToOpenFolder(data.item, data.index);
                     }
                     break;
             }
@@ -587,7 +613,7 @@ export const useDragAndDrop = ({
 
     /** 预计算所有项目的 transform 值，避免每个项目渲染时重复计算 */
     const itemTransforms = useMemo(() => {
-        const targetSlot = placeholderIndex;
+        const targetSlot = dragTarget === 'dock' ? placeholderIndex : null;
 
         // 无占位符时，所有项目不偏移
         if (targetSlot === null) {
@@ -600,6 +626,7 @@ export const useDragAndDrop = ({
             : (externalDragItem ? -1 : dragState.originalIndex);
         const isDragging = dragState.isDragging || dragState.isAnimatingReturn;
 
+        const iconSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--icon-size')) || 64;
         const transforms = items.map((_, index) => {
             const transform = strategy.calculateTransform(
                 index,
@@ -607,7 +634,7 @@ export const useDragAndDrop = ({
                 originalIndex,
                 isDragging
             );
-            return transform.x;
+            return transform.x * (iconSize / 64);
         });
 
         // Add transform for the divider/extra elements at the end
@@ -617,11 +644,12 @@ export const useDragAndDrop = ({
             originalIndex,
             isDragging
         );
-        transforms.push(dividerTransform.x);
+        transforms.push(dividerTransform.x * (iconSize / 64));
 
         return transforms;
     }, [
         placeholderIndex,
+        dragTarget,
         dragState.isDragging,
         dragState.isAnimatingReturn,
         dragState.originalIndex,

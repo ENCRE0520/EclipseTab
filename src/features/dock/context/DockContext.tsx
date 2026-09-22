@@ -4,6 +4,8 @@ import { storage } from '@/shared/utils/storage';
 import { DEFAULT_SEARCH_ENGINE } from '@/features/search/constants/searchEngines';
 import { generateFolderIcon, fetchIcon } from '@/features/dock/utils/iconFetcher';
 import { useSpaces } from '@/features/spaces/context/SpacesContext';
+import { isPointInRect } from '@/shared/utils/dragMath';
+import { DOCK_DRAG_BUFFER } from '@/shared/constants/layout';
 import { useThemeData } from '@/features/theme/context/ThemeContext';
 
 // ============================================================================
@@ -21,7 +23,7 @@ interface DockDataContextType {
     handleFolderItemsReorder: (folderId: string, items: DockItem[]) => void;
     handleFolderItemDelete: (folderId: string, item: DockItem) => void;
     handleDragFromFolder: (item: DockItem, mousePosition: { x: number; y: number }) => void;
-    handleDragToFolder: (item: DockItem) => void;
+    handleDragToFolder: (item: DockItem, index?: number) => void;
     handleDropOnFolder: (dragItem: DockItem, targetFolder: DockItem) => void;
 }
 
@@ -49,9 +51,8 @@ const DockUIContext = createContext<DockUIContextType | undefined>(undefined);
 interface DockDragContextType {
     draggingItem: DockItem | null;
     setDraggingItem: (item: DockItem | null) => void;
-    /** 文件夹是否有活动的占位符 (用于跨组件拖拽检测) */
-    folderPlaceholderActive: boolean;
-    setFolderPlaceholderActive: (active: boolean) => void;
+    dragTarget: 'dock' | 'folder' | null;
+    updateDragTarget: (x: number, y: number) => 'dock' | 'folder' | null;
 }
 
 const DockDragContext = createContext<DockDragContextType | undefined>(undefined);
@@ -83,8 +84,38 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isEditMode, setIsEditModeState] = useState(false);
     const [openFolderId, setOpenFolderIdState] = useState<string | null>(null);
     const [folderAnchor, setFolderAnchor] = useState<DOMRect | null>(null);
-    const [draggingItem, setDraggingItem] = useState<DockItem | null>(null);
-    const [folderPlaceholderActive, setFolderPlaceholderActive] = useState(false);
+    const [draggingItem, setDraggingItemState] = useState<DockItem | null>(null);
+    const [dragTarget, setDragTarget] = useState<'dock' | 'folder' | null>(null);
+    const draggingItemRef = React.useRef<DockItem | null>(null);
+    const folderHitAreaRef = React.useRef<{ element: Element; rect: DOMRect } | null>(null);
+
+    const setDraggingItem = useCallback((item: DockItem | null) => {
+        draggingItemRef.current = item;
+        const folder = document.querySelector('[data-folder-view="true"]');
+        folderHitAreaRef.current = item && folder ? { element: folder, rect: folder.getBoundingClientRect() } : null;
+        setDraggingItemState(item);
+        setDragTarget(item ? (dockItems.some(candidate => candidate.id === item.id) ? 'dock' : 'folder') : null);
+    }, [dockItems]);
+
+    // Both containers use this decision. Retain the original folder bounds while
+    // its size animates, so the surface cannot move out from under the pointer.
+    const updateDragTarget = useCallback((x: number, y: number) => {
+        const item = draggingItemRef.current;
+        if (!item) return null;
+        const folder = document.querySelector('[data-folder-view="true"]');
+        if (folder && folderHitAreaRef.current?.element !== folder) {
+            folderHitAreaRef.current = { element: folder, rect: folder.getBoundingClientRect() };
+        }
+        const overFolder = item.type !== 'folder' && folder && (
+            isPointInRect(x, y, folder.getBoundingClientRect()) ||
+            (folderHitAreaRef.current && isPointInRect(x, y, folderHitAreaRef.current.rect))
+        );
+        const dock = document.querySelector('[data-dock-container="true"]');
+        const overDock = Boolean(dock && isPointInRect(x, y, dock.getBoundingClientRect(), DOCK_DRAG_BUFFER));
+        const target = overFolder ? 'folder' : overDock ? 'dock' : null;
+        setDragTarget(target);
+        return target;
+    }, []);
     // 所有写入直接更新发起操作时所在的 Space。这样异步图标获取完成或切换 Space
     // 时，也不会把过期列表同步回当前界面。
     const setDockItems: React.Dispatch<React.SetStateAction<DockItem[]>> = useCallback(
@@ -425,7 +456,10 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             for (let i = 0; i < dockItemElements.length; i++) {
                 const rect = dockItemElements[i].getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
+                const element = dockItemElements[i] as HTMLElement;
+                const transform = getComputedStyle(element).transform;
+                const translation = transform === 'none' ? 0 : new DOMMatrix(transform).m41;
+                const centerX = rect.left - translation * (rect.width / element.offsetWidth) + rect.width / 2;
 
                 if (mousePosition.x < centerX) {
                     insertIndex = i;
@@ -441,14 +475,15 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     }, [openFolderId, checkAndDissolveFolderIfNeeded, setDockItems]);
 
-    const handleDragToFolder = useCallback((item: DockItem) => {
+    const handleDragToFolder = useCallback((item: DockItem, index?: number) => {
         if (!openFolderId || item.type === 'folder') return;
 
         setDockItems(prev => {
             const folder = prev.find(i => i.id === openFolderId);
             if (!folder || folder.type !== 'folder') return prev;
 
-            const newFolderItems = [...(folder.items || []), item];
+            const newFolderItems = (folder.items || []).filter(child => child.id !== item.id);
+            newFolderItems.splice(Math.max(0, Math.min(index ?? newFolderItems.length, newFolderItems.length)), 0, item);
 
             return prev.map(i => {
                 if (i.id === openFolderId) {
@@ -541,9 +576,9 @@ export const DockProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const dragValue: DockDragContextType = useMemo(() => ({
         draggingItem,
         setDraggingItem,
-        folderPlaceholderActive,
-        setFolderPlaceholderActive,
-    }), [draggingItem, folderPlaceholderActive]);
+        dragTarget,
+        updateDragTarget,
+    }), [draggingItem, setDraggingItem, dragTarget, updateDragTarget]);
 
     return (
         <DockDataContext.Provider value={dataValue}>

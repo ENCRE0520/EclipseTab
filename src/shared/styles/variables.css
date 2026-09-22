@@ -24,6 +24,9 @@
   --radius-small: 8px;
   --radius-extrasmall: 4px;
 
+  /* 首页贴纸统一外圈描边；局部预览可在容器内覆盖 */
+  --sticker-outline-width: 6px;
+
   /* ===== 原始颜色变量 ===== */
   /* 白色和黑色基础色 */
   --white: #fafafa;

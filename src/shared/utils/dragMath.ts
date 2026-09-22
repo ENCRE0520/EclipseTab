@@ -102,7 +102,7 @@ export interface MouseDownHandlerOptions<T extends BaseDragState> {
     setDragState: React.Dispatch<React.SetStateAction<T>>;
     onDragStart?: (item: DockItem) => void;
     handleMouseMove: (e: MouseEvent) => void;
-    handleMouseUp: () => void;
+    handleMouseUp: (event: MouseEvent) => void;
     createDragState: (item: DockItem, index: number, rect: DOMRect, startX: number, startY: number, offset: Position) => T;
 }
 
@@ -348,6 +348,24 @@ export const calculateFolderDropIndex = (
     return closestItem.index + 1;
 };
 
+/** Resolve the open folder's insertion boundary from its stable grid geometry. */
+export function getOpenFolderDropTarget(mouseX: number, mouseY: number, checkBounds = true): { index: number; position: Position } | null {
+    const grid = document.querySelector<HTMLElement>('[data-folder-grid="true"]');
+    if (!grid) return null;
+    const rect = grid.getBoundingClientRect();
+    if (checkBounds && !isPointInRect(mouseX, mouseY, rect, 8)) return null;
+    const children = Array.from(grid.children) as HTMLElement[];
+    const size = children[0]?.offsetWidth || 64;
+    const cell = size * 1.125;
+    const snapshot = children.map((_, index) => {
+        const left = (Number(grid.dataset.targetLeft) || rect.left) + (index % 4) * cell;
+        const top = (Number(grid.dataset.targetTop) || rect.top) + Math.floor(index / 4) * cell;
+        return { id: '', index, rect: new DOMRect(left, top, size, size), centerX: left + size / 2, centerY: top + size / 2 };
+    });
+    const index = calculateFolderDropIndex(mouseX, mouseY, snapshot, children.length, rect);
+    return { index, position: { x: (Number(grid.dataset.targetLeft) || rect.left) + (index % 4) * cell, y: (Number(grid.dataset.targetTop) || rect.top) + Math.floor(index / 4) * cell } };
+}
+
 // ============================================================================
 // 状态工厂
 // ============================================================================
@@ -554,16 +572,17 @@ export const createMouseDownHandler = <T extends BaseDragState>(
             window.removeEventListener('mousemove', moveThresholdCheck);
             thresholdListenerRef.current = null;
             window.addEventListener('mousemove', handleMouseMove);
+            handleMouseMove(moveEvent);
         }
     };
 
-    const cleanupMouseUp = () => {
+    const cleanupMouseUp = (event: MouseEvent) => {
         window.removeEventListener('mousemove', moveThresholdCheck);
         window.removeEventListener('mouseup', cleanupMouseUp);
         thresholdListenerRef.current = null;
         hasMovedRef.current = false;
         if (!dragDataSet) return;
-        handleMouseUp();
+        handleMouseUp(event);
     };
 
     thresholdListenerRef.current = moveThresholdCheck;

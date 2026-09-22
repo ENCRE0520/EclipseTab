@@ -48,9 +48,6 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
     isDraggingOut = false,
     onAnimationComplete,
 }) => {
-    if (!isActive || !item) {
-        return null;
-    }
 
     // 计算 scale 变换
     const getScale = (): string => {
@@ -98,6 +95,8 @@ export const DragPreview: React.FC<DragPreviewProps> = ({
             onAnimationComplete?.();
         }
     };
+
+    if (!isActive || !item) return null;
 
     return createPortal(
         <div

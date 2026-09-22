@@ -29,7 +29,7 @@ export type DockActionData =
     | { type: 'reorder'; newItems: DockItem[] }
     | { type: 'dropToFolder'; item: DockItem; targetFolder: DockItem }
     | { type: 'mergeFolder'; item: DockItem; targetItem: DockItem }
-    | { type: 'dragToOpenFolder'; item: DockItem }
+    | { type: 'dragToOpenFolder'; item: DockItem; index: number }
     | null;
 
 /** Folder 动作数据联合类型 */
@@ -137,7 +137,7 @@ export interface UseDragBaseReturn<T extends BaseDragState> {
     resetPlaceholderState: () => void;
     cleanupDragListeners: (
         mouseMoveHandler: (e: MouseEvent) => void,
-        mouseUpHandler: () => void
+        mouseUpHandler: (event: MouseEvent) => void
     ) => void;
     /** 开始回程动画 */
     startReturnAnimation: (
@@ -167,7 +167,7 @@ export const useDragBase = <T extends BaseDragState>(
     } = options;
 
     // 状态
-    const [dragState, setDragState] = useState<T>(createInitialState);
+    const [dragState, setDragStateState] = useState<T>(createInitialState);
     const [placeholderIndex, setPlaceholderIndexState] = useState<number | null>(null);
 
     // Refs
@@ -182,6 +182,12 @@ export const useDragBase = <T extends BaseDragState>(
     const dragElementRef = useRef<HTMLElement | null>(null);
     // 缓存的容器 Rect (拖拽开始时捕获，避免每帧查询 DOM)
     const cachedContainerRectRef = useRef<DOMRect | null>(null);
+
+    const setDragState = useCallback<React.Dispatch<React.SetStateAction<T>>>((value) => {
+        const next = typeof value === 'function' ? value(dragRef.current) : value;
+        dragRef.current = next;
+        setDragStateState(next);
+    }, []);
 
     // 关键修复：同步更新 state 和 ref，避免渲染时 ref 值滞后
     const setPlaceholderIndex = useCallback((value: number | null | ((prev: number | null) => number | null)) => {
@@ -198,7 +204,7 @@ export const useDragBase = <T extends BaseDragState>(
     }, []);
 
     // 同步 refs
-    useEffect(() => { dragRef.current = dragState; }, [dragState]);
+
     useEffect(() => { itemsRef.current = items; }, [items]);
     // placeholderRef 现在由 setPlaceholderIndex 同步更新，不需要 useEffect
 
@@ -236,6 +242,7 @@ export const useDragBase = <T extends BaseDragState>(
         captureLayoutSnapshot();
 
         setDragState(prev => ({ ...prev, isDragging: true }));
+        setPlaceholderIndex(dragRef.current.originalIndex);
         if (onDragStart) onDragStart(item);
     }, [onDragStart, captureLayoutSnapshot]);
 
@@ -271,7 +278,7 @@ export const useDragBase = <T extends BaseDragState>(
     // Helper: Cleanup window listeners
     const cleanupDragListeners = useCallback((
         mouseMoveHandler: (e: MouseEvent) => void,
-        mouseUpHandler: () => void
+        mouseUpHandler: (event: MouseEvent) => void
     ) => {
         if (thresholdListenerRef.current) {
             window.removeEventListener('mousemove', thresholdListenerRef.current);

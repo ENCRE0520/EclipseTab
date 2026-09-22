@@ -143,7 +143,7 @@ export const DockLayoutContainer: React.FC<DockLayoutContainerProps> = React.mem
                 onWidthChange={(w) => setDockWidth(w)}
                 onDragStart={(item) => setDraggingItem(item)}
                 onDragEnd={() => setDraggingItem(null)}
-                externalDragItem={draggingItem}
+                externalDragItem={draggingItem && !dockItems.some(item => item.id === draggingItem.id) ? draggingItem : null}
             />
         </div>
     );

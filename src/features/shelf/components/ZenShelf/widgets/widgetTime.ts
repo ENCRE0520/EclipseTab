@@ -16,9 +16,12 @@ export const daysUntil = (target: Date, now: Date): number => (
         - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000)
 );
 
-export const focusRemaining = (endsAt: number | null, remaining: number, now: number): number => (
-    Math.max(0, endsAt === null ? remaining : Math.ceil((endsAt - now) / 1000))
-);
+export const focusRemaining = (endsAt: number | null, remaining: number, now: number): number => {
+    if (endsAt === null) return Math.max(0, remaining);
+    const seconds = Math.ceil((endsAt - now) / 1000);
+    const safeRemaining = remaining > 0 ? Math.min(remaining, seconds) : seconds;
+    return Math.max(0, safeRemaining);
+};
 
 /** 专注计时器的可选时长（分钟）：60 分钟内每 5 分钟一档，之后每 10 分钟一档，最长 2 小时 */
 export const FOCUS_DURATION_OPTIONS: number[] = [

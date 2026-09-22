@@ -51,6 +51,27 @@
     transition: filter var(--transition-smooth);
 }
 
+/* Productivity widgets own their shadow so the same frame is also used in
+   settings and recycle-bin previews. Keep the canvas wrapper shadow-free to
+   avoid stacking two identical projections. */
+.widgetContainer.productivityWidgetContainer {
+    filter: none;
+    transition: none;
+}
+
+.productivityWidgetContainer [data-widget-frame] {
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
+}
+
+.productivityWidgetContainer.dragging [data-widget-frame] {
+    filter: drop-shadow(var(--shadow-sticker-drag));
+}
+
+.productivityWidgetContainer.creativeHover:hover [data-widget-frame] {
+    filter: drop-shadow(var(--shadow-sticker-hover));
+}
+
 .widgetContainer.dragging {
     cursor: grabbing;
     filter: drop-shadow(var(--shadow-sticker-drag));
@@ -60,6 +81,12 @@
     filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
+/* The productivity frame carries these states instead of its wrapper. */
+.widgetContainer.productivityWidgetContainer.dragging,
+.widgetContainer.productivityWidgetContainer.creativeHover:hover {
+    filter: none;
+}
+
 /* An ancestor filter creates a backdrop root and prevents the glass clock from
    sampling the wallpaper. Analog widgets carry their own shape-aware shadow. */
 .widgetContainer.analogWidgetContainer {
@@ -67,16 +94,16 @@
 }
 
 .analogWidgetContainer .analogClockWidget {
-    box-shadow: var(--shadow-sticker-rest);
-    transition: box-shadow var(--transition-smooth);
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
 }
 
 .analogWidgetContainer.dragging .analogClockWidget {
-    box-shadow: var(--shadow-sticker-drag);
+    filter: drop-shadow(var(--shadow-sticker-drag));
 }
 
 .analogWidgetContainer.creativeHover:hover .analogClockWidget {
-    box-shadow: var(--shadow-sticker-hover);
+    filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
 .widgetContainer.digitalWidgetContainer {
@@ -84,16 +111,16 @@
 }
 
 .digitalWidgetContainer .clockWidget {
-    box-shadow: var(--shadow-sticker-rest);
-    transition: box-shadow var(--transition-smooth);
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
 }
 
 .digitalWidgetContainer.dragging .clockWidget {
-    box-shadow: var(--shadow-sticker-drag);
+    filter: drop-shadow(var(--shadow-sticker-drag));
 }
 
 .digitalWidgetContainer.creativeHover:hover .clockWidget {
-    box-shadow: var(--shadow-sticker-hover);
+    filter: drop-shadow(var(--shadow-sticker-hover));
 }
 
 .clockWidget {
@@ -109,9 +136,11 @@
     justify-content: center;
     overflow: visible;
     border-radius: calc(var(--widget-corner-radius) * var(--clock-scale));
-    corner-shape: squircle;
+    corner-shape: superellipse(1.5);
     background: transparent;
     isolation: isolate;
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
     pointer-events: none;
     user-select: none;
     -webkit-user-select: none;
@@ -124,7 +153,7 @@
     height: 100%;
     overflow: hidden;
     border-radius: inherit;
-    corner-shape: inherit;
+    corner-shape: superellipse(1.5);
     background: var(--clock-face-surface);
 }
 
@@ -132,9 +161,9 @@
     content: '';
     position: absolute;
     z-index: 0;
-    inset: -6px;
-    border-radius: calc(var(--widget-corner-radius) * var(--clock-scale) + 6px);
-    corner-shape: inherit;
+    inset: calc(var(--sticker-outline-width) * -1);
+    border-radius: calc(var(--widget-corner-radius) * var(--clock-scale) + var(--sticker-outline-width));
+    corner-shape: superellipse(1.5);
     background: var(--color-sticker-stroke);
     pointer-events: none;
 }
@@ -195,6 +224,8 @@
     corner-shape: round;
     background: transparent;
     isolation: isolate;
+    filter: drop-shadow(var(--shadow-sticker-rest));
+    transition: filter var(--transition-smooth);
     pointer-events: none;
     user-select: none;
     -webkit-user-select: none;
@@ -202,7 +233,7 @@
 
 .analogClockRoundedSquare {
     border-radius: calc(var(--widget-corner-radius) * var(--analog-scale));
-    corner-shape: squircle;
+    corner-shape: superellipse(1.5);
 }
 
 [data-theme='default'] .clockWidget {
@@ -213,15 +244,16 @@
     content: '';
     position: absolute;
     z-index: 0;
-    inset: -6px;
+    inset: calc(var(--sticker-outline-width) * -1);
     border-radius: 50%;
-    corner-shape: inherit;
+    corner-shape: round;
     background: var(--color-sticker-stroke);
     pointer-events: none;
 }
 
 .analogClockRoundedSquare::before {
-    border-radius: calc(var(--widget-corner-radius) * var(--analog-scale) + 6px);
+    border-radius: calc(var(--widget-corner-radius) * var(--analog-scale) + var(--sticker-outline-width));
+    corner-shape: superellipse(1.5);
 }
 
 .analogClockFace {
@@ -314,7 +346,7 @@
     border: var(--analog-hand-stroke-width) solid var(--hand-color);
     border-radius: 999px;
     background: var(--analog-face-surface);
-    corner-shape: round;
+    corner-shape: superellipse(1.5);
 }
 
 .analogClockHourHand::after {
@@ -343,7 +375,7 @@
     border: var(--analog-hand-stroke-width) solid var(--hand-color);
     border-radius: 999px;
     background: var(--analog-face-surface);
-    corner-shape: round;
+    corner-shape: superellipse(1.5);
 }
 
 .analogClockMinuteHand::after {
@@ -382,7 +414,7 @@
     box-sizing: border-box;
     border: calc(4px * var(--analog-scale)) solid var(--analog-second-hand-color);
     border-radius: 50%;
-    corner-shape: round;
+    corner-shape: superellipse(1.5);
     background: var(--analog-face-surface);
     transform: translate(-50%, -50%);
 }
@@ -416,7 +448,7 @@
 
 /* 图片贴纸的轮廓 - 通过 outline 实现，颜色与文字贴纸描边一致 */
 .imageSticker {
-    outline: 6px solid var(--color-sticker-stroke);
+    outline: var(--sticker-outline-width) solid var(--color-sticker-stroke);
     outline-offset: 0;
     /* 默认投影 - 较浅 */
     filter: drop-shadow(var(--shadow-sticker-rest));
@@ -1640,7 +1672,7 @@
     max-height: 160px;
     object-fit: contain;
     /* Match image sticker style */
-    outline: 6px solid var(--color-sticker-stroke);
+    outline: var(--sticker-outline-width) solid var(--color-sticker-stroke);
     outline-offset: 0;
     border-radius: var(--radius-medium);
     filter: drop-shadow(var(--shadow-sticker-rest));

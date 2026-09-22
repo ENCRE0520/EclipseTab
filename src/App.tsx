@@ -47,7 +47,7 @@ function App() {
   } = useDockUI();
 
   // 拖拽层 (高频变化) - 仅在拖拽状态变化时重渲染
-  const { draggingItem, setDraggingItem, setFolderPlaceholderActive } = useDockDrag();
+  const { draggingItem, setDraggingItem } = useDockDrag();
 
   // 计算派生状态
   const openFolder = useMemo(
@@ -301,7 +301,6 @@ function App() {
             onDragStart={(item) => { setDraggingItem(item); setDraggingFromFolder(true); }}
             onDragEnd={() => { setDraggingItem(null); setDraggingFromFolder(false); }}
             externalDragItem={draggingFromFolder ? null : draggingItem}
-            onFolderPlaceholderChange={setFolderPlaceholderActive}
             onToggleEditMode={() => setIsEditMode(!isEditMode)}
           />
         </Suspense>

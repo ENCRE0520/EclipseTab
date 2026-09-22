@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { DockItem as DockItemType } from '@/shared/types';
 import { DockItem } from './DockItem';
 import { AddIcon } from './AddIcon';
@@ -15,8 +15,8 @@ import { useLanguage } from '@/shared/context/LanguageContext';
 import { generateFolderIcon } from '@/features/dock/utils/iconFetcher';
 import {
     EASE_SWIFT,
+    RETURN_ANIMATION_DURATION,
     SQUEEZE_ANIMATION_DURATION,
-    FADE_DURATION,
 } from '@/shared/constants/layout';
 import styles from './Dock.module.css';
 
@@ -29,7 +29,7 @@ interface DockProps {
     onItemAdd: (rect?: DOMRect) => void;
     onItemsReorder: (items: DockItemType[]) => void;
     onDropToFolder?: (item: DockItemType, folder: DockItemType) => void;
-    onDragToOpenFolder?: (item: DockItemType) => void;
+    onDragToOpenFolder?: (item: DockItemType, index?: number) => void;
     onHoverOpenFolder?: (item: DockItemType, folder: DockItemType) => void;
     onLongPressEdit?: () => void;
     onWidthChange?: (width: number) => void;
@@ -57,7 +57,7 @@ export const Dock: React.FC<DockProps> = ({
     onDragEnd,
 }) => {
     const innerRef = useRef<HTMLDivElement>(null);
-    const { folderPlaceholderActive } = useDockDrag();
+    const { dragTarget } = useDockDrag();
     const { setIsEditMode } = useDockUI();
     const { t } = useLanguage();
 
@@ -85,6 +85,8 @@ export const Dock: React.FC<DockProps> = ({
 
     // dockContent ref 用于宽度锁定
     const dockContentRef = useRef<HTMLDivElement>(null);
+    const dragWidthRafRef = useRef<number | null>(null);
+    const dragWidthTimeoutRef = useRef<number | null>(null);
 
     // 空间切换处理 - 包含宽度锁定和动画序列逻辑
     const handleSpaceSwitch = useCallback(() => {
@@ -266,12 +268,6 @@ export const Dock: React.FC<DockProps> = ({
         setContextMenu({ x, y, item, rect });
     }, []);
 
-    // 同步 ref 以便在拖拽回调中访问
-    const folderPlaceholderActiveRef = useRef(folderPlaceholderActive);
-    useEffect(() => {
-        folderPlaceholderActiveRef.current = folderPlaceholderActive;
-    }, [folderPlaceholderActive]);
-
     const {
         dragState,
         placeholderIndex,
@@ -280,7 +276,6 @@ export const Dock: React.FC<DockProps> = ({
         itemRefs,
         dockRef,
         handleMouseDown,
-        handleAnimationComplete,
         getItemTransform,
         dragElementRef,
     } = useDragAndDrop({
@@ -318,17 +313,85 @@ export const Dock: React.FC<DockProps> = ({
         externalDragItem,
         onDragStart,
         onDragEnd,
-        hasFolderPlaceholderActive: () => folderPlaceholderActiveRef.current,
     });
 
     const isInteracting = dragState.isDragging || dragState.isAnimatingReturn || !!externalDragItem;
+
+    // Flex content has an auto width, so transition it through measured pixel
+    // values. Reading the current width before changing the target also makes
+    // quick reversals continue from the live position.
+    useLayoutEffect(() => {
+        const element = dockContentRef.current;
+        if (!element || (animationPhase !== 'idle' && !dragState.isAnimatingReturn)) return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            element.classList.remove(styles.widthTransition);
+            element.style.width = '';
+            return;
+        }
+
+        if (dragWidthRafRef.current !== null) {
+            cancelAnimationFrame(dragWidthRafRef.current);
+            dragWidthRafRef.current = null;
+        }
+        if (dragWidthTimeoutRef.current !== null) {
+            window.clearTimeout(dragWidthTimeoutRef.current);
+            dragWidthTimeoutRef.current = null;
+        }
+
+        // Keep the pre-drop width while the drag preview is flying back. The
+        // item is removed from `items` when the animation commits, so locking
+        // this value here gives the next render a real start point to animate
+        // from instead of letting flexbox jump directly to the shorter width.
+        if (dragState.isAnimatingReturn) {
+            element.classList.remove(styles.widthTransition);
+            element.style.width = `${element.getBoundingClientRect().width}px`;
+            return;
+        }
+
+        element.classList.remove(styles.widthTransition);
+        const currentWidth = element.getBoundingClientRect().width;
+        element.style.width = '';
+        const targetWidth = element.getBoundingClientRect().width;
+
+        if (Math.abs(targetWidth - currentWidth) < 1) {
+            // The natural size is already reached. Keep the element auto-sized
+            // so a cancelled transition cannot leave a stale pixel width behind.
+            return;
+        }
+
+        element.style.width = `${currentWidth}px`;
+        element.classList.add(styles.widthTransition);
+        void element.offsetWidth;
+
+        dragWidthRafRef.current = requestAnimationFrame(() => {
+            dragWidthRafRef.current = null;
+            if (!dockContentRef.current) return;
+            dockContentRef.current.style.width = `${targetWidth}px`;
+            dragWidthTimeoutRef.current = window.setTimeout(() => {
+                if (!dockContentRef.current) return;
+                dockContentRef.current.style.width = '';
+                dockContentRef.current.classList.remove(styles.widthTransition);
+                dragWidthTimeoutRef.current = null;
+            }, RETURN_ANIMATION_DURATION);
+        });
+
+        return () => {
+            if (dragWidthRafRef.current !== null) {
+                cancelAnimationFrame(dragWidthRafRef.current);
+                dragWidthRafRef.current = null;
+            }
+            if (dragWidthTimeoutRef.current !== null) {
+                window.clearTimeout(dragWidthTimeoutRef.current);
+                dragWidthTimeoutRef.current = null;
+            }
+        };
+    }, [animationPhase, dragState.isAnimatingReturn, dragTarget, externalDragItem, placeholderIndex, items.length]);
 
     // ============================================================================
     // 性能优化: 缓存 transition 字符串，避免每次渲染创建新对象
     // ============================================================================
     const cachedTransitions = useMemo(() => ({
-        draggingCollapsed: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`,
-        draggingWithPlaceholder: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, min-width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}, opacity ${FADE_DURATION}ms`,
         normal: `transform ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`,
     }), []);
 
@@ -337,43 +400,29 @@ export const Dock: React.FC<DockProps> = ({
         index: number,
         isDraggingItem: boolean,
         translateX: number,
-        placeholderIdx: number | null,
         interacting: boolean
     ): React.CSSProperties => {
         if (isDraggingItem) {
-            if (placeholderIdx === null) {
-                // 折叠状态 - 光标远离 Dock
-                return {
-                    '--stagger-index': index,
-                    width: 'var(--spacing-none)',
-                    minWidth: 'var(--spacing-none)',
-                    overflow: 'hidden',
-                    opacity: 0,
-                    visibility: 'hidden',
-                    pointerEvents: 'none',
-                    transition: interacting ? cachedTransitions.draggingCollapsed : 'none',
-                } as React.CSSProperties;
-            } else {
-                // 有占位符状态 - 光标在 Dock 上方
-                return {
-                    '--stagger-index': index,
-                    width: 'var(--icon-size)',
-                    minWidth: 'var(--icon-size)',
-                    opacity: 0,
-                    visibility: 'hidden',
-                    pointerEvents: 'none',
-                    transform: `translateX(${translateX}px)`,
-                    transition: interacting ? cachedTransitions.draggingWithPlaceholder : 'none',
-                } as React.CSSProperties;
-            }
+            return {
+                '--stagger-index': index,
+                width: dragTarget === 'dock' ? 'var(--icon-size)' : 0,
+                minWidth: 0,
+                marginRight: dragTarget === 'dock' ? 0 : 'calc(-1 * var(--spacing-gap-small))',
+                overflow: 'hidden',
+                transition: `width 200ms ${EASE_SWIFT}, margin-right 200ms ${EASE_SWIFT}`,
+                opacity: 0,
+                visibility: 'hidden',
+                pointerEvents: 'none',
+            } as React.CSSProperties;
         }
+
         // 正常状态
         return {
             '--stagger-index': index,
             transform: `translateX(${translateX}px)`,
             transition: interacting ? cachedTransitions.normal : 'none',
         } as React.CSSProperties;
-    }, [cachedTransitions]);
+    }, [cachedTransitions, dragTarget]);
 
     // 将 innerRef 与来自 hook 的 dockRef 同步
     useEffect(() => {
@@ -446,7 +495,7 @@ export const Dock: React.FC<DockProps> = ({
                             ref={el => { itemRefs.current[index] = el; }}
                             className={`${styles.dockItemWrapper} ${isDragging ? styles.isBeingDragged : ''} ${animationClass}`}
                             data-dock-item-wrapper="true"
-                            style={getItemWrapperStyle(index, isDragging, translateX, placeholderIndex, isInteracting)}
+                            style={getItemWrapperStyle(index, isDragging, translateX, isInteracting)}
                         >
                             <DockItem
                                 item={item}
@@ -479,18 +528,16 @@ export const Dock: React.FC<DockProps> = ({
                         <line x1="0.5" y1="0" x2="0.5" y2="48" strokeWidth="1" />
                     </svg>
                 </div>
-                {/* 动态占位元素 - 仅当需要扩展时渲染，避免 flex gap 造成多余间距 */}
-                {getItemTransform(items.length) > 0 && (
-                    <div
-                        style={{
-                            width: getItemTransform(items.length),
-                            flexShrink: 0,
-                            transition: isInteracting
-                                ? `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SWIFT}`
-                                : 'none',
-                        }}
-                    />
-                )}
+                {/* Keep the spacer mounted so entering/leaving Dock can reverse smoothly. */}
+                <div
+                    aria-hidden="true"
+                    className={styles.dragSpacer}
+                    style={{
+                        width: externalDragItem && dragTarget === 'dock' && placeholderIndex !== null ? 'var(--icon-size)' : 0,
+                        marginLeft: externalDragItem && dragTarget === 'dock' && placeholderIndex !== null ? 0 : 'calc(-1 * var(--spacing-gap-small))',
+                        transition: externalDragItem ? undefined : 'none',
+                    }}
+                />
             </div>
             {/* DockNavigator - 空间切换器，使用绝对定位始终靠右 */}
             <div
@@ -524,7 +571,6 @@ export const Dock: React.FC<DockProps> = ({
                 isEditMode={isEditMode}
                 dragElementRef={dragElementRef}
                 isPreMerge={isPreMerge}
-                onAnimationComplete={handleAnimationComplete}
             />
             {/* 空间管理菜单 */}
             <SpaceManageMenu

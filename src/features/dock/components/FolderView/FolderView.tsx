@@ -2,6 +2,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { DockItem } from '@/shared/types';
+import { useDockDrag } from '@/features/dock/context/DockContext';
 import { DockItem as DockItemComponent } from '../Dock/DockItem';
 import { DockContextMenu } from '../Dock/DockContextMenu';
 import { DragPreview } from '@/features/dock/components/DragPreview';
@@ -10,8 +11,6 @@ import { useFolderDragAndDrop } from '@/features/dock/hooks/useFolderDragAndDrop
 import {
   FOLDER_COLUMNS,
   FOLDER_PADDING,
-  EASE_SPRING,
-  SQUEEZE_ANIMATION_DURATION,
 } from '@/shared/constants/layout';
 import styles from './FolderView.module.css';
 
@@ -29,8 +28,6 @@ interface FolderViewProps {
   externalDragItem?: DockItem | null;
   onDragStart?: (item: DockItem) => void;
   onDragEnd?: () => void;
-  /** 占位符状态变化回调 - 用于同步到 Context */
-  onFolderPlaceholderChange?: (active: boolean) => void;
   /** 切换编辑模式 */
   onToggleEditMode?: () => void;
 }
@@ -57,9 +54,9 @@ export const FolderView: React.FC<FolderViewProps> = ({
   externalDragItem,
   onDragStart,
   onDragEnd,
-  onFolderPlaceholderChange,
   onToggleEditMode,
 }) => {
+  const { dragTarget } = useDockDrag();
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const iconSize = getIconSize();
@@ -95,7 +92,6 @@ export const FolderView: React.FC<FolderViewProps> = ({
     externalDragItem,
     onDragStart,
     onDragEnd,
-    onFolderPlaceholderChange,
   });
 
   const items = folder.items || [];
@@ -110,7 +106,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
 
     // Internal state
     const srcIndex = dragState.originalIndex; // -1 if not dragging internally
-    const dstIndex = placeholderIndex;        // null if no target slot
+    const dstIndex = dragTarget === 'folder' ? placeholderIndex : null;        // null if no target slot
     // 关键修复：isAnimatingReturn 期间也要保持挤压效果
     const isInternal = (dragState.isDragging || dragState.isAnimatingReturn) && srcIndex !== -1;
 
@@ -164,17 +160,13 @@ export const FolderView: React.FC<FolderViewProps> = ({
     });
 
     return positions;
-  }, [items, dragState.originalIndex, dragState.isDragging, dragState.isAnimatingReturn, placeholderIndex, externalDragItem, cellSize]);
+  }, [items, dragState.originalIndex, dragState.isDragging, dragState.isAnimatingReturn, placeholderIndex, externalDragItem, cellSize, dragTarget]);
 
-  // Calculate Container Dimensions
-  // Total visible slots = Items count (internal drag: N, external: N+1)
-  // Actually, if internal drag: N items. Source is hidden (count-1), Gap is adding (count+1-1 = N). Total N.
-  // If external drag: N items. Gap is adding. Total N+1.
-  const visualCount = externalDragItem ? items.length + 1 : items.length;
-
-  // 宽度计算专用：内部拖拽时不扩展宽度（保持 items.length）
-  // 只有外部拖入时才扩展宽度（items.length + 1）
-  const widthItemCount = externalDragItem ? items.length + 1 : items.length;
+  // A source leaves the flow; only the active destination adds one slot.
+  const internalDrag = dragState.isDragging || dragState.isAnimatingReturn;
+  const hasPlaceholder = dragTarget === 'folder' && (internalDrag || !!externalDragItem);
+  const visualCount = items.length - (internalDrag ? 1 : 0) + (hasPlaceholder ? 1 : 0);
+  const widthItemCount = Math.max(visualCount, 1);
 
   const totalRows = Math.ceil(Math.max(visualCount, 1) / COLUMNS);
   const gridHeight = totalRows * cellSize - gap; // Remove last gap
@@ -222,13 +214,10 @@ export const FolderView: React.FC<FolderViewProps> = ({
     }
   };
 
-  if (items.length === 0 && !externalDragItem) {
-    return null;
-  }
 
   // Positioning
   // We use the same formula as the container width to ensure perfectly centered positioning.
-  const displayWidth = (Math.min(items.length, COLUMNS) * cellSize - gap) + (padding * 2) + 2;
+  const displayWidth = (Math.min(widthItemCount, COLUMNS) * cellSize - gap) + (padding * 2) + 2;
   const halfWidth = displayWidth / 2;
 
   // ============================================================================
@@ -246,14 +235,22 @@ export const FolderView: React.FC<FolderViewProps> = ({
     width: (Math.min(widthItemCount, COLUMNS) * cellSize - gap) + (padding * 2) + 2,
     height: 'auto' as const,
     padding,
-    transition: `width ${SQUEEZE_ANIMATION_DURATION}ms ${EASE_SPRING}`,
     pointerEvents: (dragState.isAnimatingReturn ? 'none' : 'auto') as React.CSSProperties['pointerEvents'],
   }), [widthItemCount, cellSize, gap, padding, dragState.isAnimatingReturn]);
+
+  // Hit testing uses the destination size, even on the frame before expansion.
+  // This keeps the preview and mouseup index identical while the panel animates.
+  const dropCount = items.length + (externalDragItem ? 1 : 0);
+  const dropWidth = Math.min(Math.max(dropCount, 1), COLUMNS) * cellSize - gap + padding * 2 + 2;
+  const dropHeight = Math.ceil(Math.max(dropCount, 1) / COLUMNS) * cellSize - gap;
+  const dropCenter = Math.min(Math.max(Math.round((anchorRect?.left ?? 0) + (anchorRect?.width ?? 0) / 2), dropWidth / 2), window.innerWidth - dropWidth / 2);
 
   const gridStyle = useMemo(() => ({
     height: gridHeight,
     width: '100%' as const,
   }), [gridHeight]);
+
+  if (items.length === 0 && !externalDragItem) return null;
 
   return createPortal(
     <>
@@ -271,6 +268,9 @@ export const FolderView: React.FC<FolderViewProps> = ({
           <div
             ref={gridRef}
             className={styles.grid}
+            data-folder-grid="true"
+            data-target-left={dropCenter - dropWidth / 2 + padding + 1}
+            data-target-top={parseFloat(popupWrapperStyle.top) - dropHeight - padding - 1}
             style={gridStyle}
           >
             {items.map((item, index) => {
@@ -288,6 +288,7 @@ export const FolderView: React.FC<FolderViewProps> = ({
                     width: iconSize,
                     height: iconSize,
                     transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
+                    transition: dragState.isDragging || dragState.isAnimatingReturn || externalDragItem ? undefined : 'none',
                   }}
                 >
                   <DockItemComponent

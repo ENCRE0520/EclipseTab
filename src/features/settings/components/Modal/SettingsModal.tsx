@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { Theme, useTheme, Texture } from '@/features/theme/context/ThemeContext';
 import { useSystemTheme } from '@/features/theme/hooks/useSystemTheme';
 import { useLanguage } from '@/shared/context/LanguageContext';
@@ -37,23 +37,50 @@ interface SettingsModalProps {
 type SettingsSection = 'appearance' | 'behavior' | 'data' | 'widgets';
 
 const SETTINGS_SECTION_HEIGHT = 42;
-const SETTINGS_PANEL_CORNER_RADIUS = 32;
+const SETTINGS_PANEL_CORNER_RADIUS = 22;
 const SETTINGS_CONNECTOR_RADIUS = 8;
 const SETTINGS_CORNER_MORPH_DISTANCE = SETTINGS_PANEL_CORNER_RADIUS + SETTINGS_CONNECTOR_RADIUS;
-const WIDGET_PREVIEW_SCALE = 0.36;
+// The card's inner width is 100px at the modal's desktop width. Keep the
+// outlined preview at 84px (78px content + 3px outline on each side), so the
+// 8px card padding reads equally on every edge.
+const WIDGET_PREVIEW_CONTENT_SIZE = 78;
+const WIDGET_PREVIEW_OUTLINE_WIDTH = 3;
+const PRODUCTIVITY_WIDGET_PREVIEW_SCALE = WIDGET_PREVIEW_CONTENT_SIZE / WIDGET_SIZE;
+const CLOCK_WIDGET_PREVIEW_SCALE = WIDGET_PREVIEW_CONTENT_SIZE / CLOCK_WIDGET_SIZE;
+const CLOCK_WIDGET_PREVIEW_CORNER_RADIUS = 32 * PRODUCTIVITY_WIDGET_PREVIEW_SCALE / CLOCK_WIDGET_PREVIEW_SCALE;
 
 const setSurfaceGeometry = (surface: HTMLDivElement, offset: number) => {
     // When both vertical radii no longer fit in the available distance, shrink
     // only their Y axes. X stays fixed, preserving the width of each curve.
     const distanceProgress = Math.min(1, Math.max(0, offset / SETTINGS_CORNER_MORPH_DISTANCE));
-    // Morph toward a normal ellipse only while the two corners are constrained.
-    // At a settled lower tab there is enough room, so the panel remains a squircle.
-    const shapeProgress = distanceProgress * distanceProgress * (3 - 2 * distanceProgress);
-
     surface.style.setProperty('--sidebar-highlight-offset', `${offset}px`);
     surface.style.setProperty('--settings-panel-radius-y', `${SETTINGS_PANEL_CORNER_RADIUS * distanceProgress}px`);
     surface.style.setProperty('--settings-connector-radius-y', `${SETTINGS_CONNECTOR_RADIUS * distanceProgress}px`);
-    surface.style.setProperty('--settings-join-superellipse', `${1 + shapeProgress}`);
+};
+
+const WidgetPreview: React.FC<{
+    size: number;
+    defaultScale: number;
+    children: (scale: number) => React.ReactNode;
+}> = ({ size, defaultScale, children }) => {
+    const previewRef = useRef<HTMLSpanElement>(null);
+    const [previewWidth, setPreviewWidth] = useState(0);
+
+    useLayoutEffect(() => {
+        const preview = previewRef.current;
+        if (!preview) return;
+        const updateWidth = () => setPreviewWidth(preview.clientWidth);
+        updateWidth();
+        const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateWidth) : null;
+        resizeObserver?.observe(preview);
+        return () => resizeObserver?.disconnect();
+    }, []);
+
+    const scale = previewWidth > 0
+        ? Math.max(0.05, (previewWidth - WIDGET_PREVIEW_OUTLINE_WIDTH * 2) / size)
+        : defaultScale;
+
+    return <span ref={previewRef} className={styles.widgetPreview} aria-hidden="true">{children(scale)}</span>;
 };
 
 // 简单的权限切换组件
@@ -181,8 +208,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
     const surfaceAnimationFrameRef = useRef<number | null>(null);
     const surfaceOffsetRef = useRef(0);
     const surfaceVelocityRef = useRef(0);
+    const surfaceWasOpenRef = useRef(false);
     const isClosingRef = useRef(false);
-    const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
+    const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection);
     const activeSectionIndex = ['appearance', 'behavior', 'data', 'widgets'].indexOf(activeSection);
 
     // 云同步状态沿用原同步弹窗的本地配置与交互逻辑
@@ -435,19 +463,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isVisible, handleClose]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const surface = surfaceShapeRef.current;
+        if (!isOpen) {
+            surfaceWasOpenRef.current = false;
+            return;
+        }
         if (!surface || !isVisible) return;
 
         const targetOffset = activeSectionIndex * SETTINGS_SECTION_HEIGHT;
         const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const isOpening = !surfaceWasOpenRef.current;
+        surfaceWasOpenRef.current = true;
 
         if (surfaceAnimationFrameRef.current !== null) {
             cancelAnimationFrame(surfaceAnimationFrameRef.current);
             surfaceAnimationFrameRef.current = null;
         }
 
-        if (reducedMotion) {
+        if (reducedMotion || isOpening) {
             surfaceOffsetRef.current = targetOffset;
             surfaceVelocityRef.current = 0;
             setSurfaceGeometry(surface, targetOffset);
@@ -489,7 +523,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                 surfaceAnimationFrameRef.current = null;
             }
         };
-    }, [activeSectionIndex, isVisible]);
+    }, [activeSectionIndex, isOpen, isVisible]);
 
     if (!isVisible) return null;
 
@@ -512,7 +546,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
         { id: 'appearance', label: t.settings.appearance },
         { id: 'behavior', label: t.settings.behavior },
         { id: 'data', label: t.settings.data },
-        { id: 'widgets', label: t.settings.widgets },
+        { id: 'widgets', label: `${t.settings.widgets} (Beta)` },
     ];
     const lastSyncLabel = getLastSyncTimeLabel();
 
@@ -793,21 +827,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                         </div>
                                         <div className={styles.widgetList}>
                                             <div className={`${styles.widgetCard} ${styles.productivityCard}`}>
-                                                <span className={styles.widgetPreview} aria-hidden="true"><CalendarWidget preview scale={0.27} /></span>
-                                                <span className={styles.widgetCardType}>{t.settings.calendarWidget}</span>
-                                                <span className={styles.widgetCardName}>{t.settings.calendarWidgetDescription}</span>
+                                                <WidgetPreview size={WIDGET_SIZE} defaultScale={PRODUCTIVITY_WIDGET_PREVIEW_SCALE}>{scale => <CalendarWidget preview scale={scale} />}</WidgetPreview>
+                                                <span className={styles.widgetCardName}>{t.settings.calendarWidget}</span>
                                                 <button type="button" className={styles.widgetAddOverlay} onClick={() => handleAddProductivityWidget('calendar')} aria-label={t.settings.addCalendarWidget} />
                                             </div>
                                             <div className={`${styles.widgetCard} ${styles.productivityCard}`}>
-                                                <span className={styles.widgetPreview} aria-hidden="true"><FocusWidget preview scale={0.27} /></span>
-                                                <span className={styles.widgetCardType}>{t.settings.focusWidget}</span>
-                                                <span className={styles.widgetCardName}>{t.settings.focusWidgetDescription}</span>
+                                                <WidgetPreview size={WIDGET_SIZE} defaultScale={PRODUCTIVITY_WIDGET_PREVIEW_SCALE}>{scale => <FocusWidget preview scale={scale} />}</WidgetPreview>
+                                                <span className={styles.widgetCardName}>{t.settings.focusWidget}</span>
                                                 <button type="button" className={styles.widgetAddOverlay} onClick={() => handleAddProductivityWidget('focus')} aria-label={t.settings.addFocusWidget} />
                                             </div>
                                             <div className={`${styles.widgetCard} ${styles.productivityCard}`}>
-                                                <span className={styles.widgetPreview} aria-hidden="true"><CountdownWidget preview scale={0.27} /></span>
-                                                <span className={styles.widgetCardType}>{t.settings.countdownWidget}</span>
-                                                <span className={styles.widgetCardName}>{t.settings.countdownWidgetDescription}</span>
+                                                <WidgetPreview size={WIDGET_SIZE} defaultScale={PRODUCTIVITY_WIDGET_PREVIEW_SCALE}>{scale => <CountdownWidget preview scale={scale} />}</WidgetPreview>
+                                                <span className={styles.widgetCardName}>{t.settings.countdownWidget}</span>
                                                 <button type="button" className={styles.widgetAddOverlay} onClick={() => handleAddProductivityWidget('countdown')} aria-label={t.settings.addCountdownWidget} />
                                             </div>
                                             <button
@@ -816,10 +847,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                                 onClick={handleAddClockWidget}
                                                 aria-label={t.settings.addClockWidget}
                                             >
-                                                <span className={styles.widgetPreview} aria-hidden="true">
-                                                    <ClockWidget scale={WIDGET_PREVIEW_SCALE} />
-                                                </span>
-                                                <span className={styles.widgetCardType}>{t.settings.widgetTypeDigital}</span>
+                                                <WidgetPreview size={CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <ClockWidget scale={scale} cornerRadius={CLOCK_WIDGET_PREVIEW_CORNER_RADIUS} />}</WidgetPreview>
                                                 <span className={styles.widgetCardName}>{t.settings.clockWidget}</span>
                                             </button>
                                             <button
@@ -828,10 +856,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                                 onClick={handleAddAnalogClockWidget}
                                                 aria-label={t.settings.addAnalogClockWidget}
                                             >
-                                                <span className={styles.widgetPreview} aria-hidden="true">
-                                                    <AnalogClockWidget scale={WIDGET_PREVIEW_SCALE} />
-                                                </span>
-                                                <span className={styles.widgetCardType}>{t.settings.widgetTypeAnalog}</span>
+                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} cornerRadius={CLOCK_WIDGET_PREVIEW_CORNER_RADIUS} />}</WidgetPreview>
                                                 <span className={styles.widgetCardName}>{t.settings.analogClockWidget}</span>
                                             </button>
                                             <button
@@ -840,10 +865,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                                 onClick={handleAddRoundedAnalogClockWidget}
                                                 aria-label={t.settings.addRoundedAnalogClockWidget}
                                             >
-                                                <span className={styles.widgetPreview} aria-hidden="true">
-                                                    <AnalogClockWidget scale={WIDGET_PREVIEW_SCALE} shape="roundedSquare" />
-                                                </span>
-                                                <span className={styles.widgetCardType}>{t.settings.widgetTypeAnalog}</span>
+                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} shape="roundedSquare" cornerRadius={CLOCK_WIDGET_PREVIEW_CORNER_RADIUS} />}</WidgetPreview>
                                                 <span className={styles.widgetCardName}>{t.settings.roundedAnalogClockWidget}</span>
                                             </button>
                                         </div>

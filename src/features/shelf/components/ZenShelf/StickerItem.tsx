@@ -750,7 +750,7 @@ const StickerItemComponent: React.FC<StickerItemProps> = ({
                         )}
                     </div>
                 ) : sticker.type === 'widget' && ['calendar', 'focus', 'countdown'].includes(sticker.widgetType || '') ? (
-                    <div className={[styles.widgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
+                    <div className={[styles.widgetContainer, styles.productivityWidgetContainer, isDragging && styles.dragging, isCreativeMode && styles.creativeHover].filter(Boolean).join(' ')}>
                         <ProductivityWidget sticker={sticker} />
                         <div className={styles.resizeHandle} onMouseDown={handleResizeStart} />
                     </div>

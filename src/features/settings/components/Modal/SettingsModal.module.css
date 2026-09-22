@@ -442,7 +442,7 @@
 .githubLink {
     display: flex;
     align-items: center;
-    min-height: 28px;
+    min-height: 20px;
     position: relative;
     color: var(--white);
     text-decoration: none;
@@ -562,12 +562,11 @@
     --settings-sidebar-width: 116px;
     --settings-sidebar-item-height: 42px;
     --settings-sidebar-gap: 0px;
-    --settings-panel-radius-x: 32px;
+  --settings-panel-radius-x: 22px;
     --settings-panel-radius-y: var(--settings-panel-radius-x);
-    --settings-tab-radius: 21px;
+  --settings-tab-radius: 24px;
     --settings-connector-radius-x: 8px;
     --settings-connector-radius-y: var(--settings-connector-radius-x);
-    --settings-join-superellipse: 2;
     --settings-surface: var(--color-bg-secondary);
     display: flex;
     flex: 1;
@@ -591,7 +590,7 @@
     background: var(--settings-surface);
     border-radius: var(--settings-panel-radius-x);
     border-top-left-radius: var(--settings-panel-radius-x) var(--settings-panel-radius-y);
-    corner-shape: superellipse(var(--settings-join-superellipse)) squircle squircle squircle;
+    corner-shape: superellipse(1.5);
     overflow: visible;
 }
 
@@ -611,7 +610,7 @@
     height: var(--settings-sidebar-item-height);
     background: var(--settings-surface);
     border-radius: var(--settings-tab-radius) 0 0 var(--settings-tab-radius);
-    corner-shape: squircle square square squircle;
+    corner-shape: superellipse(1.5);
     transform: translateY(var(--sidebar-highlight-offset, 0px));
     will-change: transform;
 }
@@ -663,7 +662,7 @@
     display: flex;
     flex-direction: column;
     flex: 0 0 var(--settings-sidebar-width);
-    padding: 0 0 var(--spacing-padding-small);
+    padding: 0 0 var(--spacing-padding-extrasmall);
     background: transparent;
     border-right: 0;
     box-sizing: border-box;
@@ -787,8 +786,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--spacing-padding-small);
-    border: 1px solid var(--color-border);
+    padding: var(--spacing-padding-large) var(--spacing-padding-large) var(--spacing-padding-medium);
+    border: 0;
     border-radius: var(--radius-small);
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
@@ -796,13 +795,12 @@
     text-align: center;
     cursor: pointer;
     touch-action: manipulation;
-    transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-instant);
+    transition: background-color var(--transition-fast), transform var(--transition-instant);
 }
 
 @media (hover: hover) and (pointer: fine) {
     .widgetCard:hover {
         background: var(--color-bg-tertiary);
-        border-color: var(--color-text-tertiary);
     }
 }
 
@@ -816,28 +814,22 @@
 }
 
 .widgetPreview {
+    --sticker-outline-width: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 86px;
+    height: auto;
+    aspect-ratio: 1;
     overflow: visible;
     pointer-events: none;
 }
 
-.widgetCardType {
+.widgetCardName {
     margin-top: var(--spacing-padding-small);
     color: var(--color-text-secondary);
     font-size: var(--font-size-caption);
     font-weight: var(--font-weight-medium);
-    line-height: var(--line-height-tight);
-    white-space: nowrap;
-}
-
-.widgetCardName {
-    margin-top: 2px;
-    color: var(--color-text-tertiary);
-    font-size: var(--font-size-caption);
     line-height: var(--line-height-tight);
     white-space: nowrap;
 }
@@ -903,9 +895,9 @@
 .sidebarFooter {
     display: flex;
     align-items: center;
-    min-height: 24px;
+    min-height: 20px;
     margin-top: auto;
-    padding: var(--spacing-padding-extrasmall) var(--spacing-padding-small) 0;
+    padding: var(--spacing-gap-tiny) var(--spacing-padding-small) 0;
     border-top: 1px solid var(--color-border);
     box-sizing: border-box;
 }

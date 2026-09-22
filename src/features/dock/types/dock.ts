@@ -35,7 +35,7 @@ export interface DockActions {
     onItemAdd: (rect?: DOMRect) => void;
     onItemsReorder: (items: DockItem[]) => void;
     onDropToFolder: (dragItem: DockItem, targetFolder: DockItem) => void;
-    onDragToOpenFolder: (dragItem: DockItem) => void;
+    onDragToOpenFolder: (dragItem: DockItem, index?: number) => void;
     onHoverOpenFolder: (item: DockItem, folder: DockItem) => void;
 }
 

@@ -3,9 +3,8 @@ import styles from './ZenShelf.module.css';
 
 export const ANALOG_CLOCK_WIDGET_SIZE = 212;
 const CLOCK_CENTER = ANALOG_CLOCK_WIDGET_SIZE / 2;
-const ROUNDED_SQUARE_CORNER_RADIUS = 32;
-const SQUIRCLE_EXPONENT = 4;
-const SQUIRCLE_DIAGONAL_COMPONENT = 2 ** (-1 / SQUIRCLE_EXPONENT);
+const SUPERELLIPSE_EXPONENT = 1.5;
+const SUPERELLIPSE_DIAGONAL_COMPONENT = 2 ** (-1 / SUPERELLIPSE_EXPONENT);
 const TICK_OVERFLOW = 2;
 const MAX_CORNER_TICK_EXTENSION = 4;
 
@@ -37,14 +36,14 @@ const formatTime = (date: Date): string => (
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 );
 
-const getRoundedSquareBoundaryValue = (x: number, y: number): number => {
-    const straightEdge = CLOCK_CENTER - ROUNDED_SQUARE_CORNER_RADIUS;
-    const cornerX = Math.max(Math.abs(x) - straightEdge, 0) / ROUNDED_SQUARE_CORNER_RADIUS;
-    const cornerY = Math.max(Math.abs(y) - straightEdge, 0) / ROUNDED_SQUARE_CORNER_RADIUS;
+const getRoundedSquareBoundaryValue = (x: number, y: number, cornerRadius: number): number => {
+    const straightEdge = CLOCK_CENTER - cornerRadius;
+    const cornerX = Math.max(Math.abs(x) - straightEdge, 0) / cornerRadius;
+    const cornerY = Math.max(Math.abs(y) - straightEdge, 0) / cornerRadius;
 
-    // A local fourth-order superellipse matches CSS `corner-shape: squircle`
+    // A local 1.5-order superellipse matches CSS `corner-shape: superellipse(1.5)`
     // while retaining the rounded square's four straight edge sections.
-    return cornerX ** SQUIRCLE_EXPONENT + cornerY ** SQUIRCLE_EXPONENT;
+    return cornerX ** SUPERELLIPSE_EXPONENT + cornerY ** SUPERELLIPSE_EXPONENT;
 };
 
 const getBoundaryDistance = (
@@ -52,6 +51,7 @@ const getBoundaryDistance = (
     tangent: Point,
     tangentOffset: number,
     shape: ClockShape,
+    cornerRadius: number,
 ): number => {
     if (shape === 'circle') {
         return Math.sqrt(CLOCK_CENTER ** 2 - tangentOffset ** 2);
@@ -60,7 +60,7 @@ const getBoundaryDistance = (
     let lowerBound = 0;
     let upperBound = CLOCK_CENTER * 2;
 
-    // Intersect each long side of the tick independently with the squircle.
+    // Intersect each long side of the tick independently with the superellipse.
     // This compensates for the unequal X/Y reach of a rotated rectangle: both
     // sides cross the face boundary at the same visual depth.
     for (let iteration = 0; iteration < 40; iteration += 1) {
@@ -68,7 +68,7 @@ const getBoundaryDistance = (
         const x = radialDistance * radial.x + tangentOffset * tangent.x;
         const y = radialDistance * radial.y + tangentOffset * tangent.y;
 
-        if (getRoundedSquareBoundaryValue(x, y) < 1) {
+        if (getRoundedSquareBoundaryValue(x, y, cornerRadius) < 1) {
             lowerBound = radialDistance;
         } else {
             upperBound = radialDistance;
@@ -83,19 +83,19 @@ const getPoint = (radial: Point, tangent: Point, radialDistance: number, tangent
     y: CLOCK_CENTER + radialDistance * radial.y + tangentOffset * tangent.y,
 });
 
-const getCornerTickExtension = (index: number, shape: ClockShape): number => {
+const getCornerTickExtension = (index: number, shape: ClockShape, cornerRadius: number): number => {
     if (shape !== 'roundedSquare') return 0;
 
     const angle = index * 6 * Math.PI / 180;
     const radial = { x: Math.sin(angle), y: -Math.cos(angle) };
     const tangent = { x: Math.cos(angle), y: Math.sin(angle) };
-    const boundaryDistance = getBoundaryDistance(radial, tangent, 0, shape);
-    const straightEdge = CLOCK_CENTER - ROUNDED_SQUARE_CORNER_RADIUS;
+    const boundaryDistance = getBoundaryDistance(radial, tangent, 0, shape, cornerRadius);
+    const straightEdge = CLOCK_CENTER - cornerRadius;
     const cornerX = Math.max(Math.abs(boundaryDistance * radial.x) - straightEdge, 0)
-        / ROUNDED_SQUARE_CORNER_RADIUS;
+        / cornerRadius;
     const cornerY = Math.max(Math.abs(boundaryDistance * radial.y) - straightEdge, 0)
-        / ROUNDED_SQUARE_CORNER_RADIUS;
-    const cornerWeight = Math.min(cornerX, cornerY) / SQUIRCLE_DIAGONAL_COMPONENT;
+        / cornerRadius;
+    const cornerWeight = Math.min(cornerX, cornerY) / SUPERELLIPSE_DIAGONAL_COMPONENT;
 
     // Only the curved sections need optical compensation. The extension fades
     // in from each straight edge and peaks around the visual corner diagonal.
@@ -133,13 +133,13 @@ const getRoundedPolygonPath = (points: Point[], radius: number): string => {
     ].join(' ');
 };
 
-const getTickPath = (index: number, dimensions: TickDimensions, shape: ClockShape): string => {
+const getTickPath = (index: number, dimensions: TickDimensions, shape: ClockShape, cornerRadius: number): string => {
     const angle = index * 6 * Math.PI / 180;
     const radial = { x: Math.sin(angle), y: -Math.cos(angle) };
     const tangent = { x: Math.cos(angle), y: Math.sin(angle) };
     const halfWidth = dimensions.width / 2;
-    const leftBoundary = getBoundaryDistance(radial, tangent, -halfWidth, shape);
-    const rightBoundary = getBoundaryDistance(radial, tangent, halfWidth, shape);
+    const leftBoundary = getBoundaryDistance(radial, tangent, -halfWidth, shape, cornerRadius);
+    const rightBoundary = getBoundaryDistance(radial, tangent, halfWidth, shape, cornerRadius);
     const points = [
         getPoint(radial, tangent, leftBoundary + TICK_OVERFLOW, -halfWidth),
         getPoint(radial, tangent, rightBoundary + TICK_OVERFLOW, halfWidth),
@@ -153,19 +153,20 @@ const getTickPath = (index: number, dimensions: TickDimensions, shape: ClockShap
 interface AnalogClockWidgetProps {
     scale?: number;
     shape?: ClockShape;
+    cornerRadius?: number;
 }
 
-export const AnalogClockWidget: React.FC<AnalogClockWidgetProps> = ({ scale = 1, shape = 'circle' }) => {
+export const AnalogClockWidget: React.FC<AnalogClockWidgetProps> = ({ scale = 1, shape = 'circle', cornerRadius = 32 }) => {
     const [now, setNow] = useState(() => new Date());
     const hands = getClockHands(now);
     const ticks = useMemo(() => Array.from({ length: 60 }, (_, index) => {
         const isMajor = index % 5 === 0;
         const dimensions = isMajor
             ? { width: 3, innerDepth: 14 }
-            : { width: 2, innerDepth: 8 + getCornerTickExtension(index, shape) };
+            : { width: 2, innerDepth: 8 + getCornerTickExtension(index, shape, cornerRadius) };
 
-        return { index, isMajor, path: getTickPath(index, dimensions, shape) };
-    }), [shape]);
+        return { index, isMajor, path: getTickPath(index, dimensions, shape, cornerRadius) };
+    }), [shape, cornerRadius]);
 
     useEffect(() => {
         const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -179,6 +180,7 @@ export const AnalogClockWidget: React.FC<AnalogClockWidgetProps> = ({ scale = 1,
                 width: ANALOG_CLOCK_WIDGET_SIZE * scale,
                 height: ANALOG_CLOCK_WIDGET_SIZE * scale,
                 '--analog-scale': scale,
+                '--widget-corner-radius': `${cornerRadius}px`,
             } as React.CSSProperties}
             role="timer"
             aria-label={`Current time ${formatTime(now)}`}

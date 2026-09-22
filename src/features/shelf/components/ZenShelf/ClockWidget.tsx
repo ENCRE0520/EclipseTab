@@ -9,7 +9,7 @@ const formatTime = (date: Date): string => (
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 );
 
-export const ClockWidget: React.FC<{ scale?: number }> = ({ scale = 1 }) => {
+export const ClockWidget: React.FC<{ scale?: number; cornerRadius?: number }> = ({ scale = 1, cornerRadius = 32 }) => {
     const [time, setTime] = useState(() => formatTime(new Date()));
     const [horizontalScale, setHorizontalScale] = useState(CLOCK_HORIZONTAL_SCALE);
     const clockFaceRef = useRef<HTMLDivElement>(null);
@@ -62,6 +62,7 @@ export const ClockWidget: React.FC<{ scale?: number }> = ({ scale = 1 }) => {
                 height: CLOCK_WIDGET_SIZE * scale,
                 '--clock-scale': scale,
                 '--clock-horizontal-scale': horizontalScale,
+                '--widget-corner-radius': `${cornerRadius}px`,
             } as React.CSSProperties}
             role="timer"
             aria-label={`Current time ${time}`}

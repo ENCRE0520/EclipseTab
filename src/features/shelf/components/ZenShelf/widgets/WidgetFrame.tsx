@@ -41,12 +41,17 @@ export function WidgetFrame({ children, scale = 1, preview = false, label, tone 
                 '--widget-scale': safeScale,
             } as React.CSSProperties}
             className={styles.frame}
+            data-widget-frame
         >
             <fieldset
                 disabled={preview}
                 aria-label={label}
                 className={`${styles.surface} ${styles[tone]}`}
-                style={{ width: WIDGET_SIZE, height: WIDGET_SIZE, transform: `scale(${safeScale})` }}
+                style={{
+                    width: WIDGET_SIZE,
+                    height: WIDGET_SIZE,
+                    ...(safeScale !== 1 ? { transform: `scale(${safeScale})` } : {}),
+                }}
                 onMouseDown={event => {
                     if ((event.target as HTMLElement).closest('button, input, select, label, form')) event.stopPropagation();
                 }}

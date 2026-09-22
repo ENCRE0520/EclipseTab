@@ -45,8 +45,8 @@
   /* 宽度固定：4 columns * 64px + 3 gaps * 8px = 256 + 24 = 280px */
   /* 或者让JS动态计算 maxWidth，这里我们设为 max-content 或由 JS 控制 width */
   width: 100%;
-  /* Height will be controlled by JS for transition */
-  transition: height 300ms cubic-bezier(0.25, 1, 0.5, 1);
+  transition: height 200ms cubic-bezier(0.2, 0, 0, 1);
+
 }
 
 /* 文件夹容器 - 玻璃态效果 (匹配 Dock 的 inline-block 模式) */
@@ -85,4 +85,8 @@
 .isBeingDragged {
   opacity: 0 !important;
   visibility: hidden !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gridItem, .grid, .container, .popupWrapper { transition: none; }
 }

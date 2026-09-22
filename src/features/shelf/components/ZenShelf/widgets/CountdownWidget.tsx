@@ -11,11 +11,15 @@ export function CountdownWidget({ value, onChange, scale = 1, preview = false }:
     const { language } = useLanguage();
     const zh = language === 'zh';
     const now = useWidgetNow(1000, preview);
+    const displayValue = value ?? (preview ? {
+        title: zh ? '旅行' : 'Trip',
+        date: localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 30)),
+    } : undefined);
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState({ title: '', date: '' });
     const [error, setError] = useState('');
     const editRef = useRef<HTMLButtonElement>(null);
-    const target = value ? parseLocalDate(value.date) : null;
+    const target = displayValue ? parseLocalDate(displayValue.date) : null;
     const days = target ? daysUntil(target, now) : null;
 
     const open = () => {
@@ -35,20 +39,20 @@ export function CountdownWidget({ value, onChange, scale = 1, preview = false }:
     };
 
     const isToday = days === 0;
-    const title = value?.title || '';
+    const title = displayValue?.title || '';
     const targetDate = target?.toLocaleDateString(zh ? 'zh-CN' : 'en-US', {
         year: 'numeric', month: 'short', day: 'numeric',
     }) || '';
     const sentence = isToday
         ? (zh ? `今天就是 ${title}` : `Today is ${title}`)
         : days! > 0
-            ? (zh ? `距离 ${title} 还有 ${Math.abs(days!)} 天` : `Days until ${title}: ${Math.abs(days!)} days`)
-            : (zh ? `自从 ${title} 已经 ${Math.abs(days!)} 天` : `Days since ${title}: ${Math.abs(days!)} days`);
+            ? (zh ? `距离 ${title} 还有 ${Math.abs(days!)} 天` : `${Math.abs(days!)} days until ${title}`)
+            : (zh ? `自从 ${title} 已经 ${Math.abs(days!)} 天` : `${Math.abs(days!)} days since ${title}`);
     const summary = isToday
         ? (zh ? `今天是 ${title}` : `Today: ${title}`)
         : days! > 0
-            ? (zh ? `距离 ${title}` : `Days until ${title}`)
-            : (zh ? `自从 ${title}` : `Days since ${title}`);
+            ? (zh ? `距离 ${title}` : `Until ${title}`)
+            : (zh ? `自从 ${title}` : `Since ${title}`);
 
     return (
         <WidgetFrame scale={scale} preview={preview} tone="countdown" label={zh ? '倒数日' : 'Countdown'}>
@@ -71,14 +75,21 @@ export function CountdownWidget({ value, onChange, scale = 1, preview = false }:
                 </form>
             ) : target ? (
                 <div className={styles.countdownBody}>
-                    <button ref={editRef} type="button" className={styles.countdownCountRow}
-                        onMouseDown={event => event.stopPropagation()}
-                        onPointerDown={event => event.stopPropagation()}
-                        onClick={open} aria-label={sentence} title={zh ? '点击修改信息' : 'Edit details'}>
+                    <div className={styles.countdownCountRow} aria-label={sentence}>
                         <span className={styles.countdownCount}>{Math.abs(days ?? 0)}</span>
                         <span className={styles.countdownUnit}>{zh ? '天' : 'days'}</span>
+                    </div>
+                    <button
+                        ref={editRef}
+                        type="button"
+                        className={styles.countdownSentence}
+                        onMouseDown={event => event.stopPropagation()}
+                        onPointerDown={event => event.stopPropagation()}
+                        onClick={open}
+                        title={zh ? '点击修改信息' : 'Edit details'}
+                    >
+                        {summary}
                     </button>
-                    <div className={styles.countdownSentence}>{summary}</div>
                     <div className={styles.countdownTargetDate}>{targetDate}</div>
                 </div>
             ) : (

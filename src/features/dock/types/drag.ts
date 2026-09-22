@@ -43,7 +43,7 @@ export interface UseDragAndDropOptions {
     onReorder: (items: DockItem[]) => void;
     onDropToFolder?: (dragItem: DockItem, targetFolder: DockItem) => void;
     onMergeFolder?: (dragItem: DockItem, targetItem: DockItem) => void;
-    onDragToOpenFolder?: (dragItem: DockItem) => void;
+    onDragToOpenFolder?: (dragItem: DockItem, index?: number) => void;
     onHoverOpenFolder?: (dragItem: DockItem, targetFolder: DockItem) => void;
     onDragStart?: (item: DockItem) => void;
     onDragEnd?: () => void;

@@ -1,10 +1,12 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { DockItem } from '@/shared/types';
+import { useDockDrag } from '@/features/dock/context/DockContext';
 import {
     createMouseDownHandler,
     reorderList,
     createGridStrategy,
+    getOpenFolderDropTarget,
 } from '@/shared/utils/dragMath';
 import { onReturnAnimationComplete } from '@/features/dock/utils/animationUtils';
 import {
@@ -15,7 +17,6 @@ import {
 } from './useDragBase';
 import {
     FOLDER_COLUMNS,
-    FOLDER_CELL_SIZE,
     HAPTIC_PATTERNS,
 } from '@/shared/constants/layout';
 
@@ -28,11 +29,10 @@ export interface UseFolderDragAndDropOptions {
     containerRef: React.RefObject<HTMLElement>;
     externalDragItem?: DockItem | null;
     onDragOut?: (item: DockItem, mousePosition: { x: number; y: number }) => void;
-    /** 占位符状态变化回调，用于通知父组件同步到 Context */
-    onFolderPlaceholderChange?: (active: boolean) => void;
 }
 
 export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
+    const { updateDragTarget } = useDockDrag();
     const {
         items,
         isEditMode,
@@ -42,7 +42,6 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         containerRef,
         externalDragItem,
         onDragOut,
-        onFolderPlaceholderChange,
     } = options;
 
     const {
@@ -84,19 +83,6 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         }
     }, [placeholderIndex, performHapticFeedback, dragState.isDragging]);
 
-    // ========== 同步文件夹占位符状态到父组件 (Context) ==========
-    useEffect(() => {
-        if (externalDragItem && onFolderPlaceholderChange) {
-            onFolderPlaceholderChange(placeholderIndex !== null);
-        }
-
-        return () => {
-            if (onFolderPlaceholderChange) {
-                onFolderPlaceholderChange(false);
-            }
-        };
-    }, [externalDragItem, placeholderIndex, onFolderPlaceholderChange]);
-
     // 跟踪松开事件的最后位置（因为我们在拖拽期间不更新状态）
     const lastPositionRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -126,49 +112,21 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
                 dragElementRef.current.style.top = `${y}px`;
             }
 
-            // 检查是否拖出文件夹区域 (Drag Out Detection) - 使用缓存的 Rect
-            const containerRect = cachedContainerRectRef.current || containerRef.current?.getBoundingClientRect();
-            if (onDragOut && containerRect) {
-
-
-                // 如果鼠标超出文件夹边界一定距离
-                const isOutside = strategy.isOutsideContainer
-                    ? strategy.isOutsideContainer(e.clientX, e.clientY, containerRect)
-                    : false;
-
-                if (isOutside) {
-                    // Only update state if status changes
-                    if (currentDrag.targetAction !== 'dragOut') {
-                        setDragState(prev => ({
-                            ...prev,
-                            targetAction: 'dragOut'
-                        }));
-                        setPlaceholderIndex(null);
-                    }
-                    return;
-                } else {
-                    // 回到内部
-                    if (currentDrag.targetAction === 'dragOut') {
-                        setDragState(prev => ({
-                            ...prev,
-                            targetAction: 'reorder'
-                        }));
-                    }
+            const target = updateDragTarget(e.clientX, e.clientY);
+            if (target !== 'folder') {
+                if (currentDrag.targetAction !== 'dragOut') {
+                    setDragState(prev => ({ ...prev, targetAction: 'dragOut' }));
                 }
+                setPlaceholderIndex(null);
+                return;
             }
-
-            // 计算落点
-            // 使用策略计算新的 Index
-            const newIndex = strategy.calculatePlaceholder(
-                e.clientX,
-                e.clientY,
-                layoutSnapshotRef.current,
-                itemsRef.current.length,
-                cachedContainerRectRef.current || undefined
-            );
-            setPlaceholderIndex(newIndex);
+            if (currentDrag.targetAction === 'dragOut') {
+                setDragState(prev => ({ ...prev, targetAction: 'reorder' }));
+            }
+            const newIndex = getOpenFolderDropTarget(e.clientX, e.clientY, false)?.index ?? currentDrag.originalIndex;
+            setPlaceholderIndex(newIndex > currentDrag.originalIndex ? newIndex - 1 : newIndex);
         }
-    }, [dragRef, itemsRef, layoutSnapshotRef, containerRef, setDragState, setPlaceholderIndex, onDragOut, strategy, dragElementRef, cachedContainerRectRef]);
+    }, [dragRef, itemsRef, layoutSnapshotRef, containerRef, setDragState, setPlaceholderIndex, onDragOut, strategy, dragElementRef, cachedContainerRectRef, updateDragTarget]);
 
     /** RAF 节流包装的 handleMouseMove */
     const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -190,10 +148,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
     useEffect(() => {
         if (!externalDragItem) return;
 
-        // 确保 Layout Snapshot 已经捕获
-        if (layoutSnapshotRef.current.length === 0 && items.length > 0) {
-            captureLayoutSnapshot();
-        }
+        captureLayoutSnapshot();
 
         let externalRafId: number | null = null;
         let pendingExternalEvent: MouseEvent | null = null;
@@ -205,26 +160,31 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
             externalRafId = requestAnimationFrame(() => {
                 externalRafId = null;
                 if (pendingExternalEvent) {
-                    const newIndex = strategy.calculatePlaceholder(
-                        pendingExternalEvent.clientX,
-                        pendingExternalEvent.clientY,
-                        layoutSnapshotRef.current,
-                        items.length,
-                        cachedContainerRectRef.current || undefined
-                    );
-                    setPlaceholderIndex(newIndex);
+                    const target = updateDragTarget(pendingExternalEvent.clientX, pendingExternalEvent.clientY) === 'folder'
+                        ? getOpenFolderDropTarget(pendingExternalEvent.clientX, pendingExternalEvent.clientY, false) : null;
+                    setPlaceholderIndex(target?.index ?? null);
                 }
             });
         };
 
+        const handleExternalMouseUp = (event: MouseEvent) => {
+            const target = updateDragTarget(event.clientX, event.clientY) === 'folder'
+                ? getOpenFolderDropTarget(event.clientX, event.clientY, false) : null;
+            setPlaceholderIndex(target?.index ?? null);
+            if (externalRafId !== null) cancelAnimationFrame(externalRafId);
+            externalRafId = null;
+            window.removeEventListener('mousemove', handleExternalMouseMove);
+        };
+        window.addEventListener('mouseup', handleExternalMouseUp);
         window.addEventListener('mousemove', handleExternalMouseMove);
         return () => {
             window.removeEventListener('mousemove', handleExternalMouseMove);
+            window.removeEventListener('mouseup', handleExternalMouseUp);
             if (externalRafId !== null) {
                 cancelAnimationFrame(externalRafId);
             }
         };
-    }, [externalDragItem, items.length, setPlaceholderIndex, captureLayoutSnapshot, strategy, cachedContainerRectRef]);
+    }, [externalDragItem, items.length, setPlaceholderIndex, captureLayoutSnapshot, strategy, cachedContainerRectRef, updateDragTarget]);
 
 
     /**
@@ -277,7 +237,12 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
      * 2. 保留 placeholderIndex 维持挤压动画
      * 3. 使用 transitionend 监听动画完成
      */
-    const handleMouseUp = useCallback(() => {
+    const handleMouseUp = useCallback((event: MouseEvent) => {
+        if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+        const pending = event;
+        pendingMouseEventRef.current = null;
+        if (pending) processInternalMouseMove(pending);
         const currentDrag = dragRef.current;
         // 使用 ref 获取最新值，避免闭包捕获旧状态
         const currentPlaceholder = placeholderRef.current ?? -1;
@@ -290,7 +255,8 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
             if (currentDrag.targetAction === 'dragOut' && onDragOut) {
                 // DragOut 不需要归位动画，直接执行
                 // 使用 ref 中的最后已知位置（因为拖拽期间不更新状态）
-                const finalPos = lastPositionRef.current || currentDrag.currentPosition;
+                const position = lastPositionRef.current || currentDrag.currentPosition;
+                const finalPos = { x: position.x + currentDrag.offset.x, y: position.y + currentDrag.offset.y };
                 onDragOut(currentDrag.item, finalPos);
 
                 setDragState(resetFolderDragState());
@@ -305,7 +271,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
                 const gridElement = containerRef.current;
                 const gridRect = gridElement?.getBoundingClientRect();
                 if (gridRect && gridElement) {
-                    const CELL_SIZE = FOLDER_CELL_SIZE;
+                    const CELL_SIZE = (layoutSnapshotRef.current[0]?.rect.width ?? 64) * 1.125;
                     const COLUMNS = FOLDER_COLUMNS;
 
                     // 获取容器 Padding 偏移量 (CRITICAL: 确保与 CSS Grid 像素级对齐)
@@ -317,8 +283,8 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
                     const targetRow = Math.floor(currentPlaceholder / COLUMNS);
 
                     // 目标屏幕坐标 = 容器左上角 + Padding偏移 + 网格偏移
-                    const targetX = gridRect.left + paddingLeft + targetCol * CELL_SIZE;
-                    const targetY = gridRect.top + paddingTop + targetRow * CELL_SIZE;
+                    const targetX = (Number(gridElement.dataset.targetLeft) || gridRect.left + paddingLeft) + targetCol * CELL_SIZE;
+                    const targetY = (Number(gridElement.dataset.targetTop) || gridRect.top + paddingTop) + targetRow * CELL_SIZE;
 
                     // 预计算新的 items 顺序 (保存到 state 中，第二阶段使用)
                     const newItems = reorderList(itemsRef.current, currentDrag.originalIndex, currentPlaceholder);
@@ -356,7 +322,7 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         if (onDragEnd) {
             onDragEnd();
         }
-    }, [dragRef, placeholderRef, containerRef, onDragOut, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove, handleAnimationComplete, itemsRef, dragElementRef]);
+    }, [dragRef, placeholderRef, containerRef, onDragOut, onDragEnd, setDragState, resetPlaceholderState, handleMouseMove, processInternalMouseMove, handleAnimationComplete, itemsRef, dragElementRef]);
 
     /**
      * 鼠标按下处理
@@ -375,12 +341,12 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
                 },
                 handleMouseMove,
                 handleMouseUp,
-                createDragState: (item, index, _rect, startX, startY, offset) => ({
+                createDragState: (item, index, rect, startX, startY, offset) => ({
                     ...createFolderDragState(),
                     isDragging: true,
                     item,
                     originalIndex: index,
-                    currentPosition: { x: startX, y: startY },
+                    currentPosition: { x: rect.left, y: rect.top },
                     startPosition: { x: startX, y: startY },
                     offset,
                     targetAction: 'reorder', // 默认行为
@@ -411,6 +377,11 @@ export const useFolderDragAndDrop = (options: UseFolderDragAndDropOptions) => {
         );
 
     }, [dragState.isDragging, dragState.isAnimatingReturn, dragState.originalIndex, placeholderIndex, externalDragItem, strategy]);
+
+    useEffect(() => () => {
+        if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+        window.removeEventListener('mousemove', handleMouseMove);
+    }, [handleMouseMove]);
 
     const isDraggingOut = dragState.targetAction === 'dragOut';
 

@@ -87,6 +87,10 @@ export function useDragMerge({
         setMergeTargetId(null);
         setIsPreMerge(false);
         potentialMergeTarget.current = null;
+        hoveredFolderRef.current = null;
+        hoveredAppRef.current = null;
+        mergeTargetRef.current = null;
+        isPreMergeRef.current = false;
     }, []);
 
     /**
