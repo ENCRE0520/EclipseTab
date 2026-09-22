@@ -11,7 +11,7 @@
 
 [English](README-en.md) · 简体中文
 
-![Eclipse Tab 预览](https://github.com/user-attachments/assets/f7674f4f-3830-43bc-8ac4-00fdc0ceec7d)
+![Eclipse Tab 预览](docs/assets/eclipse-tab-preview.png)
 
 </div>
 
