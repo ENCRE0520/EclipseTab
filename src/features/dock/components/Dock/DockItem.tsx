@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { DockItem as DockItemType } from '@/shared/types';
 import { Tooltip } from '@/shared/components/Tooltip/Tooltip';
 import { isFaviconRef, isRemoteIconUrl, getDomainFromRef, resolveIconUrl, resolveRemoteIconUrl, getCachedIconUrlSync, getCachedRemoteIconUrlSync } from '@/features/dock/utils/iconCache';
+import { generateStableTextIcon } from '@/features/dock/utils/iconFetcher';
 import styles from './DockItem.module.css';
 import editIcon from '@/assets/icons/edit.svg';
 
@@ -11,24 +12,30 @@ const PLACEHOLDER_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdo
 /**
  * 解析图标：如果是 favicon: 引用则异步加载，否则直接使用
  * 优化：如果图标已在内存缓存中，同步返回，避免占位符闪烁
+ * 离线且没有本地副本时，返回固定配色的文字图标兜底
  */
-function useResolvedIcon(icon: string | undefined): string {
+function useResolvedIcon(icon: string | undefined, name?: string, url?: string): { src: string; fallback: string } {
+  const fallbackText = name || url || '';
+  const fallback = React.useMemo(
+    () => (fallbackText ? generateStableTextIcon(fallbackText, url || fallbackText) : PLACEHOLDER_ICON),
+    [fallbackText, url]
+  );
+
   const [resolved, setResolved] = useState<string>(() => {
-    if (!icon) return PLACEHOLDER_ICON;
+    if (!icon) return navigator.onLine ? PLACEHOLDER_ICON : fallback;
     if (isFaviconRef(icon)) {
-      const domain = getDomainFromRef(icon);
-      const cached = getCachedIconUrlSync(domain);
-      return cached || PLACEHOLDER_ICON;
+      const cached = getCachedIconUrlSync(getDomainFromRef(icon));
+      return cached || (navigator.onLine ? PLACEHOLDER_ICON : fallback);
     }
     if (isRemoteIconUrl(icon)) {
-      return getCachedRemoteIconUrlSync(icon) || PLACEHOLDER_ICON;
+      return getCachedRemoteIconUrlSync(icon) || icon;
     }
     return icon; // data URL 或其他直接可用的 URL
   });
 
   useEffect(() => {
     if (!icon) {
-      setResolved(PLACEHOLDER_ICON);
+      setResolved(navigator.onLine ? PLACEHOLDER_ICON : fallback);
       return;
     }
     if (!isFaviconRef(icon)) {
@@ -42,7 +49,7 @@ function useResolvedIcon(icon: string | undefined): string {
         let cancelled = false;
         resolveRemoteIconUrl(icon).then(url => {
           if (!cancelled) {
-            setResolved(url || PLACEHOLDER_ICON);
+            setResolved(url || fallback);
           }
         });
 
@@ -63,15 +70,39 @@ function useResolvedIcon(icon: string | undefined): string {
     let cancelled = false;
     resolveIconUrl(domain).then(url => {
       if (!cancelled) {
-        setResolved(url || PLACEHOLDER_ICON);
+        setResolved(url || fallback);
       }
     });
 
     return () => { cancelled = true; };
-  }, [icon]);
+  }, [icon, fallback]);
 
-  return resolved;
+  return { src: resolved, fallback };
 }
+
+const ResolvedIconImage: React.FC<{
+  icon?: string;
+  name?: string;
+  url?: string;
+  alt: string;
+  className?: string;
+}> = ({ icon, name, url, alt, className }) => {
+  const { src, fallback } = useResolvedIcon(icon, name, url);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <img
+      src={failed ? fallback : src}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+};
 
 interface DockItemProps {
   item: DockItemType;
@@ -106,9 +137,6 @@ const DockItemComponent: React.FC<DockItemProps> = ({
   const rootRef = useRef<HTMLDivElement>(null);
   const [pressTimer, setPressTimer] = useState<number | null>(null);
   const isLongPressTriggered = useRef(false);
-
-  // 解析图标 URL（处理 favicon: 引用的异步加载）
-  const resolvedIcon = useResolvedIcon(item.icon);
 
   const handleClick = () => {
     if (isLongPressTriggered.current) {
@@ -217,8 +245,10 @@ const DockItemComponent: React.FC<DockItemProps> = ({
         {item.type === 'folder' ? (
           <FolderIconGrid items={item.items} />
         ) : (
-          <img
-            src={resolvedIcon}
+          <ResolvedIconImage
+            icon={item.icon}
+            name={item.name}
+            url={item.url}
             alt={item.name}
             className={`${styles.icon} ${item.iconSmall ? styles.iconSmall : ''}`}
           />
@@ -254,16 +284,14 @@ const FolderIconGrid: React.FC<{ items?: DockItemType[] }> = ({ items }) => {
 };
 
 const FolderIconTile: React.FC<{ subItem: DockItemType }> = ({ subItem }) => {
-  const resolvedIcon = useResolvedIcon(subItem.icon);
-  const isPlaceholder = resolvedIcon === PLACEHOLDER_ICON;
-
   return (
     <div className={styles.folderIconTile}>
-      {!isPlaceholder ? (
-        <img src={resolvedIcon} alt={subItem.name} />
-      ) : (
-        <div className={styles.fallbackIcon} />
-      )}
+      <ResolvedIconImage
+        icon={subItem.icon}
+        name={subItem.name}
+        url={subItem.url}
+        alt={subItem.name}
+      />
     </div>
   );
 };

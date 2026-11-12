@@ -155,6 +155,7 @@
 /* 输入框占位符样式 */
 .searchInput::placeholder {
   color: var(--color-text-secondary);
+  opacity: 0.6;
 }
 
 /* 搜索按钮图标 */

@@ -346,7 +346,7 @@ const RecycleBinItem: React.FC<{
 
 
 export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ isOpen, onClose }) => {
-    const { deletedStickers, restoreSticker, permanentlyDeleteSticker } = useZenShelf();
+    const { deletedStickers, restoreSticker, permanentlyDeleteSticker, clearRecycleBin } = useZenShelf();
     const { t } = useLanguage();
     const [isClosing, setIsClosing] = useState(false);
 
@@ -363,6 +363,12 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ isOpen, onClos
     const handlePermanentDelete = useCallback((sticker: any) => {
         permanentlyDeleteSticker(sticker.id);
     }, [permanentlyDeleteSticker]);
+
+    const handleClearRecycleBin = useCallback(() => {
+        if (deletedStickers.length === 0) return;
+        if (!window.confirm(t.space.clearRecycleBinConfirm)) return;
+        clearRecycleBin();
+    }, [deletedStickers.length, clearRecycleBin, t.space.clearRecycleBinConfirm]);
 
     // 重置关闭状态
     useEffect(() => {
@@ -393,13 +399,30 @@ export const RecycleBinModal: React.FC<RecycleBinModalProps> = ({ isOpen, onClos
                         <h2 className={styles.recycleBinTitle}>{t.space.recycleBin || "Recycle Bin"}</h2>
                         <span className={styles.recycleBinSubtitle}>{t.space.restoreHint || "Swipe left to restore, swipe right to delete"} · {t.space.recycleBinLimitHint}</span>
                     </div>
-                    <button className={styles.recycleBinCloseWrapper} onClick={handleClose}>
-                        <div className={styles.recycleBinCloseInner}>
-                            <svg className={styles.recycleBinCloseIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </div>
-                    </button>
+                    <div className={styles.recycleBinHeaderActions}>
+                        <button
+                            type="button"
+                            className={styles.recycleBinClearWrapper}
+                            onClick={handleClearRecycleBin}
+                            disabled={deletedStickers.length === 0}
+                            aria-label={t.space.clearRecycleBin || "Clear"}
+                            title={t.space.clearRecycleBin || "Clear"}
+                        >
+                            <div className={styles.recycleBinClearInner}>
+                                <span
+                                    className={styles.recycleBinClearIcon}
+                                    style={{ WebkitMaskImage: `url(${TrashIcon})`, maskImage: `url(${TrashIcon})` }}
+                                />
+                            </div>
+                        </button>
+                        <button className={styles.recycleBinCloseWrapper} onClick={handleClose}>
+                            <div className={styles.recycleBinCloseInner}>
+                                <svg className={styles.recycleBinCloseIcon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
                 </div>
 
                 <div className={styles.recycleBinGrid}>

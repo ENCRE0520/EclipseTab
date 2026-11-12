@@ -3,8 +3,8 @@ import { Theme, useTheme, Texture } from '@/features/theme/context/ThemeContext'
 import { useSystemTheme } from '@/features/theme/hooks/useSystemTheme';
 import { useLanguage } from '@/shared/context/LanguageContext';
 import { useZenShelf } from '@/features/shelf/context/ZenShelfContext';
-import { CLOCK_WIDGET_SIZE, ClockWidget } from '@/features/shelf/components/ZenShelf/ClockWidget';
-import { ANALOG_CLOCK_WIDGET_SIZE, AnalogClockWidget } from '@/features/shelf/components/ZenShelf/AnalogClockWidget';
+import { CLOCK_WIDGET_CORNER_RADIUS, CLOCK_WIDGET_SIZE, ClockWidget } from '@/features/shelf/components/ZenShelf/ClockWidget';
+import { ANALOG_CLOCK_WIDGET_CORNER_RADIUS, ANALOG_CLOCK_WIDGET_SIZE, AnalogClockWidget } from '@/features/shelf/components/ZenShelf/AnalogClockWidget';
 import { WIDGET_SIZE } from '@/features/shelf/components/ZenShelf/widgets/WidgetFrame';
 import { CalendarWidget } from '@/features/shelf/components/ZenShelf/widgets/CalendarWidget';
 import { FocusWidget } from '@/features/shelf/components/ZenShelf/widgets/FocusWidget';
@@ -47,7 +47,7 @@ const WIDGET_PREVIEW_CONTENT_SIZE = 78;
 const WIDGET_PREVIEW_OUTLINE_WIDTH = 3;
 const PRODUCTIVITY_WIDGET_PREVIEW_SCALE = WIDGET_PREVIEW_CONTENT_SIZE / WIDGET_SIZE;
 const CLOCK_WIDGET_PREVIEW_SCALE = WIDGET_PREVIEW_CONTENT_SIZE / CLOCK_WIDGET_SIZE;
-const CLOCK_WIDGET_PREVIEW_CORNER_RADIUS = 32 * PRODUCTIVITY_WIDGET_PREVIEW_SCALE / CLOCK_WIDGET_PREVIEW_SCALE;
+const CLOCK_WIDGET_PREVIEW_CORNER_RADIUS = CLOCK_WIDGET_CORNER_RADIUS;
 
 const setSurfaceGeometry = (surface: HTMLDivElement, offset: number) => {
     // When both vertical radii no longer fit in the available distance, shrink
@@ -856,7 +856,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                                 onClick={handleAddAnalogClockWidget}
                                                 aria-label={t.settings.addAnalogClockWidget}
                                             >
-                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} cornerRadius={CLOCK_WIDGET_PREVIEW_CORNER_RADIUS} />}</WidgetPreview>
+                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} cornerRadius={ANALOG_CLOCK_WIDGET_CORNER_RADIUS} />}</WidgetPreview>
                                                 <span className={styles.widgetCardName}>{t.settings.analogClockWidget}</span>
                                             </button>
                                             <button
@@ -865,7 +865,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                                                 onClick={handleAddRoundedAnalogClockWidget}
                                                 aria-label={t.settings.addRoundedAnalogClockWidget}
                                             >
-                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} shape="roundedSquare" cornerRadius={CLOCK_WIDGET_PREVIEW_CORNER_RADIUS} />}</WidgetPreview>
+                                                <WidgetPreview size={ANALOG_CLOCK_WIDGET_SIZE} defaultScale={CLOCK_WIDGET_PREVIEW_SCALE}>{scale => <AnalogClockWidget scale={scale} shape="roundedSquare" cornerRadius={ANALOG_CLOCK_WIDGET_CORNER_RADIUS} />}</WidgetPreview>
                                                 <span className={styles.widgetCardName}>{t.settings.roundedAnalogClockWidget}</span>
                                             </button>
                                         </div>

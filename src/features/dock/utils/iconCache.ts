@@ -5,6 +5,7 @@
  */
 
 import { db } from '@/shared/utils/db';
+import { probeImageBlob } from './imageBlob';
 
 // favicon 引用 ID 前缀
 export const FAVICON_PREFIX = 'favicon:';
@@ -101,25 +102,36 @@ export const resolveIconUrl = async (domain: string): Promise<string> => {
   return loadPromise;
 };
 
-export const resolveRemoteIconUrl = async (iconUrl: string): Promise<string> => {
+/**
+ * 确保远程图标 URL 的图片已经存进 IndexedDB（离线也能显示）
+ * @returns 是否已有可用的本地副本
+ */
+export const ensureRemoteIconCached = async (iconUrl: string): Promise<boolean> => {
   const key = getRemoteIconCacheKey(iconUrl);
-  const cached = await resolveIconUrl(key);
-  if (cached) return cached;
+  if (objectURLCache.has(key)) return true;
 
   const pending = pendingLoads.get(key);
-  if (pending) return pending;
+  if (pending) {
+    return (await pending) !== '';
+  }
 
-  const loadPromise = (async () => {
+  const loadPromise = (async (): Promise<string> => {
     try {
+      const item = await db.getFavicon(key);
+      if (item && item.data instanceof Blob && item.data.size > 0) {
+        const url = URL.createObjectURL(item.data);
+        objectURLCache.set(key, url);
+        return url;
+      }
+
       const response = await fetch(iconUrl, { redirect: 'follow' });
-      if (!response.ok) return iconUrl;
+      if (!response.ok) return '';
 
       const contentType = response.headers.get('content-type') || '';
-      if (!contentType.startsWith('image/') && !contentType.includes('icon')) return iconUrl;
+      if (!contentType.startsWith('image/') && !contentType.includes('icon')) return '';
 
       const blob = await response.blob();
-      const bitmap = await createImageBitmap(blob);
-      bitmap.close();
+      if (!(await probeImageBlob(blob))) return '';
 
       await db.saveFavicon({
         domain: key,
@@ -132,14 +144,23 @@ export const resolveRemoteIconUrl = async (iconUrl: string): Promise<string> => 
       objectURLCache.set(key, objectUrl);
       return objectUrl;
     } catch {
-      return iconUrl;
+      return '';
     } finally {
       pendingLoads.delete(key);
     }
   })();
 
   pendingLoads.set(key, loadPromise);
-  return loadPromise;
+  return (await loadPromise) !== '';
+};
+
+export const resolveRemoteIconUrl = async (iconUrl: string): Promise<string> => {
+  const key = getRemoteIconCacheKey(iconUrl);
+  const cached = objectURLCache.get(key);
+  if (cached) return cached;
+
+  const ok = await ensureRemoteIconCached(iconUrl);
+  return ok ? (objectURLCache.get(key) || iconUrl) : iconUrl;
 };
 
 /**

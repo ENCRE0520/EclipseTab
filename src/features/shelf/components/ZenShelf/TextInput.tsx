@@ -87,6 +87,8 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
     );
     const [hasCheckbox, setHasCheckbox] = useState<boolean>(initialHasCheckbox);
     const [isExiting, setIsExiting] = useState(false);
+    const [isEntering, setIsEntering] = useState(() => !initialText);
+    const [isPreviewExiting, setIsPreviewExiting] = useState(false);
     const [editText, setEditText] = useState(() => markdownToEditableText(initialText));
     const [linkCard, setLinkCard] = useState<LinkCardMetadata | undefined>(initialLinkCard);
     const [isFetchingLinkCard, setIsFetchingLinkCard] = useState(false);
@@ -140,13 +142,6 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
         if (toolbarRef.current) {
             scaleFadeIn(toolbarRef.current, 200);
         }
-        if (inputWrapperRef.current) {
-            // 仅在添加新文本（初始 text 为空）时播放输入框入场动画
-            // 如果是编辑，文本已经显示在画布上，因此输入框本身不需要入场动画。
-            if (!initialText) {
-                scaleFadeIn(inputWrapperRef.current, 200);
-            }
-        }
         if (inputRef.current) {
             inputRef.current.focus();
             // 如果是编辑，设置初始文本（可往返的链接编辑格式）
@@ -163,6 +158,13 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
         }
     }, [initialText]);
 
+    // 入场动画结束后移除标记，避免之后切换链接卡片时重播
+    useEffect(() => {
+        if (!isEntering) return;
+        const timer = window.setTimeout(() => setIsEntering(false), 300);
+        return () => window.clearTimeout(timer);
+    }, [isEntering]);
+
     // 字体大小更改时更新它
     useEffect(() => {
         if (inputRef.current) {
@@ -175,8 +177,12 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
         if (isExiting) return;
         setIsExiting(true);
 
-        if (animateInput && inputWrapperRef.current) {
+        if (animateInput && linkCard && inputWrapperRef.current) {
+            // 链接卡片预览没有贴纸投影，沿用模糊淡出
             scaleFadeOut(inputWrapperRef.current, 150);
+        } else {
+            // 文字预览的淡出（含投影）由 CSS 出场动画处理
+            setIsPreviewExiting(animateInput);
         }
 
         if (toolbarRef.current) {
@@ -184,7 +190,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
         } else {
             callback();
         }
-    }, [isExiting]);
+    }, [isExiting, linkCard]);
 
     const handleSubmitContent = useCallback((editText: string) => {
         const contentWithLinks = getSubmittedContent(editText);
@@ -438,7 +444,13 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(({ x, y, in
             style={{ left: position.x, top: position.y }}
         >
             {/* 实时预览贴纸 - 直接在背景上显示 */}
-            <div ref={inputWrapperRef} className={[!linkCard ? styles.stickerText : '', hasCheckbox ? styles.textStickerContainer : '', linkCard ? styles.hasLinkCard : ''].filter(Boolean).join(' ')}>
+            <div ref={inputWrapperRef} className={[
+                !linkCard ? styles.stickerText : '',
+                hasCheckbox ? styles.textStickerContainer : '',
+                linkCard ? styles.hasLinkCard : '',
+                isEntering ? styles.previewStickerEnter : '',
+                isPreviewExiting ? styles.previewStickerExit : '',
+            ].filter(Boolean).join(' ')}>
                 {hasCheckbox && (
                     <button
                         className={styles.textStickerCheckbox}

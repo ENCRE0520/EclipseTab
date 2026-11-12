@@ -3,7 +3,7 @@ import { Space, SpacesState, DockItem, createDefaultSpace } from '@/shared/types
 import { storage } from '@/shared/utils/storage';
 import { SpaceExportData, MultiSpaceExportData, createSpaceFromImport, createSpacesFromMultiImport } from '@/features/spaces/utils/spaceExportImport';
 import { prefetchIcons } from '@/features/dock/utils/iconCache';
-import { generateFolderIcon } from '@/features/dock/utils/iconFetcher';
+import { ensureOfflineIcon, generateFolderIcon } from '@/features/dock/utils/iconFetcher';
 
 function containsDockItem(items: DockItem[], itemId: string): boolean {
     return items.some(item =>
@@ -130,30 +130,156 @@ export function SpacesProvider({ children }: SpacesProviderProps) {
     // 首次加载时预取所有空间的图标到内存缓存
     // 这样切换空间时图标已在缓存中，不需要重新从 IndexedDB 加载
     const hasPrefetchedRef = useRef(false);
-    useEffect(() => {
-        if (hasPrefetchedRef.current) return;
-        hasPrefetchedRef.current = true;
+    const spacesRef = useRef(spacesState);
+    const attemptedHydrationRef = useRef<Set<string>>(new Set());
 
-        const allDomains: string[] = [];
-        for (const space of spaces) {
+    useEffect(() => {
+        spacesRef.current = spacesState;
+    }, [spacesState]);
+
+    // 静默补全缺失或只有网址的图标：联网时把图标存进本地，断网也能显示。
+    // 老用户已有的「网址型图标」也会在第一次联网时自动修复。
+    const hydrateOfflineIcons = useCallback(async () => {
+        if (!navigator.onLine) return;
+
+        type Target = {
+            spaceId: string;
+            parentId?: string;
+            itemId: string;
+            url: string;
+            icon?: string;
+        };
+        type Update = {
+            spaceId: string;
+            parentId?: string;
+            itemId: string;
+            fromIcon?: string;
+            toIcon: string;
+            iconSmall?: boolean;
+        };
+
+        const targets: Target[] = [];
+        for (const space of spacesRef.current.spaces) {
             for (const item of space.apps) {
-                if (item.url) {
-                    try { allDomains.push(new URL(item.url).hostname); } catch {}
-                }
-                if (item.type === 'folder' && item.items) {
-                    for (const sub of item.items) {
+                if (item.type === 'folder') {
+                    for (const sub of item.items || []) {
                         if (sub.url) {
-                            try { allDomains.push(new URL(sub.url).hostname); } catch {}
+                            targets.push({
+                                spaceId: space.id,
+                                parentId: item.id,
+                                itemId: sub.id,
+                                url: sub.url,
+                                icon: sub.icon,
+                            });
                         }
                     }
+                } else if (item.url) {
+                    targets.push({
+                        spaceId: space.id,
+                        itemId: item.id,
+                        url: item.url,
+                        icon: item.icon,
+                    });
                 }
             }
         }
 
-        if (allDomains.length > 0) {
-            prefetchIcons(allDomains).catch(() => {});
+        const updates: Update[] = [];
+        await Promise.all(targets.map(async (target) => {
+            const attemptKey = `${target.spaceId}:${target.itemId}:${target.icon || ''}`;
+            if (attemptedHydrationRef.current.has(attemptKey)) return;
+            attemptedHydrationRef.current.add(attemptKey);
+
+            const result = await ensureOfflineIcon(target.url, target.icon);
+            if (result) {
+                updates.push({
+                    spaceId: target.spaceId,
+                    parentId: target.parentId,
+                    itemId: target.itemId,
+                    fromIcon: target.icon,
+                    toIcon: result.icon,
+                    iconSmall: result.iconSmall,
+                });
+            }
+        }));
+
+        if (updates.length === 0) return;
+
+        const updateMap = new Map(updates.map(update => [
+            `${update.spaceId}|${update.parentId || ''}|${update.itemId}`,
+            update,
+        ]));
+
+        setSpacesState(prev => {
+            const applyToItems = (items: DockItem[], spaceId: string, parentId?: string): DockItem[] => {
+                let listChanged = false;
+                const nextItems = items.map(item => {
+                    const update = updateMap.get(`${spaceId}|${parentId || ''}|${item.id}`);
+                    if (update) {
+                        if (item.icon !== update.fromIcon) return item;
+                        listChanged = true;
+                        return { ...item, icon: update.toIcon, iconSmall: update.iconSmall };
+                    }
+
+                    if (!parentId && item.type === 'folder' && item.items) {
+                        const newSubItems = applyToItems(item.items, spaceId, item.id);
+                        if (newSubItems === item.items) return item;
+                        listChanged = true;
+                        return { ...item, items: newSubItems, icon: generateFolderIcon(newSubItems) };
+                    }
+
+                    return item;
+                });
+                return listChanged ? nextItems : items;
+            };
+
+            let changed = false;
+            const nextSpaces = prev.spaces.map(space => {
+                const apps = applyToItems(space.apps, space.id);
+                if (apps === space.apps) return space;
+                changed = true;
+                return { ...space, apps };
+            });
+
+            return changed ? { ...prev, spaces: nextSpaces } : prev;
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!hasPrefetchedRef.current) {
+            hasPrefetchedRef.current = true;
+
+            const allDomains: string[] = [];
+            for (const space of spacesRef.current.spaces) {
+                for (const item of space.apps) {
+                    if (item.url) {
+                        try { allDomains.push(new URL(item.url).hostname); } catch { /* ignore */ }
+                    }
+                    if (item.type === 'folder' && item.items) {
+                        for (const sub of item.items) {
+                            if (sub.url) {
+                                try { allDomains.push(new URL(sub.url).hostname); } catch { /* ignore */ }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (allDomains.length > 0) {
+                prefetchIcons(allDomains).catch(() => {});
+            }
+
+            hydrateOfflineIcons();
         }
-    }, []); // 仅首次运行
+
+        // 网络恢复后重试本轮失败的图标
+        const handleOnline = () => {
+            attemptedHydrationRef.current.clear();
+            hydrateOfflineIcons();
+        };
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, [hydrateOfflineIcons]);
 
     // 快捷方式的编辑和删除是低频、用户明确触发的操作，应在状态提交后立即落盘。
     // 原先的 500ms 防抖在新标签页快速关闭/刷新时会被 effect cleanup 取消，导致

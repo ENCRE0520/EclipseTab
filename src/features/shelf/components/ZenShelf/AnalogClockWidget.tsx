@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { WIDGET_CORNER_RADIUS, WIDGET_SIZE } from './widgets/WidgetFrame';
 import styles from './ZenShelf.module.css';
 
 export const ANALOG_CLOCK_WIDGET_SIZE = 212;
+export const ANALOG_CLOCK_WIDGET_CORNER_RADIUS = WIDGET_CORNER_RADIUS * ANALOG_CLOCK_WIDGET_SIZE / WIDGET_SIZE;
 const CLOCK_CENTER = ANALOG_CLOCK_WIDGET_SIZE / 2;
-const SUPERELLIPSE_EXPONENT = 1.5;
+// CSS `corner-shape: superellipse(1.5)` uses 1.5 as half of the exponent (1 = circle),
+// so the painted face is a 3rd-order superellipse. Tick paths must use the same curve,
+// otherwise corner ticks stop short of the face edge and the inner ring looks off.
+const SUPERELLIPSE_EXPONENT = 3;
 const SUPERELLIPSE_DIAGONAL_COMPONENT = 2 ** (-1 / SUPERELLIPSE_EXPONENT);
 const TICK_OVERFLOW = 2;
 const MAX_CORNER_TICK_EXTENSION = 4;
@@ -41,7 +46,7 @@ const getRoundedSquareBoundaryValue = (x: number, y: number, cornerRadius: numbe
     const cornerX = Math.max(Math.abs(x) - straightEdge, 0) / cornerRadius;
     const cornerY = Math.max(Math.abs(y) - straightEdge, 0) / cornerRadius;
 
-    // A local 1.5-order superellipse matches CSS `corner-shape: superellipse(1.5)`
+    // A local 3rd-order superellipse matches CSS `corner-shape: superellipse(1.5)`
     // while retaining the rounded square's four straight edge sections.
     return cornerX ** SUPERELLIPSE_EXPONENT + cornerY ** SUPERELLIPSE_EXPONENT;
 };
@@ -156,7 +161,7 @@ interface AnalogClockWidgetProps {
     cornerRadius?: number;
 }
 
-export const AnalogClockWidget: React.FC<AnalogClockWidgetProps> = ({ scale = 1, shape = 'circle', cornerRadius = 32 }) => {
+export const AnalogClockWidget: React.FC<AnalogClockWidgetProps> = ({ scale = 1, shape = 'circle', cornerRadius = ANALOG_CLOCK_WIDGET_CORNER_RADIUS }) => {
     const [now, setNow] = useState(() => new Date());
     const hands = getClockHands(now);
     const ticks = useMemo(() => Array.from({ length: 60 }, (_, index) => {

@@ -56,6 +56,7 @@ interface Translations {
         searchBy: string;
         searchBySuffix: string;
         searchButton: string;
+        searchHint: string;
     };
     contextMenu: {
         addSticker: string;
@@ -116,6 +117,8 @@ interface Translations {
         emptyRecycleBin: string;
         emptyRecycleBinHint: string;
         recycleBinLimitHint: string;
+        clearRecycleBin: string;
+        clearRecycleBinConfirm: string;
     };
     batchImport: {
         title: string;
@@ -225,6 +228,7 @@ const translations: Record<Language, Translations> = {
             searchBy: 'Search by',
             searchBySuffix: '',
             searchButton: 'Search',
+            searchHint: 'Press Tab to switch search engine',
         },
         contextMenu: {
             addSticker: 'Add Sticker',
@@ -285,6 +289,8 @@ const translations: Record<Language, Translations> = {
             emptyRecycleBin: 'Nothing here',
             emptyRecycleBinHint: 'Deleted stickers will show up here',
             recycleBinLimitHint: 'Recycle bin stores up to 30 items',
+            clearRecycleBin: 'Clear',
+            clearRecycleBinConfirm: 'Permanently delete everything in the recycle bin? This cannot be undone.',
         },
         dock: {
             emptyHint: 'Right-click or use top-right button to enter edit mode and add icons',
@@ -392,6 +398,7 @@ const translations: Record<Language, Translations> = {
             searchBy: '使用',
             searchBySuffix: '',
             searchButton: '搜索',
+            searchHint: '按 Tab 快速切换搜索引擎',
         },
         contextMenu: {
             addSticker: '添加贴纸',
@@ -452,6 +459,8 @@ const translations: Record<Language, Translations> = {
             emptyRecycleBin: '这里空空如也',
             emptyRecycleBinHint: '删除的贴纸将出现在这里',
             recycleBinLimitHint: '回收站最多存储30条贴纸',
+            clearRecycleBin: '清空',
+            clearRecycleBinConfirm: '确定要清空回收站吗？所有内容将被永久删除，且无法恢复。',
         },
         dock: {
             emptyHint: '右键进入编辑模式，或鼠标移动到页面右上角并点击编辑图标',

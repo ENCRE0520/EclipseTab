@@ -1,7 +1,9 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { WIDGET_CORNER_RADIUS, WIDGET_SIZE } from './widgets/WidgetFrame';
 import styles from './ZenShelf.module.css';
 
 export const CLOCK_WIDGET_SIZE = 212;
+export const CLOCK_WIDGET_CORNER_RADIUS = WIDGET_CORNER_RADIUS * CLOCK_WIDGET_SIZE / WIDGET_SIZE;
 const CLOCK_HORIZONTAL_SCALE = 1;
 const CLOCK_HORIZONTAL_INSET = 5;
 
@@ -9,7 +11,7 @@ const formatTime = (date: Date): string => (
     `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 );
 
-export const ClockWidget: React.FC<{ scale?: number; cornerRadius?: number }> = ({ scale = 1, cornerRadius = 32 }) => {
+export const ClockWidget: React.FC<{ scale?: number; cornerRadius?: number }> = ({ scale = 1, cornerRadius = CLOCK_WIDGET_CORNER_RADIUS }) => {
     const [time, setTime] = useState(() => formatTime(new Date()));
     const [horizontalScale, setHorizontalScale] = useState(CLOCK_HORIZONTAL_SCALE);
     const clockFaceRef = useRef<HTMLDivElement>(null);

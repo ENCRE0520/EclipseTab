@@ -3,6 +3,7 @@ import styles from './Widgets.module.css';
 
 /** 小组件统一尺寸（1:1 正方形，8px 网格） */
 export const WIDGET_SIZE = 240;
+export const WIDGET_CORNER_RADIUS = 32;
 
 export function useWidgetNow(interval: number, preview = false) {
     const [now, setNow] = useState(() => new Date());

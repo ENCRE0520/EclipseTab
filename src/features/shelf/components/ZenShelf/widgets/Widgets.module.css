@@ -2,19 +2,14 @@
    小组件通用样式
    设计规则：
    - 1:1 正方形（240×240，8px 网格）
-   - 最多 2 种字体家族：正文 SF / 系统字，数字 SF PRO（降级 Google Sans / 等宽压缩体）
+   - 最多 2 种字体家族：正文 SF / 系统字，数字 SF PRO（非 Mac 平台使用内置同宽同重数字子集）
    - 最多 3 种字重：400 / 500 / 600
    - 白边描边由外层 .frame 承载（不会被内层 transform: scale 影响 → 缩放时宽度恒定）
    ============================================================================ */
 
 :root {
     --widget-radius: 32px;
-    /* 数字字体：与时钟小组件保持一致，SF PRO → Google Sans Flex → 系统压缩体 */
-    --widget-number-font:
-        'SF Pro', 'SF Pro Condensed', 'SF Pro Display', 'SF Pro Text',
-        'Google Sans Flex', 'Avenir Next Condensed',
-        'Helvetica Neue Condensed', 'Arial Narrow', sans-serif;
-    --widget-text-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --widget-corner-shape: superellipse(1.5);
 }
 
 /* ===== 外框：白边描边（不缩放）===== */
@@ -23,7 +18,7 @@
     position: relative;
     isolation: isolate;
     border-radius: calc(var(--widget-radius) * var(--widget-scale, 1));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     filter: drop-shadow(var(--shadow-sticker-rest));
     transition: filter var(--transition-smooth);
 }
@@ -35,7 +30,7 @@
     z-index: 0;
     inset: calc(var(--sticker-outline-width) * -1);
     border-radius: calc(var(--widget-radius) * var(--widget-scale, 1) + var(--sticker-outline-width));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     background: var(--color-sticker-stroke);
     pointer-events: none;
 }
@@ -55,7 +50,7 @@
     padding: 20px;            /* 8px 网格：5 × 4 = 20 */
     border: 0;
     border-radius: var(--widget-radius);
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     background: var(--widget-surface);
     color: var(--color-text-primary);
     overflow: hidden;
@@ -554,11 +549,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--color-text-secondary);
-    font-size: 28px;
+    /* 26px + 比例数字：保证 zh-CN 最长日期（2026年12月12日）在 200px 内完整显示 */
+    font-size: 26px;
     font-weight: 500;
     line-height: 1.25;
     font-family: var(--widget-text-font);
-    font-variant-numeric: tabular-nums;
 }
 
 .countdownEmpty {

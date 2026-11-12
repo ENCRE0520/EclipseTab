@@ -3,6 +3,8 @@ import { DockItem, SearchEngine, SpacesState, createDefaultSpacesState, Sticker 
 const STORAGE_KEYS = {
   DOCK_ITEMS: 'EclipseTab_dockItems',
   SEARCH_ENGINE: 'EclipseTab_searchEngine',
+  // 搜索框 Tab 切换引擎提示是否已关闭
+  SEARCH_TAB_HINT_DISMISSED: 'EclipseTab_searchTabHintDismissed',
   // Config (Unified settings)
   CONFIG: 'EclipseTab_config',
 
@@ -253,6 +255,22 @@ export const storage = {
       localStorage.setItem(STORAGE_KEYS.SEARCH_ENGINE, JSON.stringify(engine));
     } catch (error) {
       console.error('Failed to save search engine:', error);
+    }
+  },
+
+  getSearchTabHintDismissed(): boolean {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.SEARCH_TAB_HINT_DISMISSED) === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  dismissSearchTabHint(): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SEARCH_TAB_HINT_DISMISSED, 'true');
+    } catch (error) {
+      console.error('Failed to save search hint state:', error);
     }
   },
 

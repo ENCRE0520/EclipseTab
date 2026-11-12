@@ -1,6 +1,15 @@
-import { makeFaviconRef, invalidateIconCache, resolveIconUrl } from './iconCache';
+import {
+  makeFaviconRef,
+  invalidateIconCache,
+  resolveIconUrl,
+  getDomainFromRef,
+  isFaviconRef,
+  isRemoteIconUrl,
+  ensureRemoteIconCached,
+} from './iconCache';
 import { db } from '@/shared/utils/db';
 import { ensureHostPermission } from '@/shared/utils/hostPermission';
+import { probeImageBlob } from './imageBlob';
 
 // ============================================================================
 // 请求去重: 跟踪进行中的请求，避免重复网络请求
@@ -54,17 +63,16 @@ const fetchAndProbeImage = async (
     }
 
     const blob = await response.blob();
-    const bitmap = await createImageBitmap(blob);
-    const { width, height } = bitmap;
-    bitmap.close();
+    const size = await probeImageBlob(blob);
+    if (!size) {
+      throw new Error('Image invalid');
+    }
+    const { width, height } = size;
 
     if (probeMinSize > 0) {
       if (width < probeMinSize || height < probeMinSize) {
-        if (width <= 1) throw new Error('Image invalid');
         throw new Error(`Image too small (${width}x${height} < ${probeMinSize})`);
       }
-    } else {
-      if (width <= 1) throw new Error('Image invalid');
     }
 
     return { blob, width, height };
@@ -187,6 +195,88 @@ export const fetchAndProcessIcon = async (
   allowPermissionRequest: boolean = false
 ): Promise<IconResult> => {
   return fetchIcon(url, minSize, forceRefresh, allowPermissionRequest);
+};
+
+/**
+ * 为已有 Dock 条目补一份离线可用的本地图标副本。
+ *
+ * - favicon: 引用且本地 Blob 完好 → 不用处理
+ * - favicon: 引用但本地缺失/是文字兜底 → 静默重新下载
+ * - https 图标 → 先缓存原图；不行再改用站点图标
+ * - data URL → 已经是本地图标，跳过
+ *
+ * 只做静默下载，失败时不写入文字兜底图标，避免污染缓存和 24h 刷新逻辑。
+ * @returns null 表示无需修改；否则返回应写回条目的新图标
+ */
+export const ensureOfflineIcon = async (
+  url: string,
+  currentIcon?: string
+): Promise<{ icon: string; iconSmall?: boolean } | null> => {
+  let domain: string;
+  try {
+    domain = new URL(url).hostname;
+  } catch {
+    return null;
+  }
+  if (!domain) return null;
+
+  if (currentIcon && currentIcon.startsWith('data:')) {
+    return null;
+  }
+
+  if (currentIcon && isFaviconRef(currentIcon)) {
+    const refDomain = getDomainFromRef(currentIcon);
+    try {
+      const cached = await db.getFavicon(refDomain);
+      if (cached && cached.data instanceof Blob && cached.data.size > 0 && !cached.isFallback) {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+    return downloadSiteIcon(url, refDomain);
+  }
+
+  if (currentIcon && isRemoteIconUrl(currentIcon)) {
+    if (await ensureRemoteIconCached(currentIcon)) {
+      return null;
+    }
+    return downloadSiteIcon(url, domain);
+  }
+
+  // 没有图标，或存的是已失效的 blob: 引用
+  if (currentIcon && !currentIcon.startsWith('blob:')) {
+    return null;
+  }
+  return downloadSiteIcon(url, domain);
+};
+
+const downloadSiteIcon = async (
+  url: string,
+  domain: string
+): Promise<{ icon: string; iconSmall?: boolean } | null> => {
+  const networkResult = await fetchIconFromNetwork(url, domain, 100, false);
+  if (!networkResult || networkResult.kind !== 'blob') {
+    return null;
+  }
+
+  try {
+    invalidateIconCache(domain);
+    await db.saveFavicon({
+      domain,
+      data: networkResult.blob,
+      isFallback: false,
+      iconSmall: networkResult.iconSmall,
+      lastUpdated: Date.now(),
+    });
+  } catch {
+    return null;
+  }
+
+  return {
+    icon: makeFaviconRef(domain),
+    iconSmall: networkResult.iconSmall,
+  };
 };
 
 /**
@@ -510,9 +600,8 @@ const imageUrlToBlob = async (
       const contentType = response.headers.get('content-type') || '';
       if (contentType.startsWith('image/') || contentType.includes('icon')) {
         const blob = await response.blob();
-        // 验证 Blob 是否真的是有效图片
-        const bitmap = await createImageBitmap(blob);
-        bitmap.close();
+        // 验证 Blob 是否真的是有效图片（SVG 也能通过 <img> 探测）
+        if (!(await probeImageBlob(blob))) return null;
         return blob;
       }
     }
@@ -621,7 +710,8 @@ function getReusableCanvas(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingC
  * 生成文字图标，同时返回 Blob 和 data URL
  */
 const generateTextIconBlob = (text: string): { blob: Blob; dataUrl: string } => {
-  const dataUrl = generateTextIcon(text);
+  // 用文字本身做种子，同一站点每次生成的配色一致
+  const dataUrl = generateStableTextIcon(text, text);
   // 将 data URL 转为 Blob
   const parts = dataUrl.split(',');
   const mime = parts[0]?.match(/:(.*?);/)?.[1] || 'image/png';
@@ -724,6 +814,19 @@ export const generateTextIcon = (text: string, hue?: number): string => {
   } catch {
     return '';
   }
+};
+
+/**
+ * 生成色彩固定的文字图标，用于离线且没有本地缓存时兜底。
+ * 色相由 seed 决定，同一站点每次渲染颜色一致。
+ */
+export const generateStableTextIcon = (text: string, seed: string = text): string => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  return generateTextIcon(text, Math.abs(hash) % 360);
 };
 
 /**

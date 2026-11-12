@@ -126,7 +126,8 @@
 .clockWidget {
     --clock-scale: 1;
     --clock-horizontal-scale: 0.66;
-    --widget-corner-radius: 32px;
+    --widget-corner-radius: 28.2667px;
+    --widget-corner-shape: superellipse(1.5);
     --clock-face-surface: var(--gray-200);
     --widget-surface: var(--gray-200);
     position: relative;
@@ -136,7 +137,7 @@
     justify-content: center;
     overflow: visible;
     border-radius: calc(var(--widget-corner-radius) * var(--clock-scale));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     background: transparent;
     isolation: isolate;
     filter: drop-shadow(var(--shadow-sticker-rest));
@@ -153,7 +154,7 @@
     height: 100%;
     overflow: hidden;
     border-radius: inherit;
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     background: var(--clock-face-surface);
 }
 
@@ -163,7 +164,7 @@
     z-index: 0;
     inset: calc(var(--sticker-outline-width) * -1);
     border-radius: calc(var(--widget-corner-radius) * var(--clock-scale) + var(--sticker-outline-width));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
     background: var(--color-sticker-stroke);
     pointer-events: none;
 }
@@ -192,7 +193,7 @@
 .clockTime {
     display: block;
     color: var(--clock-time-color, #000);
-    font-family: 'SF Pro', 'SF Pro Condensed', 'SF Pro Display', 'SF Pro Text', 'Google Sans Flex', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+    font-family: var(--widget-clock-font);
     font-size: calc(164px * var(--clock-scale));
     font-weight: 410;
     font-stretch: condensed;
@@ -211,7 +212,8 @@
 
 .analogClockWidget {
     --analog-scale: 1;
-    --widget-corner-radius: 32px;
+    --widget-corner-radius: 28.2667px;
+    --widget-corner-shape: superellipse(1.5);
     --analog-face-surface: var(--gray-200);
     --analog-tick-minor: #9a9a9a;
     --analog-tick-major: #111;
@@ -233,7 +235,7 @@
 
 .analogClockRoundedSquare {
     border-radius: calc(var(--widget-corner-radius) * var(--analog-scale));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
 }
 
 [data-theme='default'] .clockWidget {
@@ -253,7 +255,7 @@
 
 .analogClockRoundedSquare::before {
     border-radius: calc(var(--widget-corner-radius) * var(--analog-scale) + var(--sticker-outline-width));
-    corner-shape: superellipse(1.5);
+    corner-shape: var(--widget-corner-shape);
 }
 
 .analogClockFace {
@@ -1157,6 +1159,64 @@
     pointer-events: auto;
 }
 
+/* 预览贴纸的入场/出场：投影与贴纸一并平滑出现、消失 */
+/* 投影使用与其他贴纸一致的 300ms ease-smooth，避免阴影瞬间跳出 */
+.stickerText.previewStickerEnter {
+    animation:
+        previewStickerFadeIn var(--duration-medium) var(--ease-out-quint) both,
+        previewStickerShadowIn var(--duration-normal) var(--ease-smooth) both;
+}
+
+.stickerText.previewStickerExit {
+    animation:
+        previewStickerFadeOut var(--duration-fast) var(--ease-in-quint) both,
+        previewStickerShadowOut var(--duration-fast) var(--ease-in-quint) both;
+}
+
+@keyframes previewStickerFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes previewStickerShadowIn {
+    from {
+        filter: blur(5px) drop-shadow(0 4px 8px rgba(0, 0, 0, 0));
+    }
+
+    to {
+        filter: blur(0px) drop-shadow(var(--shadow-sticker-rest));
+    }
+}
+
+@keyframes previewStickerFadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes previewStickerShadowOut {
+    from {
+        filter: blur(0px) drop-shadow(var(--shadow-sticker-rest));
+    }
+
+    to {
+        filter: blur(5px) drop-shadow(0 4px 8px rgba(0, 0, 0, 0));
+    }
+}
+
 /* 可编辑的贴纸预览 */
 .stickerPreviewInput {
     min-width: 60px;
@@ -1196,10 +1256,11 @@
     }
 }
 
-/* 占位符样式 */
+/* 占位符样式 - 需明显浅于已输入文字，避免看起来像真实内容 */
+/* 用不透明的浅灰而非降低整体不透明度，否则描边滤镜会把半透明文字判为无描边 */
 .stickerPreviewInput:empty::before {
     content: attr(data-placeholder);
-    color: var(--color-text-tertiary);
+    color: var(--gray-400);
     pointer-events: none;
 }
 
@@ -1566,6 +1627,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: var(--spacing-gap-large);
     color: var(--color-text-primary);
     padding: 0 40px;
     box-sizing: border-box;
@@ -1584,6 +1646,7 @@
     flex-direction: column;
     gap: var(--spacing-padding-extrasmall);
     align-items: flex-start;
+    min-width: 0;
 }
 
 .recycleBinSubtitle {
@@ -1591,6 +1654,60 @@
     color: var(--color-text-secondary);
     font-weight: var(--font-weight-regular);
     opacity: 0.8;
+}
+
+.recycleBinHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-gap-small);
+    flex-shrink: 0;
+}
+
+/* Clear button - same glass shell as the close button */
+.recycleBinClearWrapper {
+    backdrop-filter: blur(var(--backdrop-blur-large));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-large));
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-default);
+    padding: var(--spacing-padding-extrasmall);
+    cursor: pointer;
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.recycleBinClearWrapper:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.recycleBinClearWrapper:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.recycleBinClearInner {
+    width: var(--control-height-lg);
+    height: var(--control-height-lg);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-default-in);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-small);
+}
+
+.recycleBinClearIcon {
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+    flex-shrink: 0;
+    background-color: var(--color-text-primary);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
 .recycleBinCloseWrapper {

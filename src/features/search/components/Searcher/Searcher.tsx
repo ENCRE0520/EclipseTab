@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SearchEngine } from '@/shared/types';
+import { storage } from '@/shared/utils/storage';
 import styles from './Searcher.module.css';
 import { useSearchSuggestions } from '@/features/search/hooks/useSearchSuggestions';
 import { useLanguage } from '@/shared/context/LanguageContext';
@@ -9,6 +10,7 @@ interface SearcherProps {
   searchEngine: SearchEngine;
   onSearch: (query: string) => void;
   onSearchEngineClick: (anchorRect: DOMRect) => void;
+  onCycleSearchEngine?: (direction: 1 | -1) => void;
   openInNewTab?: boolean;
   containerStyle?: React.CSSProperties;
 }
@@ -17,12 +19,14 @@ export const Searcher: React.FC<SearcherProps> = ({
   searchEngine,
   onSearch,
   onSearchEngineClick,
+  onCycleSearchEngine,
   openInNewTab = true,
   containerStyle,
 }) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [showTabHint, setShowTabHint] = useState(() => !storage.getSearchTabHintDismissed());
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { suggestions } = useSearchSuggestions(query);
@@ -71,6 +75,15 @@ export const Searcher: React.FC<SearcherProps> = ({
     setActiveIndex(-1);
   }, [suggestions]);
 
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (showTabHint && value.trim()) {
+      setShowTabHint(false);
+      storage.dismissSearchTabHint();
+    }
+  };
+
   const handleSearch = (searchQuery: string) => {
     if (!searchQuery.trim()) return;
 
@@ -107,6 +120,12 @@ export const Searcher: React.FC<SearcherProps> = ({
         setActiveIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
         return;
       }
+    }
+
+    if (e.key === 'Tab' && onCycleSearchEngine && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      onCycleSearchEngine(e.shiftKey ? -1 : 1);
+      return;
     }
 
     if (e.key === 'Enter') {
@@ -168,9 +187,9 @@ export const Searcher: React.FC<SearcherProps> = ({
             ref={inputRef}
             type="text"
             className={styles.searchInput}
-            placeholder=""
+            placeholder={showTabHint ? t.search.searchHint : ''}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => {

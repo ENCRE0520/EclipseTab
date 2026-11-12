@@ -1,5 +1,23 @@
 /* Design System Variables  */
 
+/* 小组件数字兜底字体（Roboto Flex 静态子集，SIL OFL 1.1，见 assets/fonts/RobotoFlex-OFL.txt）。
+   仅含数字与 + - . :，用于没有 SF Pro 的平台；字宽与墨量已按 SF Pro 校准（wght 480）。 */
+@font-face {
+  font-family: 'Widget Digits';
+  src: url('../../assets/fonts/widget-digits.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Widget Clock Digits';
+  src: url('../../assets/fonts/widget-clock-digits.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* ===== 间距变量 ===== */
   /* 用于定义统一的边距、内边距和间隙 */
@@ -118,6 +136,13 @@
   /* ===== 字体变量 ===== */
   /* 定义统一的字体族、字重、字号和行高 */
   --font-family: 'Bricolage Grotesque', sans-serif;
+
+  /* 小组件字体：Mac 系统字体优先；Windows / Linux 使用内置 Roboto Flex 子集兜底。
+     数字子集按 SF Pro 实测字宽校准（正文数字 wdth 46.5、时钟 wdth 48.7），
+     正文拉丁回退 Google Sans Flex，中文回退 Noto Sans SC 以补上 Windows 缺失的 Medium 字重。 */
+  --widget-number-font: 'SF Pro', 'Widget Digits', 'Google Sans Flex', 'Avenir Next Condensed', 'Helvetica Neue Condensed', 'Arial Narrow', sans-serif;
+  --widget-clock-font: 'SF Pro', 'Widget Clock Digits', 'Google Sans Flex', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+  --widget-text-font: 'Helvetica Neue', 'Google Sans Flex', 'Segoe UI', Helvetica, Arial, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;

@@ -2,6 +2,7 @@ import React, { useState, useLayoutEffect, useCallback } from 'react';
 import { useThemeData } from '@/features/theme/context/ThemeContext';
 import { useDockData, useDockUI, useDockDrag } from '@/features/dock/context/DockContext';
 import { Searcher } from '@/features/search/components/Searcher/Searcher';
+import { SEARCH_ENGINES } from '@/features/search/constants/searchEngines';
 import { Dock } from './Dock/Dock';
 import { DockItem } from '@/shared/types';
 import styles from '@/App.module.css';
@@ -24,6 +25,7 @@ export const DockLayoutContainer: React.FC<DockLayoutContainerProps> = React.mem
     const {
         dockItems,
         selectedSearchEngine,
+        setSelectedSearchEngine,
         handleItemDelete,
         handleItemsReorder,
         handleDropOnFolder,
@@ -110,6 +112,14 @@ export const DockLayoutContainer: React.FC<DockLayoutContainerProps> = React.mem
         window.open(searchUrl, openInNewTab ? '_blank' : '_self');
     }, [selectedSearchEngine, openInNewTab]);
 
+    const handleCycleSearchEngine = useCallback((direction: 1 | -1) => {
+        const currentIndex = SEARCH_ENGINES.findIndex(engine => engine.id === selectedSearchEngine.id);
+        const nextIndex = currentIndex === -1
+            ? 0
+            : (currentIndex + direction + SEARCH_ENGINES.length) % SEARCH_ENGINES.length;
+        setSelectedSearchEngine(SEARCH_ENGINES[nextIndex]);
+    }, [selectedSearchEngine, setSelectedSearchEngine]);
+
     return (
         <div
             className={dockPosition === 'center' ? styles.containerCenter : styles.container}
@@ -125,6 +135,7 @@ export const DockLayoutContainer: React.FC<DockLayoutContainerProps> = React.mem
                 searchEngine={selectedSearchEngine}
                 onSearch={handleSearch}
                 onSearchEngineClick={onSearchEngineClick}
+                onCycleSearchEngine={handleCycleSearchEngine}
                 openInNewTab={openInNewTab}
                 containerStyle={dockWidth ? { width: `${dockWidth}px` } : undefined}
             />
